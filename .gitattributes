@@ -1,0 +1,2 @@
+# 纠正 GitHub 语言统计，将 .html 文件权重降低
+*.html linguist-language=HTML linguist-vendored
