@@ -948,35 +948,78 @@ async function loadGoal() {
     try {
         const res = await fetch('/xiaoyu/api/goals');
         const data = await res.json();
-        if (data.success && data.goal) {
-            const g = data.goal;
-            document.getElementById('goalScore').value = g.target_score;
-            document.getElementById('goalReward').value = g.reward || '';
-            updateGoalDisplay(g);
+        if (data.success && data.goals && data.goals.length > 0) {
+            const goals = data.goals;
+            // 找到最近的未达成目标
+            const current = goals.filter(g => !g.achieved).sort((a,b) => a.target_score - b.target_score)[0] || goals[goals.length-1];
+            document.getElementById('goalScore').value = current.target_score;
+            document.getElementById('goalReward').value = current.reward || '';
+            updateGoalDisplay(goals);
         }
     } catch(e) {}
 }
 
-function updateGoalDisplay(goal) {
+function updateGoalDisplay(goals) {
     const display = document.getElementById('goalDisplay');
-    if (!goal) { display.style.display = 'none'; return; }
+    if (!goals || goals.length === 0) { display.style.display = 'none'; return; }
     fetch('/xiaoyu/api/scores')
         .then(r => r.json())
         .then(data => {
             let total = 0;
             (data.scores || []).forEach(s => { total += s.score || 0; });
-            const remain = goal.target_score - total;
+            // 排序：未达成的在前面
+            var sorted = goals.slice().sort(function(a,b){ return a.achieved - b.achieved || a.target_score - b.target_score; });
+            // 显示最近2个已达成的 + 所有未达成的
+            var done = sorted.filter(function(g){ return g.achieved; });
+            var undone = sorted.filter(function(g){ return !g.achieved; });
+            var showDone = done.slice(-2);
+            var showList = showDone.concat(undone);
+            var html = showList.map(function(g) {
+                var done = g.achieved;
+                var remain = g.target_score - total;
+                return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;' + (done ? 'opacity:0.5;' : '') + 'border-bottom:1px solid #f0f0f0;">' +
+                    '<span style="font-size:14px;color:#666;">🎯 <strong>' + g.target_score + '</strong> 分</span>' +
+                    '<span style="font-size:14px;color:#999;">→</span>' +
+                    '<span style="font-size:15px;font-weight:600;color:#333;">🎁 ' + escapeHtml(g.reward || '请输入愿望') + '</span>' +
+                    (done ? '<span style="font-size:12px;color:#22c55e;font-weight:700;">✅ 已达成</span>' : '') +
+                    (!done ? '<span style="font-size:14px;color:#e91e63;">还差 <strong>' + Math.max(0, remain) + '</strong> 分</span>' : '') +
+                    '<button onclick="deleteGoal(' + g.id + ')" style="margin-left:auto;background:none;border:none;color:#999;cursor:pointer;font-size:14px;padding:4px 8px;border-radius:6px;" title="删除目标">🗑️</button>' +
+                    '</div>';
+            }).join('');
+            if (done.length > 2) {
+                html += '<div style="font-size:12px;color:#999;text-align:center;padding:4px 0;">⋯ 还有 ' + (done.length - 2) + ' 个已达成目标</div>';
+            }
             display.style.display = 'block';
-            display.innerHTML = '<div style="display:flex;align-items:center;gap:12px;">' +
-                '<span style="font-size:14px;color:#666;">当前 <strong>' + total + '</strong> 分</span>' +
-                '<span style="font-size:14px;color:#999;">→</span>' +
-                '<span style="font-size:14px;color:#9c27b0;">目标 <strong>' + goal.target_score + '</strong> 分</span>' +
-                '<span style="font-size:14px;color:#999;">→</span>' +
-                '<span style="font-size:14px;color:#e91e63;">还差 <strong>' + Math.max(0, remain) + '</strong> 分</span>' +
-                '<span style="font-size:14px;color:#999;">→</span>' +
-                '<span style="font-size:15px;font-weight:600;color:#333;">🎁 ' + escapeHtml(goal.reward) + '</span>' +
-                '</div>';
-        }).catch(() => {});
+            display.innerHTML = html;
+        }).catch(function(){});
+}
+
+function deleteGoal(id) {
+    if (!confirm('确定删除这个目标吗？')) return;
+    fetch('/xiaoyu/api/goals/' + id, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                loadGoal();
+                toast('目标已删除', 'success');
+            } else {
+                toast('删除失败', 'error');
+            }
+        })
+        .catch(function(){ toast('删除失败', 'error'); });
+}
+
+async function checkGoals() {
+    try {
+        const res = await fetch('/xiaoyu/api/goals/check', {method:'POST'});
+        const data = await res.json();
+        if (data.success && data.triggered && data.triggered.length > 0) {
+            data.triggered.forEach(function(g) {
+                toast('🎉 目标达成！' + g.target_score + '分，愿望：' + g.reward, 'success');
+            });
+            loadGoal();
+        }
+    } catch(e) {}
 }
 
 function saveGoal() {
@@ -990,7 +1033,7 @@ function saveGoal() {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            updateGoalDisplay(data.goal);
+            loadGoal();
             toast('目标已保存！', 'success');
         }
     })
@@ -1281,7 +1324,7 @@ async function saveRuleEdit(id) {
 
 // 初始化
 loadStats();
-loadGoal();loadTrend();
+loadGoal();checkGoals();loadTrend();
 loadRules();
 loadScores();
 renderTopRules();

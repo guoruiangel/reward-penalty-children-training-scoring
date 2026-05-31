@@ -209,27 +209,33 @@ def update_score(score_id):
     return jsonify({'success': True})
 
 @xiaoyu.route('/api/goals', methods=['GET', 'POST'])
+@xiaoyu.route('/api/goals', methods=['GET', 'POST'])
 def goals_api():
     ensure_tables()
     conn = get_db()
-    # 建表
+    # 建表（兼容旧的没有 achieved 列的表）
     conn.execute('''
         CREATE TABLE IF NOT EXISTS xiaoyu_goals (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             target_score REAL NOT NULL DEFAULT 100,
             reward TEXT DEFAULT '',
+            achieved INTEGER DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    try:
+        conn.execute('ALTER TABLE xiaoyu_goals ADD COLUMN achieved INTEGER DEFAULT 0')
+    except:
+        pass
     conn.commit()
-    
+
     if request.method == 'GET':
-        goal = conn.execute('SELECT * FROM xiaoyu_goals ORDER BY id DESC LIMIT 1').fetchone()
+        goals = conn.execute(
+            'SELECT * FROM xiaoyu_goals ORDER BY target_score ASC'
+        ).fetchall()
         conn.close()
-        if goal:
-            return jsonify({'success': True, 'goal': dict(goal)})
-        return jsonify({'success': True, 'goal': None})
-    
+        return jsonify({'success': True, 'goals': [dict(g) for g in goals]})
+
     # POST
     data = request.get_json()
     target_score = data.get('target_score', 100)
@@ -241,6 +247,53 @@ def goals_api():
     goal = conn.execute('SELECT * FROM xiaoyu_goals WHERE id = ?', (goal_id,)).fetchone()
     conn.close()
     return jsonify({'success': True, 'goal': dict(goal)})
+
+
+@xiaoyu.route('/api/goals/check', methods=['POST'])
+def goals_check():
+    """检查当前分数是否达成目标，若达成自动创建下一个目标"""
+    ensure_tables()
+    conn = get_db()
+    # 计算总分
+    row = conn.execute('SELECT COALESCE(SUM(score), 0) as total FROM xiaoyu_scores').fetchone()
+    total = row['total']
+
+    # 获取所有 goals
+    goals = conn.execute('SELECT * FROM xiaoyu_goals ORDER BY target_score ASC').fetchall()
+
+    triggered = []
+    for g in goals:
+        if g['achieved']:
+            continue
+        if total >= g['target_score']:
+            conn.execute('UPDATE xiaoyu_goals SET achieved = 1 WHERE id = ?', (g['id'],))
+            triggered.append(dict(g))
+
+    # 如果所有已存在 goal 都达成（或没有goal），自动创建下一个
+    last_goal = conn.execute('SELECT * FROM xiaoyu_goals ORDER BY target_score DESC, id DESC LIMIT 1').fetchone();
+    if not last_goal or last_goal['achieved']:
+        next_target = (last_goal['target_score'] if last_goal else 0) + 100
+        conn.execute('INSERT INTO xiaoyu_goals (target_score, reward) VALUES (?, ?)',
+                     (next_target, '请输入愿望 ✨'))
+        new_goal_id = cursor.lastrowid
+
+    conn.commit()
+    goals = conn.execute('SELECT * FROM xiaoyu_goals ORDER BY target_score ASC').fetchall()
+    conn.close()
+    return jsonify({
+        'success': True,
+        'total': total,
+        'triggered': triggered,
+        'goals': [dict(g) for g in goals]
+    })
+@xiaoyu.route('/api/goals/<int:goal_id>', methods=['DELETE'])
+def delete_goal(goal_id):
+    conn = get_db()
+    conn.execute('DELETE FROM xiaoyu_goals WHERE id = ?', (goal_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
 
 @xiaoyu.route('/api/scores/stats', methods=['GET'])
 def score_stats():
