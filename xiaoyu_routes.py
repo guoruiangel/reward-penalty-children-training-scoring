@@ -573,9 +573,11 @@ def auto_checkin_score():
                     ('学校英语', monday.isoformat(), sunday.isoformat())
                 ).fetchall())
                 reason = f"本周英语打卡（美梯{len(mt)}天+学校{len(xx)}天，合并{week_checkin}天，缺{week_miss}天）"
+                from datetime import datetime as _dt
+                bj_time = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
                 conn.execute(
-                    'INSERT INTO xiaoyu_scores (rule_id, score, reason) VALUES (?, ?, ?)',
-                    (rule_id, matched_score, reason)
+                    'INSERT INTO xiaoyu_scores (rule_id, score, reason, created_at) VALUES (?, ?, ?, ?)',
+                    (rule_id, matched_score, reason, bj_time)
                 )
                 scores_created.append({
                     'rule': rname,
@@ -608,9 +610,11 @@ def auto_checkin_score():
             ).fetchone()
             if not existing:
                 reason = f"本周口算打卡{week_checkin}天，缺{week_miss}天"
+                from datetime import datetime as _dt
+                bj_time = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
                 conn.execute(
-                    'INSERT INTO xiaoyu_scores (rule_id, score, reason) VALUES (?, ?, ?)',
-                    (rule_id, matched_score, reason)
+                    'INSERT INTO xiaoyu_scores (rule_id, score, reason, created_at) VALUES (?, ?, ?, ?)',
+                    (rule_id, matched_score, reason, bj_time)
                 )
                 scores_created.append({
                     'rule': rname,
