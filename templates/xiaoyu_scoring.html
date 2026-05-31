@@ -969,26 +969,22 @@ function updateGoalDisplay(goals) {
             (data.scores || []).forEach(s => { total += s.score || 0; });
             // 排序：未达成的在前面
             var sorted = goals.slice().sort(function(a,b){ return a.achieved - b.achieved || a.target_score - b.target_score; });
-            // 显示最近2个已达成的 + 所有未达成的
+            // 默认全展开：展示所有目标
             var done = sorted.filter(function(g){ return g.achieved; });
             var undone = sorted.filter(function(g){ return !g.achieved; });
-            var showDone = done.slice(-2);
-            var showList = showDone.concat(undone);
+            var showList = done.concat(undone);
             var html = showList.map(function(g) {
-                var done = g.achieved;
+                var finished = g.achieved;
                 var remain = g.target_score - total;
-                return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;' + (done ? 'opacity:0.5;' : '') + 'border-bottom:1px solid #f0f0f0;">' +
+                return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;' + (finished ? 'opacity:0.5;' : '') + 'border-bottom:1px solid #f0f0f0;">' +
                     '<span style="font-size:14px;color:#666;">🎯 <strong>' + g.target_score + '</strong> 分</span>' +
                     '<span style="font-size:14px;color:#999;">→</span>' +
                     '<span style="font-size:15px;font-weight:600;color:#333;">🎁 ' + escapeHtml(g.reward || '请输入愿望') + '</span>' +
-                    (done ? '<span style="font-size:12px;color:#22c55e;font-weight:700;">✅ 已达成</span>' : '') +
-                    (!done ? '<span style="font-size:14px;color:#e91e63;">还差 <strong>' + Math.max(0, remain) + '</strong> 分</span>' : '') +
+                    (finished ? '<span style="font-size:12px;color:#22c55e;font-weight:700;">✅ 已达成</span>' : '') +
+                    (!finished ? '<span style="font-size:14px;color:#e91e63;">还差 <strong>' + Math.max(0, remain) + '</strong> 分</span>' : '') +
                     '<button onclick="deleteGoal(' + g.id + ')" style="margin-left:auto;background:none;border:none;color:#999;cursor:pointer;font-size:14px;padding:4px 8px;border-radius:6px;" title="删除目标">🗑️</button>' +
                     '</div>';
             }).join('');
-            if (done.length > 2) {
-                html += '<div style="font-size:12px;color:#999;text-align:center;padding:4px 0;">⋯ 还有 ' + (done.length - 2) + ' 个已达成目标</div>';
-            }
             display.style.display = 'block';
             display.innerHTML = html;
         }).catch(function(){});
