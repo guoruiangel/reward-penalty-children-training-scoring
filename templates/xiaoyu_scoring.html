@@ -3,10 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⭐ 小渔的打分规则</title>
+<title id="pageTitle">⭐ 小渔的打分规则</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+function editPageTitle() {
+    var h1 = document.getElementById("pageTitleH1");
+    var current = h1.textContent.trim().replace(/^⭐ /, "");
+    var newTitle = prompt("修改标题：", current);
+    if (newTitle && newTitle.trim()) {
+        h1.innerHTML = "⭐ " + newTitle.trim();
+        document.getElementById("pageTitle").textContent = "⭐ " + newTitle.trim() + " | 小渔打分";
+        localStorage.setItem("xiaoyu_page_title", newTitle.trim());
+    }
+}
+</script>
 <style>
 :root { --primary-color: #e91e63; --success-color: #10b981; --danger-color: #ef4444; }
 body { background: linear-gradient(135deg, #fce4ec, #f3e5f5); min-height: 100vh; }
@@ -254,7 +266,7 @@ body { background: linear-gradient(135deg, #fce4ec, #f3e5f5); min-height: 100vh;
     <a href="/xiaoyu" class="back-link">‹ 返回小渔首页</a>
 
     <div class="header-card">
-        <h1>⭐ 小渔的打分规则</h1>
+        <h1 id="pageTitleH1" style="cursor:pointer;" onclick="editPageTitle()">⭐ 小渔的打分规则</h1>
         <div class="sub">管理成长积分规则 · 可自由编排打分项</div>
     </div>
 
@@ -302,7 +314,332 @@ body { background: linear-gradient(135deg, #fce4ec, #f3e5f5); min-height: 100vh;
         </div>
     </div>
 
-    <!-- 新建打分 -->
+<style>
+.cal-cell {
+    padding: 14px 10px;
+    text-align: center;
+    vertical-align: middle;
+    border-radius: 8px;
+    background: transparent;
+    transition: background 0.15s;
+    cursor: pointer;
+    font-size: 1rem;
+}
+.cal-cell:hover { background: rgba(124,58,237,0.06); }
+.cal-cell.today { background: rgba(124,58,237,0.12); }
+
+.cal-header {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #64748b;
+    padding: 8px 6px;
+    text-align: center;
+}
+.btn-sm-glass {
+    background: rgba(124,58,237,0.08);
+    color: #7c3aed;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.btn-sm-glass:hover { background: rgba(124,58,237,0.18); color: #6d28d9; }
+.btn-sm-glass:active { transform: scale(0.97); }
+</style>
+    <!-- 打卡标签编辑 -->
+    <div class="glass-card" style="margin-top:20px;">
+        <h5 class="mb-3"><i class="bi bi-pencil me-2"></i>打卡标签编辑</h5>
+        <div id="tagEdit" style="display:flex;gap:12px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:0.75rem;color:#94a3b8;display:block;margin-bottom:2px;">标签1</label><input id="tag1" style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:0.9rem;width:100px;"></div>
+            <div><label style="font-size:0.75rem;color:#94a3b8;display:block;margin-bottom:2px;">标签2</label><input id="tag2" style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:0.9rem;width:100px;"></div>
+            <div><label style="font-size:0.75rem;color:#94a3b8;display:block;margin-bottom:2px;">标签3</label><input id="tag3" style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:0.9rem;width:100px;"></div>
+            <div><button class="btn-sm-glass" onclick="CSaveTags()" style="padding:6px 20px;">保存</button></div>
+        </div>
+    </div>
+
+<!-- 打卡日历 -->
+<style>
+.cal-cell {
+    padding: 14px 10px;
+    text-align: center;
+    vertical-align: middle;
+    border-radius: 8px;
+    background: transparent;
+    transition: background 0.15s;
+    cursor: pointer;
+    font-size: 1rem;
+}
+.cal-cell:hover { background: rgba(124,58,237,0.06); }
+.cal-cell.today { background: rgba(124,58,237,0.12); }
+
+.cal-header {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #64748b;
+    padding: 8px 6px;
+    text-align: center;
+}
+.btn-sm-glass {
+    background: rgba(124,58,237,0.08);
+    color: #7c3aed;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.btn-sm-glass:hover { background: rgba(124,58,237,0.18); color: #6d28d9; }
+.btn-sm-glass:active { transform: scale(0.97); }
+</style>
+
+<div class="glass-card" id="calendarCard" style="margin-top:24px;">
+    <h5 class="mb-3"><i class="bi bi-calendar-check me-2"></i>打卡日历</h5>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+        <button class="btn-sm-glass" onclick="CPrevMonth()">&#x25C0;</button>
+        <span id="calMonthDisplay" style="font-size:1.1rem;font-weight:600;min-width:120px;text-align:center;"></span>
+        <button class="btn-sm-glass" onclick="CNextMonth()">&#x25B6;</button>
+    </div>
+    
+    <table style="width:100%;table-layout:fixed;border-collapse:collapse;border-spacing:4px;">
+        <thead><tr>
+            <th class="cal-header">日</th><th class="cal-header">一</th><th class="cal-header">二</th>
+            <th class="cal-header">三</th><th class="cal-header">四</th><th class="cal-header">五</th><th class="cal-header">六</th>
+        </tr></thead>
+        <tbody id="calBody"></tbody>
+    </table>
+
+<script>
+
+function CLoadTags() {
+    fetch("/xiaoyu/api/checkin_tags").then(function(r){return r.json()}).then(function(d){
+        if(d.tags && d.tags.length === 3) {
+            CTypes = d.tags;
+            var t1 = document.getElementById("tag1");
+            if (t1) { t1.value = d.tags[0]; }
+            var t2 = document.getElementById("tag2");
+            if (t2) { t2.value = d.tags[1]; }
+            var t3 = document.getElementById("tag3");
+            if (t3) { t3.value = d.tags[2]; }
+        } else {
+            var t1 = document.getElementById("tag1");
+            if (t1) { t1.value = CTypes[0]; }
+            var t2 = document.getElementById("tag2");
+            if (t2) { t2.value = CTypes[1]; }
+            var t3 = document.getElementById("tag3");
+            if (t3) { t3.value = CTypes[2]; }
+        }
+    });
+}
+
+function CSaveTags() {
+    var tags = [document.getElementById("tag1").value, document.getElementById("tag2").value, document.getElementById("tag3").value];
+    fetch("/xiaoyu/api/checkin_tags", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({tags:tags})}).then(function(r){return r.json()}).then(function(d){
+        if(d.success) { CTypes = tags; alert("标签已更新"); CInitCalendar(); }
+    });
+}
+
+
+// 打卡日历 - 独立命名空间，不冲突
+var CYear = new Date().getFullYear();
+var CMonth = new Date().getMonth() + 1;
+var CToday = new Date().toISOString().slice(0, 10);
+var CTypes = ["美梯英语", "学校英语", "口算"];
+var CData = {};
+var CSelDate = null;
+
+function CInitCalendar() {
+    fetch("/xiaoyu/api/checkin_month/" + CYear + "/" + CMonth)
+        .then(function(r){ return r.json(); })
+        .then(function(d) {
+            CData = d.data || {};
+            var pm = CMonth - 1, py = CYear;
+            if (pm < 1) { pm = 12; py--; }
+            var nm = CMonth + 1, ny = CYear;
+            if (nm > 12) { nm = 1; ny++; }
+            fetch("/xiaoyu/api/checkin_month/" + py + "/" + pm).then(function(r){return r.json()}).then(function(d2) {
+                var d2d = d2.data || {};
+                for (var k in d2d) CData[k] = d2d[k];
+                fetch("/xiaoyu/api/checkin_month/" + ny + "/" + nm).then(function(r){return r.json()}).then(function(d3) {
+                    var d3d = d3.data || {};
+                    for (var k in d3d) CData[k] = d3d[k];
+                    CRender(CYear, CMonth);
+                });
+            });
+        });
+}
+function CRender(y, m) {
+    var el = document.getElementById("calMonthDisplay");
+    if (el) el.textContent = y + "年" + m + "月";
+    var fd = new Date(y, m-1, 1).getDay();
+    var dim = new Date(y, m, 0).getDate();
+    var prevDim = new Date(y, m-1, 0).getDate();
+    var tb = document.getElementById("calBody");
+    if (!tb) return;
+    tb.innerHTML = "";
+    var totalCells = fd + dim;
+    var rows = Math.ceil(totalCells / 7);
+    for (var r = 0; r < rows; r++) {
+        var tr = document.createElement("tr");
+        for (var d = 0; d < 7; d++) {
+            var cellNum = r * 7 + d;
+            var dn = cellNum - fd + 1;
+            var td = document.createElement("td");
+            td.className = "cal-cell";
+            if (cellNum >= fd && dn <= dim) {
+                var ds = y + "-" + (m < 10 ? "0" + m : m) + "-" + (dn < 10 ? "0" + dn : dn);
+                var dd = CData[ds] || {};
+                var any = false;
+                var tagStr = "";
+                for (var t = 0; t < CTypes.length; t++) {
+                    var ck = !!dd[CTypes[t]];
+                    if (ck) any = true;
+                    tagStr += "<span style=\"font-size:9px;line-height:14px;" + (ck ? "color:#22c55e;font-weight:700;" : "color:#ef4444;font-weight:400;") + "\">" + CTypes[t].charAt(0) + "</span>";
+                }
+                if (ds === CToday) td.className = "cal-cell today";
+                td.style.cursor = "pointer";
+                td.onclick = function(ds2) { return function() { COpenDay(ds2); }; }(ds);
+                td.innerHTML = "<div style=\"font-size:13px;font-weight:700;\">" + dn + "</div>";
+                if (any) td.innerHTML += "<div style=\"display:flex;justify-content:center;gap:2px;\">" + tagStr + "</div>";
+            } else {
+                var otherNum, otherDs;
+                if (cellNum < fd) {
+                    otherNum = prevDim - fd + cellNum + 1;
+                    var opm = m - 1, opy = y;
+                    if (opm < 1) { opm = 12; opy--; }
+                    otherDs = opy + "-" + (opm < 10 ? "0" + opm : opm) + "-" + (otherNum < 10 ? "0" + otherNum : otherNum);
+                } else {
+                    otherNum = dn - dim;
+                    var onm = m + 1, ony = y;
+                    if (onm > 12) { onm = 1; ony++; }
+                    otherDs = ony + "-" + (onm < 10 ? "0" + onm : onm) + "-" + (otherNum < 10 ? "0" + otherNum : otherNum);
+                }
+                var odd = CData[otherDs] || {};
+                var oany = false;
+                var otagStr = "";
+                for (var t = 0; t < CTypes.length; t++) {
+                    var ock = !!odd[CTypes[t]];
+                    if (ock) oany = true;
+                    otagStr += "<span style=\"font-size:9px;line-height:14px;" + (ock ? "color:#22c55e;font-weight:700;" : "color:#94a3b8;font-weight:400;") + "\">" + CTypes[t].charAt(0) + "</span>";
+                }
+                td.style.cssText = "opacity:0.35;cursor:pointer;";
+                td.onclick = function(ds2) { return function() { COpenDay(ds2); }; }(otherDs);
+                td.innerHTML = "<div style=\"font-size:12px;font-weight:400;color:#94a3b8;\">" + otherNum + "</div>";
+                if (oany) td.innerHTML += "<div style=\"display:flex;justify-content:center;gap:2px;\">" + otagStr + "</div>";
+            }
+            tr.appendChild(td);
+        }
+        tb.appendChild(tr);
+    }
+}
+
+function CPrevMonth() { CMonth--; if (CMonth<1) { CMonth=12; CYear--; } CInitCalendar(); }
+function CNextMonth() { CMonth++; if (CMonth>12) { CMonth=1; CYear++; } CInitCalendar(); }
+
+function CShowPanel(ds) {
+    CSelDate = ds;
+    var p = document.getElementById("calPanel");
+    if (!p) return;
+    document.getElementById("calSelDate").textContent = ds;
+    fetch("/xiaoyu/api/checkin/" + ds).then(function(r){return r.json()}).then(function(d) {
+        var chk = d.checkin || {};
+        document.getElementById("calMt").checked = !!chk["美梯英语"];
+        document.getElementById("calXx").checked = !!chk["学校英语"];
+        document.getElementById("calKs").checked = !!chk["口算"];
+    });
+    p.style.display = "flex";
+}
+
+function CUpdateSel() {
+    if (!CSelDate) return;
+    fetch("/xiaoyu/api/checkin", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({type:"美梯英语", date:CSelDate, toggle:true})});
+    fetch("/xiaoyu/api/checkin", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({type:"学校英语", date:CSelDate, toggle:true})});
+    fetch("/xiaoyu/api/checkin", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({type:"口算", date:CSelDate, toggle:true})});
+    setTimeout(CInitCalendar, 100);
+}
+
+function CClearPanel() {
+    document.getElementById("calPanel").style.display = "none";
+    CSelDate = null;
+}
+
+function COpenDay(ds) {
+    CShowPanel(ds);
+    var mo = document.getElementById("calModal");
+    if (!mo) {
+        mo = document.createElement("div");
+        mo.id = "calModal";
+        mo.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:9999;";
+        document.body.appendChild(mo);
+        mo.onclick = function(e) { if(e.target===mo) mo.style.display="none"; };
+    }
+    var id = document.createElement("div");
+    id.style.cssText = "background:#ffffff;border-radius:20px;padding:28px;min-width:320px;box-shadow:0 8px 40px rgba(0,0,0,0.15);color:#1e293b;";
+    id.innerHTML = "<div style='margin-bottom:12px;font-size:1rem;font-weight:700;'>" + ds + "</div><div id='calTypes'></div><div style='margin-top:12px;display:flex;gap:8px;justify-content:center;'></div>";
+    var br = id.lastChild;
+    var cb = document.createElement("button");
+    cb.textContent = "取消";
+    cb.style.cssText = "padding:8px 24px;border:none;border-radius:12px;background:#e2e8f0;color:#475569;font-weight:600;font-size:0.9rem;cursor:pointer;";
+    cb.onclick = function(){ mo.style.display="none"; };
+    var ok = document.createElement("button");
+    ok.textContent = "确认";
+    ok.style.cssText = "padding:8px 24px;border:none;border-radius:12px;background:#e91e63;color:white;font-weight:600;font-size:0.9rem;cursor:pointer;";
+    ok.onclick = function() {
+        document.querySelectorAll("#calTypes input").forEach(function(e) {
+            var t = e.dataset.type;
+            if (!t) return;
+            fetch("/xiaoyu/api/checkin", {method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({type:t, date:ds, checked:e.checked})});
+        });
+        mo.style.display="none";
+        setTimeout(CInitCalendar, 100);
+    };
+    br.appendChild(cb);
+    br.appendChild(ok);
+    mo.innerHTML = "";
+    mo.appendChild(id);
+    mo.style.display = "flex";
+    
+    document.getElementById("calTypes").innerHTML = "";
+    var cols = {"美梯英语":"#e91e63", "学校英语":"#7c3aed", "口算":"#f59e0b"};
+    fetch("/xiaoyu/api/checkin/" + ds).then(function(r){return r.json()}).then(function(d) {
+        var ck = d.checkin || {};
+        for (var i = 0; i < CTypes.length; i++) {
+            var ct = CTypes[i];
+            var lb = document.createElement("label");
+            lb.style.cssText = "display:flex;align-items:center;gap:6px;cursor:pointer;font-size:0.9rem;";
+            var inp = document.createElement("input");
+            inp.type = "checkbox";
+            inp.style.cssText = "width:18px;height:18px;accent-color:" + (cols[ct]||"#e91e63") + ";cursor:pointer;";
+            inp.checked = !!ck[ct];
+            inp.dataset.type = ct;
+            var sp = document.createElement("span");
+            sp.textContent = ct;
+            lb.appendChild(inp);
+            lb.appendChild(sp);
+            document.getElementById("calTypes").appendChild(lb);
+        }
+    });
+}
+
+// DOM 加载完后初始化日历
+document.addEventListener("DOMContentLoaded", function() {
+    CLoadTags();
+    var saved = localStorage.getItem("xiaoyu_page_title");
+    if (saved && document.getElementById("pageTitleH1")) {
+        document.getElementById("pageTitleH1").innerHTML = "⭐ " + saved;
+        document.getElementById("pageTitle").textContent = "⭐ " + saved + " | 小渔打分";
+    }
+    CInitCalendar();
+});
+</script>
+
+    </div>
+
+<!-- 新建打分 -->
     <div class="glass-card">
         <h5 class="mb-3"><i class="bi bi-star me-2"></i>新建打分</h5>
         <div class="add-score-form">
@@ -322,6 +659,14 @@ body { background: linear-gradient(135deg, #fce4ec, #f3e5f5); min-height: 100vh;
         <h5 class="mb-3"><i class="bi bi-plus-circle me-2"></i>添加新规则</h5>
         <div class="add-rule-form">
             <input type="text" class="name-input" id="ruleName" placeholder="规则名称，如：主动完成作业">
+            <select id="ruleCategory" style="background:var(--card-bg);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:0.9rem;">
+                <option value="">选择类型（可选）</option>
+                <option value="学习">学习</option>
+                <option value="习惯">习惯</option>
+                <option value="运动">运动</option>
+                <option value="家务">家务</option>
+                <option value="其他">其他</option>
+            </select>
             <input type="number" class="score-input" id="ruleScore" placeholder="分值" step="0.5">
             <button class="btn-add" onclick="addRule()">➕ 添加</button>
         </div>
@@ -870,11 +1215,12 @@ async function addRule() {
     const name = document.getElementById('ruleName').value.trim();
     const score = parseFloat(document.getElementById('ruleScore').value);
     if (!name || isNaN(score)) { alert('请填写规则名称和分值'); return; }
+    const cat = document.getElementById('ruleCategory').value || '未分类';
     try {
         const res = await fetch('/xiaoyu/api/rules', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({name, score})
+            body: JSON.stringify({name, score, category: cat})
         });
         const data = await res.json();
         if (data.success) {

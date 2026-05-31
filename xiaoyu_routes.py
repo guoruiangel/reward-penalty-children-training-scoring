@@ -49,6 +49,13 @@ def ensure_tables():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             mastered_at TIMESTAMP
         );
+        CREATE TABLE IF NOT EXISTS xiaoyu_checkin (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            check_date TEXT NOT NULL,
+            check_type TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(check_date, check_type)
+        );
     """)
     conn.commit()
     conn.close()
@@ -368,3 +375,297 @@ def toggle_math_error(error_id):
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'mastered': new_mastered})
+# 以下是添加到 xiaoyu_routes.py 的内容
+# 插入位置: 在 ensure_tables() 函数的 SQL 建表语句末尾
+# 
+# 在 xiaoyu_rules 建表语句之后，追加:
+
+        
+
+# ── 打卡 API ──
+@xiaoyu.route('/api/checkin_today', methods=['GET'])
+def get_today_checkin():
+    """获取今日打卡状态"""
+    from datetime import date
+    d = date.today().isoformat()
+    ensure_tables()
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT check_type FROM xiaoyu_checkin WHERE check_date = ?', (d,)
+    ).fetchall()
+    conn.close()
+    result = {r['check_type']: True for r in rows}
+    return jsonify({'date': d, 'checkin': result})
+
+
+@xiaoyu.route('/api/checkin', methods=['POST'])
+def do_checkin():
+    """打卡：美梯英语/学校英语/口算"""
+    data = request.get_json()
+    check_date = data.get('date', '')
+    check_type = data.get('type', '')
+    toggle = data.get('toggle', False)
+    if check_type not in ('美梯英语', '学校英语', '口算'):
+        return jsonify({'success': False, 'error': '无效的打卡类型'}), 400
+    from datetime import date
+    if not check_date:
+        check_date = date.today().isoformat()
+    ensure_tables()
+    conn = get_db()
+    existing = conn.execute(
+        'SELECT id FROM xiaoyu_checkin WHERE check_date = ? AND check_type = ?',
+        (check_date, check_type)
+    ).fetchone()
+    if existing:
+        if toggle:
+            conn.execute('DELETE FROM xiaoyu_checkin WHERE id = ?', (existing['id'],))
+            conn.commit()
+            conn.close()
+            return jsonify({'success': True, 'checked': False, 'action': 'removed'})
+        # 支持 checked 参数：true=保留（已存在不动），false=删除
+        checked = data.get('checked', None)
+        if checked is not None:
+            if not checked:
+                conn.execute('DELETE FROM xiaoyu_checkin WHERE id = ?', (existing['id'],))
+                conn.commit()
+                conn.close()
+                return jsonify({'success': True, 'checked': False, 'action': 'removed_by_checked'})
+            conn.close()
+            return jsonify({'success': True, 'checked': True, 'action': 'already_exists'})
+        conn.close()
+        return jsonify({'success': True, 'checked': True, 'action': 'already_exists'})
+    conn.execute(
+        'INSERT INTO xiaoyu_checkin (check_date, check_type) VALUES (?, ?)',
+        (check_date, check_type)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'checked': True, 'action': 'created'})
+
+
+@xiaoyu.route('/api/checkin/<string:check_date>', methods=['GET'])
+def get_checkin(check_date):
+    """获取指定日期的打卡状态"""
+    ensure_tables()
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT check_type, created_at FROM xiaoyu_checkin WHERE check_date = ?',
+        (check_date,)
+    ).fetchall()
+    conn.close()
+    result = {r['check_type']: True for r in rows}
+    return jsonify({'date': check_date, 'checkin': result})
+
+
+@xiaoyu.route('/api/checkin_month/<int:year>/<int:month>', methods=['GET'])
+def get_month_checkin(year, month):
+    """获取某月的打卡状态"""
+    ensure_tables()
+    conn = get_db()
+    prefix = f"{year:04d}-{month:02d}"
+    rows = conn.execute(
+        'SELECT check_date, check_type FROM xiaoyu_checkin WHERE check_date LIKE ?',
+        (prefix + '%',)
+    ).fetchall()
+    conn.close()
+    result = {}
+    for r in rows:
+        d = r['check_date']
+        if d not in result:
+            result[d] = {}
+        result[d][r['check_type']] = True
+    return jsonify({'year': year, 'month': month, 'data': result})
+
+
+@xiaoyu.route('/api/checkin/streaks', methods=['GET'])
+def get_checkin_streaks():
+    """获取每种打卡的连续天数统计"""
+    from datetime import date, timedelta
+    ensure_tables()
+    conn = get_db()
+    today = date.today()
+    result = {}
+    for check_type in ('美梯英语', '学校英语', '口算'):
+        rows = conn.execute(
+            'SELECT check_date FROM xiaoyu_checkin WHERE check_type = ? ORDER BY check_date DESC',
+            (check_type,)
+        ).fetchall()
+        dates = sorted(set(r['check_date'] for r in rows), reverse=True)
+        streak = 0
+        d = today
+        while d.isoformat() in dates:
+            streak += 1
+            d -= timedelta(days=1)
+        monday = today - timedelta(days=today.weekday())
+        week_checkin = len([d for d in dates if d >= monday.isoformat()])
+        days_passed = min(7, today.weekday() + 1)
+        week_miss = max(0, days_passed - week_checkin)
+        result[check_type] = {
+            'current_streak': streak,
+            'week_checkin': week_checkin,
+            'week_miss': week_miss
+        }
+    conn.close()
+    return jsonify(result)
+
+
+@xiaoyu.route('/api/checkin/auto-score', methods=['POST'])
+def auto_checkin_score():
+    """
+    按完整一周（周一到周日）的打卡记录生成打分。
+    只对口算和学校英语生成。
+    """
+    from datetime import date, timedelta
+    ensure_tables()
+    conn = get_db()
+    today = date.today()
+    scores_created = []
+
+    monday = today - timedelta(days=today.weekday())
+    sunday = monday + timedelta(days=6)
+
+    for check_type in ('学校英语', '口算'):
+        rows = conn.execute(
+            'SELECT check_date FROM xiaoyu_checkin WHERE check_type = ? AND check_date >= ? AND check_date <= ? ORDER BY check_date',
+            (check_type, monday.isoformat(), sunday.isoformat())
+        ).fetchall()
+        check_dates = set(r['check_date'] for r in rows)
+        week_checkin = len(check_dates)
+        week_miss = 7 - week_checkin
+
+        miss_to_score = {0: 10, 1: 5, 2: 3, 3: 1, 4: -1, 5: -5, 6: -7, 7: -10}
+        category_map = {'学校英语': '坚持英语打卡', '口算': '坚持口算'}
+        cat = category_map[check_type]
+
+        matched_score = miss_to_score.get(week_miss, None)
+        if matched_score is not None:
+            rule = conn.execute(
+                'SELECT id, name FROM xiaoyu_rules WHERE category = ? AND score = ? LIMIT 1',
+                (cat, matched_score)
+            ).fetchone()
+            if rule:
+                rule_id = rule['id']
+                rname = rule['name']
+                existing = conn.execute(
+                    'SELECT id FROM xiaoyu_scores WHERE rule_id = ? AND created_at >= ?',
+                    (rule_id, today.isoformat())
+                ).fetchone()
+                if not existing:
+                    reason = f"本周{check_type}打卡{week_checkin}天，缺{week_miss}天"
+                    conn.execute(
+                        'INSERT INTO xiaoyu_scores (rule_id, score, reason) VALUES (?, ?, ?)',
+                        (rule_id, matched_score, reason)
+                    )
+                    scores_created.append({
+                        'rule': rname,
+                        'score': matched_score,
+                        'week_checkin': week_checkin,
+                        'week_miss': week_miss
+                    })
+
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'scores_created': scores_created})
+@xiaoyu.route('/api/checkin/sync-from-scores', methods=['POST'])
+def sync_checkin_from_scores():
+    """从打分记录反推打卡状态，更新日历"""
+    from datetime import date, timedelta
+    ensure_tables()
+    conn = get_db()
+    
+    # 1. 扫描所有带"今日"关键词的打分记录
+    scores = conn.execute(
+        "SELECT id, created_at, score, reason FROM xiaoyu_scores WHERE reason LIKE '%今日%'"
+    ).fetchall()
+    
+    new_checkins = 0
+    for s in scores:
+        reason = s['reason']
+        score_date = s['created_at'][:10]  # '2026-05-30'
+        
+        # 从 reason 判断打卡类型
+        check_type = None
+        if '美梯英语' in reason or '美梯' in reason:
+            check_type = '美梯英语'
+        elif '学校英语' in reason:
+            check_type = '学校英语'
+        elif '口算' in reason:
+            check_type = '口算'
+        
+        if not check_type:
+            continue
+        
+        # 插入到打卡表（忽略已存在的，用 IGNORE 或 OR REPLACE）
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO xiaoyu_checkin (check_date, check_type) VALUES (?, ?)",
+                (score_date, check_type)
+            )
+            if conn.total_changes > 0:
+                new_checkins += 1
+        except Exception as e:
+            pass  # UNIQUE约束处理
+    
+    # 2. 也扫描旧格式的 reason（"5月28日，连续满5天"），尝试推断
+    old_scores = conn.execute(
+        "SELECT id, created_at, score, reason FROM xiaoyu_scores WHERE reason NOT LIKE '%今日%'"
+    ).fetchall()
+    
+    for s in old_scores:
+        reason = s['reason']
+        score_date = s['created_at'][:10]
+        
+        # 旧格式 reason 可能包含打卡关键词
+        check_type = None
+        if '口算' in reason:
+            check_type = '口算'
+        elif '美梯' in reason:
+            check_type = '美梯英语'
+        elif '英语' in reason or ('打卡' in reason and '英语' not in reason):
+            check_type = '学校英语'
+        
+        if not check_type:
+            continue
+        
+        try:
+            conn.execute(
+                "INSERT OR IGNORE INTO xiaoyu_checkin (check_date, check_type) VALUES (?, ?)",
+                (score_date, check_type)
+            )
+            if conn.total_changes > 0:
+                new_checkins += 1
+        except Exception:
+            pass
+    
+    conn.commit()
+    conn.close()
+    
+    return jsonify({'success': True, 'synced': new_checkins})
+
+
+@xiaoyu.route('/api/checkin_tags', methods=['GET'])
+def get_checkin_tags():
+    conn = get_db()
+    conn.execute('CREATE TABLE IF NOT EXISTS xiaoyu_config (key TEXT PRIMARY KEY, value TEXT)')
+    cur = conn.execute('SELECT value FROM xiaoyu_config WHERE key = ?', ('checkin_tags',))
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        import json
+        return jsonify({'tags': json.loads(row[0])})
+    return jsonify({'tags': ['美梯英语', '学校英语', '口算']})
+
+@xiaoyu.route('/api/checkin_tags', methods=['POST'])
+def set_checkin_tags():
+    import json
+    data = request.get_json()
+    tags = data.get('tags', [])
+    conn = get_db()
+    conn.execute('CREATE TABLE IF NOT EXISTS xiaoyu_config (key TEXT PRIMARY KEY, value TEXT)')
+    conn.execute(
+        'INSERT OR REPLACE INTO xiaoyu_config (key, value) VALUES (?, ?)',
+        ('checkin_tags', json.dumps(tags, ensure_ascii=False))
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
