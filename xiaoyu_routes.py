@@ -416,15 +416,10 @@ def do_checkin():
         'SELECT id FROM xiaoyu_checkin WHERE check_date = ? AND check_type = ?',
         (check_date, check_type)
     ).fetchone()
-    if existing:
-        if toggle:
-            conn.execute('DELETE FROM xiaoyu_checkin WHERE id = ?', (existing['id'],))
-            conn.commit()
-            conn.close()
-            return jsonify({'success': True, 'checked': False, 'action': 'removed'})
-        # 支持 checked 参数：true=保留（已存在不动），false=删除
-        checked = data.get('checked', None)
-        if checked is not None:
+    checked = data.get('checked', None)
+    if checked is not None:
+        # checked 模式：true=确保存在，false=确保不存在
+        if existing:
             if not checked:
                 conn.execute('DELETE FROM xiaoyu_checkin WHERE id = ?', (existing['id'],))
                 conn.commit()
@@ -432,6 +427,20 @@ def do_checkin():
                 return jsonify({'success': True, 'checked': False, 'action': 'removed_by_checked'})
             conn.close()
             return jsonify({'success': True, 'checked': True, 'action': 'already_exists'})
+        else:
+            if checked:
+                conn.execute('INSERT INTO xiaoyu_checkin (check_date, check_type) VALUES (?, ?)', (check_date, check_type))
+                conn.commit()
+                conn.close()
+                return jsonify({'success': True, 'checked': True, 'action': 'created'})
+            conn.close()
+            return jsonify({'success': True, 'checked': False, 'action': 'noop'})
+    if existing:
+        if toggle:
+            conn.execute('DELETE FROM xiaoyu_checkin WHERE id = ?', (existing['id'],))
+            conn.commit()
+            conn.close()
+            return jsonify({'success': True, 'checked': False, 'action': 'removed'})
         conn.close()
         return jsonify({'success': True, 'checked': True, 'action': 'already_exists'})
     conn.execute(
