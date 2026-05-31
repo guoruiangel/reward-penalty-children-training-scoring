@@ -678,11 +678,6 @@ document.addEventListener("DOMContentLoaded", function() {
         <div id="ruleList"></div>
     </div>
 
-    <!-- 规则排行榜 -->
-    <div class="glass-card">
-        <h5 class="mb-3"><i class="bi bi-trophy me-2"></i>规则排行榜</h5>
-        <div id="topRules"></div>
-    </div>
 
     <!-- 最近评分记录 -->
     <div class="glass-card">
@@ -1109,7 +1104,7 @@ async function saveEditScore(id) {
         const data = await res.json();
         if (data.success) {
             editingScoreId = null;
-            await Promise.all([loadScores(), loadTrend(), loadStats(), renderTopRules()]);
+            await Promise.all([loadScores(), loadTrend(), loadStats()]);
         } else { alert('编辑失败: ' + (data.error || '')); }
     } catch(e) { alert('编辑失败: ' + e.message); }
 }
@@ -1120,7 +1115,7 @@ async function deleteScore(id) {
         const res = await fetch('/xiaoyu/api/scores/' + id, {method: 'DELETE'});
         const data = await res.json();
         if (data.success) {
-            await Promise.all([loadScores(), loadTrend(), loadStats(), renderTopRules()]);
+            await Promise.all([loadScores(), loadTrend(), loadStats()]);
         } else { alert('删除失败: ' + (data.error || '')); }
     } catch(e) { alert('删除失败: ' + e.message); }
 }
@@ -1213,12 +1208,12 @@ async function addScore() {
         if (data.success) {
             document.getElementById('scoreReason').value = '';
             document.getElementById('scorePreview').style.display = 'none';
-            await Promise.all([loadScores(), loadTrend(), loadStats(), renderTopRules()]);
+            await Promise.all([loadScores(), loadTrend(), loadStats()]);
         } else { alert('打分失败: ' + (data.error || '')); }
     } catch(e) { alert('打分失败: ' + e.message); }
 }
 
-async function renderTopRules() {
+async function  {
     try {
         const res = await fetch('/xiaoyu/api/scores');
         const data = await res.json();
@@ -1234,7 +1229,7 @@ async function renderTopRules() {
         }
         const sorted = Object.entries(ruleScores).sort((a, b) => b[1].total - a[1].total).slice(0, 5);
 
-        const el = document.getElementById('topRules');
+        const el = document.getElementById('statsContainer');
         if (sorted.length === 0) {
             el.innerHTML = '<div class="empty"><div class="icon">🏆</div><div>暂无累计数据</div></div>';
             return;
@@ -1265,7 +1260,7 @@ async function addRule() {
         if (data.success) {
             document.getElementById('ruleName').value = '';
             document.getElementById('ruleScore').value = '';
-            await Promise.all([loadRules(), loadScores(), loadTrend(), renderTopRules()]);
+            await Promise.all([loadRules(), loadScores(), loadTrend()]);
         } else { alert('添加失败: ' + (data.error || '')); }
     } catch(e) { alert('添加失败: ' + e.message); }
 }
@@ -1275,7 +1270,7 @@ async function deleteRule(id) {
     try {
         const res = await fetch('/xiaoyu/api/rules/' + id, {method: 'DELETE'});
         const data = await res.json();
-        if (data.success) { await Promise.all([loadRules(), loadScores(), loadTrend(), renderTopRules()]); }
+        if (data.success) { await Promise.all([loadRules(), loadScores(), loadTrend()]); }
         else { alert('删除失败'); }
     } catch(e) { alert('删除失败: ' + e.message); }
 }
@@ -1313,7 +1308,7 @@ async function saveRuleEdit(id) {
         const data = await res.json();
         if (data.success) {
             window._editingRuleId = null;
-            await Promise.all([loadRules(), loadScores(), loadTrend(), loadStats(), renderTopRules()]);
+            await Promise.all([loadRules(), loadScores(), loadTrend(), loadStats()]);
         } else { alert('编辑失败: ' + (data.error || '')); }
     } catch(e) { alert('编辑失败: ' + e.message); }
 }
@@ -1323,7 +1318,7 @@ loadStats();
 loadGoal();checkGoals();loadTrend();
 loadRules();
 loadScores();
-renderTopRules();
+;
 
 // 选择框事件
 setTimeout(() => {
