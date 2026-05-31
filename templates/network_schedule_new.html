@@ -1,0 +1,420 @@
+31)</div>
+                        <input type="text" class="form-control cron-value" id="fullCronDay" value="*" placeholder="*">
+                    </div>
+                    <div class="cron-field">
+                        <div class="cron-label">月 (1-12)</div>
+                        <input type="text" class="form-control cron-value" id="fullCronMonth" value="*" placeholder="*">
+                    </div>
+                    <div class="cron-field">
+                        <div class="cron-label">星期 (0-7)</div>
+                        <input type="text" class="form-control cron-value" id="fullCronWeekday" value="0" placeholder="0">
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="cron-label">完整表达式</div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="fullCronExpression" value="0 6 * * 0" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyCronExpression('full')">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">预设时间</label>
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="setPreset('full', 'sunday6am', '0 6 * * 0')">每周日 6:00</button>
+                    <button class="preset-btn" onclick="setPreset('full', 'saturday10pm', '0 22 * * 6')">每周六 22:00</button>
+                    <button class="preset-btn" onclick="setPreset('full', 'daily2am', '0 2 * * *')">每天 2:00</button>
+                    <button class="preset-btn" onclick="setPreset('full', 'monthly1st', '0 3 1 * *')">每月1日 3:00</button>
+                    <button class="preset-btn" onclick="setPreset('full', 'weekly', '0 4 * * 0')">每周日 4:00</button>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">时区</label>
+                <select class="form-select" id="fullTimezone">
+                    <option value="Asia/Shanghai" selected>亚洲/上海 (UTC+8)</option>
+                    <option value="Asia/Tokyo">亚洲/东京 (UTC+9)</option>
+                    <option value="America/New_York">美国/纽约 (UTC-5)</option>
+                    <option value="Europe/London">欧洲/伦敦 (UTC+0)</option>
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">描述</label>
+                <input type="text" class="form-control" id="fullDescription" value="每周日6:00完整扫描网络" placeholder="任务描述">
+            </div>
+            
+            <div class="next-execution">
+                <div class="next-execution-label">下次执行时间</div>
+                <div class="next-execution-time" id="fullNextExecution">计算中...</div>
+            </div>
+            
+            <div class="d-flex gap-3 mt-4">
+                <button class="btn btn-primary" onclick="saveSchedule('full')">
+                    <i class="bi bi-save me-1"></i>保存完整扫描设置
+                </button>
+                <button class="btn btn-outline-secondary" onclick="resetSchedule('full')">
+                    <i class="bi bi-arrow-clockwise me-1"></i>重置
+                </button>
+            </div>
+        </div>
+        
+        <!-- 测试区域 -->
+        <div class="test-section">
+            <h5><i class="bi bi-play-circle me-2"></i>立即测试</h5>
+            <p class="text-muted mb-3">测试当前网络扫描配置，确保设置正确</p>
+            
+            <div class="test-buttons">
+                <button class="test-btn quick" onclick="testSchedule('quick')" id="quickTestButton">
+                    <i class="bi bi-lightning me-1"></i>测试快速扫描
+                </button>
+                <button class="test-btn full" onclick="testSchedule('full')" id="fullTestButton">
+                    <i class="bi bi-radar me-1"></i>测试完整扫描
+                </button>
+            </div>
+            
+            <div id="testResult" class="mt-3" style="display: none;">
+                <div class="device-stats">
+                    <div class="stat-box">
+                        <div class="stat-value" id="testOnlineCount">0</div>
+                        <div class="stat-label">在线设备</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="testDeviceCount">0</div>
+                        <div class="stat-label">发现设备</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="testScanType">快速</div>
+                        <div class="stat-label">扫描类型</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="testScanTime">0s</div>
+                        <div class="stat-label">扫描耗时</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-lg-6">
+                <div class="glass-card">
+                    <h4><i class="bi bi-info-circle me-2"></i>使用说明</h4>
+                    
+                    <div class="mb-4">
+                        <h6>Cron表达式格式</h6>
+                        <p class="text-muted small">
+                            <code>分钟 小时 日 月 星期</code><br>
+                            • * 表示任意值<br>
+                            • */5 表示每5个单位<br>
+                            • 1,3,5 表示多个值<br>
+                            • 1-5 表示范围
+                        </p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>扫描类型说明</h6>
+                        <ul class="text-muted small">
+                            <li><strong>快速扫描</strong>: 只检查已知设备状态，速度快，适合日常监控</li>
+                            <li><strong>完整扫描</strong>: 扫描整个网络段，速度慢，适合定期发现新设备</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <div class="glass-card">
+                    <h4><i class="bi bi-lightbulb me-2"></i>推荐设置</h4>
+                    
+                    <div class="mb-4">
+                        <h6>快速扫描</h6>
+                        <ul class="text-muted small">
+                            <li><strong>办公时间</strong>: 工作日 9:00-18:00 每小时</li>
+                            <li><strong>日常监控</strong>: 每天 9:00, 12:00, 18:30, 22:00</li>
+                            <li><strong>密集监控</strong>: 每30分钟扫描一次</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6>完整扫描</h6>
+                        <ul class="text-muted small">
+                            <li><strong>周末扫描</strong>: 每周六/日 2:00-6:00</li>
+                            <li><strong>月度扫描</strong>: 每月1日 3:00</li>
+                            <li><strong>低峰时段</strong>: 每天 2:00-5:00</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>注意</strong>: 完整扫描会消耗较多网络资源，建议在低峰时段执行。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <script>
+        // 页面加载时获取所有定时设置
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllSchedules();
+            
+            // 监听cron字段变化
+            document.querySelectorAll('.cron-value').forEach(input => {
+                input.addEventListener('input', function() {
+                    const taskType = this.id.includes('quick') ? 'quick' : 'full';
+                    updateCronExpression(taskType);
+                });
+            });
+            
+            // 监听启用开关
+            document.getElementById('quickEnabled').addEventListener('change', function() {
+                updateStatusText('quick', this.checked);
+            });
+            
+            document.getElementById('fullEnabled').addEventListener('change', function() {
+                updateStatusText('full', this.checked);
+            });
+        });
+        
+        // 加载所有定时设置
+        async function loadAllSchedules() {
+            try {
+                const response = await fetch('/api/network/schedule');
+                const data = await response.json();
+                
+                if (data.success) {
+                    data.data.forEach(schedule => {
+                        loadSchedule(schedule.task_type, schedule);
+                    });
+                }
+            } catch (error) {
+                showToast('加载设置失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 加载特定类型的定时设置
+        function loadSchedule(taskType, schedule) {
+            // 更新界面
+            document.getElementById(taskType + 'Enabled').checked = schedule.enabled;
+            updateStatusText(taskType, schedule.enabled);
+            
+            // 解析cron表达式
+            if (schedule.schedule_expr) {
+                const parts = schedule.schedule_expr.split(' ');
+                if (parts.length === 5) {
+                    document.getElementById(taskType + 'CronMinute').value = parts[0];
+                    document.getElementById(taskType + 'CronHour').value = parts[1];
+                    document.getElementById(taskType + 'CronDay').value = parts[2];
+                    document.getElementById(taskType + 'CronMonth').value = parts[3];
+                    document.getElementById(taskType + 'CronWeekday').value = parts[4];
+                    updateCronExpression(taskType);
+                }
+            }
+            
+            // 更新其他字段
+            if (schedule.schedule_tz) {
+                document.getElementById(taskType + 'Timezone').value = schedule.schedule_tz;
+            }
+            if (schedule.description) {
+                document.getElementById(taskType + 'Description').value = schedule.description;
+            }
+            
+            // 更新下次执行时间
+            if (schedule.next_execution) {
+                document.getElementById(taskType + 'NextExecution').textContent = schedule.next_execution;
+            }
+        }
+        
+        // 更新状态文本
+        function updateStatusText(taskType, enabled) {
+            const statusText = document.getElementById(taskType + 'StatusText');
+            if (enabled) {
+                statusText.innerHTML = '<span class="status-badge status-enabled"><i class="bi bi-check-circle"></i> 已启用</span>';
+            } else {
+                statusText.innerHTML = '<span class="status-badge status-disabled"><i class="bi bi-x-circle"></i> 已禁用</span>';
+            }
+        }
+        
+        // 更新cron表达式
+        function updateCronExpression(taskType) {
+            const minute = document.getElementById(taskType + 'CronMinute').value || '*';
+            const hour = document.getElementById(taskType + 'CronHour').value || '*';
+            const day = document.getElementById(taskType + 'CronDay').value || '*';
+            const month = document.getElementById(taskType + 'CronMonth').value || '*';
+            const weekday = document.getElementById(taskType + 'CronWeekday').value || '*';
+            
+            const expression = `${minute} ${hour} ${day} ${month} ${weekday}`;
+            document.getElementById(taskType + 'CronExpression').value = expression;
+        }
+        
+        // 设置预设
+        function setPreset(taskType, presetId, cronExpression) {
+            const parts = cronExpression.split(' ');
+            if (parts.length === 5) {
+                document.getElementById(taskType + 'CronMinute').value = parts[0];
+                document.getElementById(taskType + 'CronHour').value = parts[1];
+                document.getElementById(taskType + 'CronDay').value = parts[2];
+                document.getElementById(taskType + 'CronMonth').value = parts[3];
+                document.getElementById(taskType + 'CronWeekday').value = parts[4];
+                updateCronExpression(taskType);
+                
+                // 高亮选中的预设按钮
+                const buttons = document.querySelectorAll(`#${taskType}TaskCard .preset-btn`);
+                buttons.forEach(btn => {
+                    btn.classList.remove('active');
+                });
+                event.target.classList.add('active');
+            }
+        }
+        
+        // 复制cron表达式
+        function copyCronExpression(taskType) {
+            const expression = document.getElementById(taskType + 'CronExpression');
+            expression.select();
+            document.execCommand('copy');
+            showToast('Cron表达式已复制到剪贴板');
+        }
+        
+        // 保存设置
+        async function saveSchedule(taskType) {
+            const enabled = document.getElementById(taskType + 'Enabled').checked;
+            const cronExpression = document.getElementById(taskType + 'CronExpression').value;
+            const timezone = document.getElementById(taskType + 'Timezone').value;
+            const description = document.getElementById(taskType + 'Description').value;
+            
+            const data = {
+                enabled: enabled,
+                schedule_expr: cronExpression,
+                schedule_tz: timezone,
+                description: description
+            };
+            
+            try {
+                const response = await fetch(`/api/network/schedule/${taskType}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    showToast(`${taskType === 'quick' ? '快速扫描' : '完整扫描'}设置已保存`);
+                    updateStatusText(taskType, enabled);
+                    
+                    // 重新加载设置以更新下次执行时间
+                    loadAllSchedules();
+                } else {
+                    showToast('保存失败: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showToast('保存失败: ' + error.message, 'error');
+            }
+        }
+        
+        // 重置设置
+        async function resetSchedule(taskType) {
+            if (confirm(`确定要重置${taskType === 'quick' ? '快速扫描' : '完整扫描'}设置为默认吗？`)) {
+                try {
+                    const response = await fetch(`/api/network/schedule/${taskType}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        showToast('已重置为默认设置');
+                        setTimeout(() => {
+                            loadAllSchedules();
+                        }, 500);
+                    } else {
+                        showToast('重置失败: ' + result.error, 'error');
+                    }
+                } catch (error) {
+                    showToast('重置失败: ' + error.message, 'error');
+                }
+            }
+        }
+        
+        // 测试扫描
+        async function testSchedule(taskType) {
+            const testButton = document.getElementById(taskType + 'TestButton');
+            const originalText = testButton.innerHTML;
+            
+            // 显示加载状态
+            testButton.innerHTML = '<span class="loading-spinner me-2"></span>扫描中...';
+            testButton.disabled = true;
+            
+            // 隐藏之前的结果
+            document.getElementById('testResult').style.display = 'none';
+            
+            const startTime = Date.now();
+            
+            try {
+                const response = await fetch('/api/network/schedule/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        scan_type: taskType
+                    })
+                });
+                
+                const endTime = Date.now();
+                const scanTime = ((endTime - startTime) / 1000).toFixed(1);
+                
+                const data = await response.json();
+                if (data.success) {
+                    // 显示结果
+                    document.getElementById('testOnlineCount').textContent = data.data.online_count;
+                    document.getElementById('testDeviceCount').textContent = data.data.device_count;
+                    document.getElementById('testScanType').textContent = data.data.scan_desc;
+                    document.getElementById('testScanTime').textContent = scanTime + 's';
+                    document.getElementById('testResult').style.display = 'block';
+                    
+                    showToast(`测试完成: ${data.message}`);
+                } else {
+                    showToast('测试失败: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showToast('测试失败: ' + error.message, 'error');
+            } finally {
+                // 恢复按钮状态
+                testButton.innerHTML = originalText;
+                testButton.disabled = false;
+            }
+        }
+        
+        // 显示提示消息
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'error' ? 'error' : ''}`;
+            toast.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <strong>${type === 'error' ? '错误' : '成功'}</strong>
+                        <div class="mt-1">${message}</div>
+                    </div>
+                    <button type="button" class="btn-close" onclick="this.parentElement.parentElement.remove()"></button>
+                </div>
+            `;
+            
+            container.appendChild(toast);
+            
+            // 5秒后自动移除
+            setTimeout(() => {
+                if (toast.parentElement) {
+                    toast.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日报 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; }
+        .date-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 180px;
+            height: 100vh;
+            background: white;
+            border-right: 1px solid #dee2e6;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        .content-area {
+            margin-left: 180px;
+            padding: 20px;
+        }
+        .date-btn {
+            display: block;
+            width: 100%;
+            text-align: left;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        .date-btn:hover {
+            background: #f8f9fa;
+            border-color: #0d6efd;
+        }
+        .date-btn.active {
+            background: #0d6efd;
+            color: white;
+            border-color: #0d6efd;
+            font-weight: 500;
+        }
+        .home-btn {
+            margin-bottom: 15px;
+            border: 1px solid #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <!-- 左侧日期栏 -->
+    <div class="date-sidebar">
+        <div class="mb-3">
+            <a href="/" class="btn btn-outline-primary btn-sm w-100 home-btn">
+                <i class="bi bi-house-door me-1"></i> 返回主页
+            </a>
+        </div>
+        <h6>日期</h6>
+        <div id="dateList">
+            <div class="text-muted">加载中...</div>
+        </div>
+    </div>
+    
+    <!-- 右侧内容区 -->
+    <div class="content-area">
+        <h3>日报 <span id="currentDate" class="badge bg-secondary">选择日期</span></h3>
+        
+        <div id="dailyContent">
+            <div class="alert alert-info">
+                从左侧选择日期查看日报
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 直接硬编码测试数据
+        const testDates = ['2026-03-31', '2026-03-30', '2026-03-29'];
+        
+        // 渲染日期列表
+        function renderDates() {
+            const dateList = document.getElementById('dateList');
+            dateList.innerHTML = '';
+            
+            testDates.forEach(date => {
+                const btn = document.createElement('button');
+                btn.className = 'date-btn';
+                btn.textContent = formatDate(date);
+                btn.onclick = () => loadDate(date);
+                dateList.appendChild(btn);
+            });
+            
+            // 加载第一个日期
+            if (testDates.length > 0) {
+                loadDate(testDates[0]);
+            }
+        }
+        
+        // 加载日期
+        function loadDate(date) {
+            document.getElementById('currentDate').textContent = formatDate(date);
+            
+            // 更新按钮状态
+            document.querySelectorAll('.date-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent === formatDate(date)) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            // 显示加载中
+            document.getElementById('dailyContent').innerHTML = `
+                <div class="alert alert-light">
+                    <div class="spinner-border spinner-border-sm me-2"></div>
+                    加载 ${date} 的日报...
+                </div>
+            `;
+            
+            // 实际加载数据
+            fetch(`/api/daily/${date}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showDailyData(data.data);
+                    } else {
+                        showError('加载失败');
+                    }
+                })
+                .catch(() => showError('网络错误'));
+        }
+        
+        // 显示日报数据
+        function showDailyData(data) {
+            let html = '';
+            
+            if (data.weather && data.weather.length > 0) {
+                const w = data.weather[0];
+                html += `<div class="card mb-3"><div class="card-body"><h5>${w.location}</h5><p>${w.temperature}°C ${w.condition}</p></div></div>`;
+            }
+            
+            if (data.news && data.news.length > 0) {
+                html += `<div class="card mb-3"><div class="card-body"><h5>新闻 (${data.news.length})</h5>`;
+                data.news.forEach(n => {
+                    html += `<p><strong>${n.title}</strong><br>${n.content || ''}</p>`;
+                });
+                html += '</div></div>';
+            }
+            
+            if (data.stocks && data.stocks.length > 0) {
+                html += `<div class="card mb-3"><div class="card-body"><h5>股票 (${data.stocks.length})</h5>`;
+                data.stocks.forEach(s => {
+                    html += `<p><strong>${s.symbol}</strong> ${s.name}<br>${s.analysis || ''}</p>`;
+                });
+                html += '</div></div>';
+            }
+            
+            if (!html) {
+                html = '<div class="alert alert-warning">该日期无日报数据</div>';
+            }
+            
+            document.getElementById('dailyContent').innerHTML = html;
+        }
+        
+        // 显示错误
+        function showError(msg) {
+            document.getElementById('dailyContent').innerHTML = `
+                <div class="alert alert-danger">
+                    ${msg}
+                </div>
+            `;
+        }
+        
+        // 格式化日期
+        function formatDate(dateStr) {
+            const d = new Date(dateStr);
+            return `${d.getMonth()+1}月${d.getDate()}日`;
+        }
+        
+        // 页面加载
+        document.addEventListener('DOMContentLoaded', renderDates);
+    </script>
+</body>
+</html>

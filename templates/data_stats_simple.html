@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据统计分析 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; padding: 20px; }
+        .card { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">数据统计分析</h1>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Token消耗统计</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="statsContainer">
+                            <p>加载中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">详细记录</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="recordsContainer">
+                            <p>加载中...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function loadStats() {
+            try {
+                const response = await fetch('/api/tokens/stats?period=7d');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const stats = data.stats;
+                    document.getElementById('statsContainer').innerHTML = `
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h3 class="text-primary">${stats.total_tokens.toLocaleString()}</h3>
+                                    <p class="mb-0">总Token消耗</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h3 class="text-success">${stats.avg_daily.toLocaleString()}</h3>
+                                    <p class="mb-0">日均消耗</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h3 class="text-warning">${stats.days_active}</h3>
+                                    <p class="mb-0">活跃天数</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 bg-light rounded">
+                                    <h3 class="text-danger">${stats.peak_daily.toLocaleString()}</h3>
+                                    <p class="mb-0">单日峰值</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6>分类统计</h6>
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>分类</th>
+                                        <th>记录数</th>
+                                        <th>Token数量</th>
+                                        <th>占比</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${stats.categories.map(cat => `
+                                        <tr>
+                                            <td>${cat.name === 'development' ? '开发' : 
+                                                 cat.name === 'search' ? '搜索' : 
+                                                 cat.name === 'communication' ? '沟通' : '其他'}</td>
+                                            <td>${cat.record_count}</td>
+                                            <td>${cat.total_tokens.toLocaleString()}</td>
+                                            <td>${cat.percentage}%</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('statsContainer').innerHTML = `
+                        <div class="alert alert-danger">加载失败: ${data.error}</div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('statsContainer').innerHTML = `
+                    <div class="alert alert-danger">错误: ${error.message}</div>
+                `;
+            }
+        }
+        
+        async function loadRecords() {
+            try {
+                const response = await fetch('/api/tokens/records?page=1&per_page=10');
+                const data = await response.json();
+                
+                if (data.success) {
+                    const records = data.data.records;
+                    if (records.length === 0) {
+                        document.getElementById('recordsContainer').innerHTML = '<p>暂无数据</p>';
+                        return;
+                    }
+                    
+                    document.getElementById('recordsContainer').innerHTML = `
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>任务</th>
+                                    <th>分类</th>
+                                    <th>输入</th>
+                                    <th>输出</th>
+                                    <th>总计</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${records.map(record => `
+                                    <tr>
+                                        <td>${record.date}</td>
+                                        <td>${record.task_name || '-'}</td>
+                                        <td>${record.category === 'development' ? '开发' : 
+                                             record.category === 'search' ? '搜索' : 
+                                             record.category === 'communication' ? '沟通' : '其他'}</td>
+                                        <td>${record.input_tokens.toLocaleString()}</td>
+                                        <td>${record.output_tokens.toLocaleString()}</td>
+                                        <td><strong>${record.total_tokens.toLocaleString()}</strong></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        <p class="text-muted">显示 ${records.length} 条记录，共 ${data.data.total} 条</p>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('recordsContainer').innerHTML = `
+                    <div class="alert alert-warning">加载记录失败: ${error.message}</div>
+                `;
+            }
+        }
+        
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('加载数据统计...');
+            loadStats();
+            loadRecords();
+        });
+    </script>
+</body>
+</html>

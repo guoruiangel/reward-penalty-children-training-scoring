@@ -62,26 +62,15 @@
         .nav-tabs-custom {
             border-bottom: 2px solid rgba(0,0,0,0.1);
             margin-bottom: 25px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            justify-content: flex-start;
-        }
-        .nav-tabs-custom .nav-item {
-            flex: 0 0 auto;
         }
         
         .nav-tabs-custom .nav-link {
             border: none;
             color: var(--dark-color);
             font-weight: 500;
-            padding: 6px 10px;
+            padding: 12px 24px;
             border-radius: 10px 10px 0 0;
-            margin-right: 2px;
-            white-space: nowrap;
-            font-size: 0.8rem;
+            margin-right: 5px;
         }
         
         .nav-tabs-custom .nav-link.active {
@@ -215,27 +204,6 @@
             .score-display {
                 font-size: 3rem;
             }
-            
-            .stat-card {
-                height: auto;
-                padding: 6px 10px;
-            }
-            .stat-value {
-                font-size: 1.2rem;
-            }
-            .stat-label {
-                font-size: 0.7rem;
-            }
-            
-            .nav-tabs-custom {
-                flex-wrap: wrap !important;
-                gap: 4px;
-                overflow-x: hidden;
-            }
-            .nav-tabs-custom .nav-link {
-                font-size: 0.7rem;
-                padding: 4px 8px;
-            }
         }
         
         /* 个人档案样式 */
@@ -328,153 +296,107 @@
             </div>
         </div>
         
-        <!-- 4个统计卡片：一行显示 -->
-        <div class="row mb-3 g-1">
-            <div class="col-3 mb-1">
+        <!-- 8个统计卡片 -->
+        <div class="row mb-3">
+            <div class="col-md-3 col-sm-6 mb-2">
                 <div class="stat-card">
                     <div class="stat-value text-primary">{{ total_records }}</div>
-                    <div class="stat-label">总评分</div>
+                    <div class="stat-label">总评分记录</div>
                 </div>
             </div>
-            <div class="col-3 mb-1">
+            <div class="col-md-3 col-sm-6 mb-2">
+                <div class="stat-card">
+                    <div class="stat-value {% if total_score >= 0 %}text-success{% else %}text-danger{% endif %}">{{ total_score }}</div>
+                    <div class="stat-label">当前总分</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-2">
                 <div class="stat-card">
                     <div class="stat-value text-success">{{ positive_count }}</div>
                     <div class="stat-label">加分次数</div>
                 </div>
             </div>
-            <div class="col-3 mb-1">
+            <div class="col-md-3 col-sm-6 mb-2">
                 <div class="stat-card">
                     <div class="stat-value text-danger">{{ negative_count }}</div>
                     <div class="stat-label">减分次数</div>
                 </div>
             </div>
-            <div class="col-3 mb-1">
+            <div class="col-md-12 mb-2">
                 <div class="stat-card">
-                    <div class="stat-value {% if total_score >= 0 %}text-success{% else %}text-danger{% endif %}">{{ total_score }}</div>
+                    <div class="stat-value text-primary">{{ total_score }}</div>
                     <div class="stat-label">当前总分</div>
                 </div>
             </div>
         </div>
         
         <!-- 导航标签 -->
-                <ul class="nav nav-tabs nav-tabs-custom" id="dashboardTabs" role="tablist">
+        <ul class="nav nav-tabs nav-tabs-custom" id="dashboardTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="scores-tab" data-bs-toggle="tab" data-bs-target="#scores" type="button" role="tab">
-                    <i class="bi bi-star-fill me-2"></i>评分
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="trend-tab" data-bs-toggle="tab" data-bs-target="#trend" type="button" role="tab">
-                    <i class="bi bi-graph-up me-2"></i>趋势
+                    <i class="bi bi-star-fill me-2"></i>评分记录
                 </button>
             </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="add-tab" data-bs-toggle="tab" data-bs-target="#add" type="button" role="tab">
-                    <i class="bi bi-plus-circle-fill me-2"></i>加分
+                    <i class="bi bi-plus-circle-fill me-2"></i>添加评分
                 </button>
             </li>
-
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">
+                    <i class="bi bi-bar-chart-fill me-2"></i>数据统计
+                </button>
+            </li>
             <li class="nav-item" role="presentation">
                 <button class="nav-link" id="soul-tab" data-bs-toggle="tab" data-bs-target="#soul" type="button" role="tab">
-                    <i class="bi bi-person-badge me-2"></i>SOUL
+                    <i class="bi bi-person-badge me-2"></i>SOUL目录
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="/cron/openclaw" role="tab">
-                    <i class="bi bi-clock-fill me-2"></i>定时
+                <a class="nav-link" href="/cron" role="tab">
+                    <i class="bi bi-clock-fill me-2"></i>定时任务
                 </a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" href="/network" role="tab">
-                    <i class="bi bi-wifi me-2"></i>设备
+                    <i class="bi bi-wifi me-2"></i>内网设备
                 </a>
             </li>
             <li class="nav-item" role="presentation">
-                <a class="nav-link" href="/data-stats" role="tab">
-                    <i class="bi bi-graph-up-arrow me-2"></i>统计
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="/protocol">
-                    <i class="bi bi-file-text me-1"></i>协议
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="/xiaoyu">
-                    <i class="bi bi-heart me-2"></i>小渔
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="/xiaoyu/homework">
-                    <i class="bi bi-pencil-square me-2"></i>小渔的作业
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="/conversations">
-                    <i class="bi bi-chat-heart me-2"></i>对话记录
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="/code-modules" role="tab">
-                    <i class="bi bi-code-slash me-2"></i>模块
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="/reports" role="tab">
+                <a class="nav-link" href="/daily" role="tab">
                     <i class="bi bi-newspaper me-2"></i>日报
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="/stocks" role="tab">
-                    <i class="bi bi-currency-exchange me-2"></i>股票
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="http://192.168.1.83:5003/wiki/" role="tab" target="_blank">
-                    <i class="bi bi-book-fill me-2"></i>Wiki
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="http://192.168.1.83:3000/" target="_blank">
-                    <i class="bi bi-link-45deg me-2"></i>kk-linkclaw
-                </a>
-            </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" href="http://192.168.1.83:5004/kk/" target="_blank">
-                    <i class="bi bi-house-heart me-2"></i>kk主页
                 </a>
             </li>
         </ul>
         
         <!-- 标签内容 -->
         <div class="tab-content" id="dashboardTabsContent">
-            <!-- 评分标签页 -->
+            <!-- 评分记录标签页 -->
             <div class="tab-pane fade show active" id="scores" role="tabpanel">
                 <div class="glass-card">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="mb-0">详细评分</h3>
+                        <h3 class="mb-0">详细评分记录</h3>
 
                     </div>
                     
                     <div class="table-responsive">
-                        <table class="table table-hover table-custom" id="scores-table">
+                        <table class="table table-hover table-custom">
                             <thead>
                                 <tr>
-                                    <th class="d-none d-md-table-cell">ID</th>
+                                    <th>ID</th>
                                     <th>年月-周</th>
-                                    <th>分数</th>
+                                    <th>分数变化</th>
                                     <th>原因描述</th>
-                                    <th class="d-none d-md-table-cell">类别</th>
-                                    <th class="d-none d-md-table-cell">日期</th>
-                                    <th>操作</th>
+                                    <th>类别</th>
+                                    <th>录入日期</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for score in scores|sort(attribute='id', reverse=true) %}
                                 <tr>
-                                    <td class="d-none d-md-table-cell">{{ score.id }}</td>
+                                    <td>{{ score.id }}</td>
                                     <td>
-                                        <span class="badge bg-info">{{ score.year_month[5:] }}-W{{ score.week_number }}</span>
+                                        <span class="badge bg-info">{{ score.year_month }}-W{{ score.week_number }}</span>
                                     </td>
                                     <td>
                                         {% if score.score_change > 0 %}
@@ -483,19 +405,11 @@
                                         <span class="badge-custom bg-danger">{{ score.score_change }}</span>
                                         {% endif %}
                                     </td>
-                                    <td style="max-width:300px;">{{ score.reason }}</td>
-                                    <td class="d-none d-md-table-cell">
+                                    <td>{{ score.reason }}</td>
+                                    <td>
                                         <span class="badge bg-secondary">{{ score.category }}</span>
                                     </td>
-                                    <td class="d-none d-md-table-cell">{{ score.created_at[:16] }}</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-primary me-1" onclick="editScore({{ score.id }})" title="编辑">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteScore({{ score.id }})" title="删除">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </td>
+                                    <td>{{ score.created_at[:16] }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -505,116 +419,17 @@
                     {% if not scores %}
                     <div class="text-center py-5">
                         <i class="bi bi-inbox" style="font-size: 3rem; color: #dee2e6;"></i>
-                        <h4 class="mt-3 text-muted">暂无评分</h4>
-                        <p class="text-muted">点击"加分"标签开始记录</p>
+                        <h4 class="mt-3 text-muted">暂无评分记录</h4>
+                        <p class="text-muted">点击"添加评分"标签开始记录</p>
                     </div>
                     {% endif %}
                 </div>
             </div>
             
-            <!-- 编辑弹窗 -->
-            <div class="modal fade" id="editScoreModal" tabindex="-1">
-                <div class="modal-dialog modal-lg">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">编辑评分记录</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                        </div>
-                        <div class="modal-body">
-                            <input type="hidden" id="edit-score-id">
-                            <div class="mb-3">
-                                <label class="form-label">分数变化</label>
-                                <input type="number" class="form-control" id="edit-score-change" placeholder="正数为加分，负数为扣分">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">原因描述</label>
-                                <textarea class="form-control" id="edit-score-reason" rows="3"></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">类别</label>
-                                <input type="text" class="form-control" id="edit-score-category">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">年月</label>
-                                <input type="text" class="form-control" id="edit-score-year-month">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">周数 (w1-w4)</label>
-                                <input type="number" class="form-control" id="edit-score-week" min="1" max="4">
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                            <button type="button" class="btn btn-primary" onclick="saveEditScore()">保存</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 周趋势图 -->
-            <div class="tab-pane fade" id="trend" role="tabpanel">
-                <div class="glass-card">
-                    <h3 class="mb-4">分数变化趋势（按周）</h3>
-                    <p class="text-muted mb-4">展示以周为单位的分数累计变化趋势</p>
-                    
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="chart-container" style="position: relative; height:400px;">
-                                <canvas id="weeklyTrendChart"></canvas>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="card bg-light">
-                                <div class="card-body">
-                                    <h5 class="card-title">趋势说明</h5>
-                                    <ul class="list-unstyled">
-                                        <li class="mb-2">
-                                            <i class="bi bi-graph-up text-success"></i>
-                                            <strong>周累计分数</strong>：每周的分数变化总和
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="bi bi-arrow-up-right text-primary"></i>
-                                            <strong>累计总分</strong>：从开始到当前周的总分累计
-                                        </li>
-                                        <li class="mb-2">
-                                            <i class="bi bi-calendar-week"></i>
-                                            <strong>周数格式</strong>：YYYY-MM-wX（如2026-04-w2）
-                                        </li>
-                                        <li>
-                                            <i class="bi bi-info-circle"></i>
-                                            <strong>当前总分</strong>：<span id="currentTotal" class="fw-bold"></span>
-                                        </li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="mt-4">
-                        <h5>详细数据</h5>
-                        <div class="table-responsive">
-                            <table class="table table-hover" id="weeklyTrendTable">
-                                <thead>
-                                    <tr>
-                                        <th>周期</th>
-                                        <th>周累计</th>
-                                        <th>累计总分</th>
-                                        <th>记录数</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="weeklyTrendData">
-                                    <!-- 数据通过JavaScript填充 -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 加分标签页 -->
+            <!-- 添加评分标签页 -->
             <div class="tab-pane fade" id="add" role="tabpanel">
                 <div class="glass-card">
-                    <h3 class="mb-4">添加新评分</h3>
+                    <h3 class="mb-4">添加新评分记录</h3>
                     <form id="addScoreForm" onsubmit="return addScore(event)">
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -674,8 +489,71 @@
                 </div>
             </div>
             
-            <!-- 统计标签页 -->
-            <!-- SOUL标签页 -->
+            <!-- 数据统计标签页 -->
+            <div class="tab-pane fade" id="stats" role="tabpanel">
+                <div class="glass-card">
+                    <h3 class="mb-4">评分数据统计</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">月度趋势</h5>
+                                    <canvas id="monthlyChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title">类别分布</h5>
+                                    <canvas id="categoryChart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">详细统计</h5>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>统计项</th>
+                                            <th>数值</th>
+                                            <th>说明</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>平均每次变化</td>
+                                            <td>{{ "%.2f"|format(average_change) }} 分</td>
+                                            <td>每次评分的平均变化值</td>
+                                        </tr>
+                                        <tr>
+                                            <td>最高单次加分</td>
+                                            <td>+{{ max_positive }} 分</td>
+                                            <td>单次最高加分记录</td>
+                                        </tr>
+                                        <tr>
+                                            <td>最高单次减分</td>
+                                            <td>{{ min_negative }} 分</td>
+                                            <td>单次最高减分记录</td>
+                                        </tr>
+                                        <tr>
+                                            <td>评分频率</td>
+                                            <td>{{ "%.1f"|format(frequency) }} 天/次</td>
+                                            <td>平均多少天评分一次</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SOUL目录标签页 -->
             <div class="tab-pane fade" id="soul" role="tabpanel">
                 <div class="glass-card">
                     <h3 class="mb-4">
@@ -811,7 +689,7 @@
                                                             <ul class="mb-0">
                                                                 <li>每次任务后提供token消耗</li>
                                                                 <li>代码模块复用，不重复开发</li>
-                                                                <li>定时用脚本完成</li>
+                                                                <li>定时任务用脚本完成</li>
                                                                 <li>能省token的地方自己优化</li>
                                                             </ul>
                                                         </div>
@@ -835,9 +713,15 @@
                                     <div class="soul-stats">
                                         <div class="mb-3">
                                             <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <span>当前总分</span>
+                                                <span class="fs-5 fw-bold text-danger">-59分</span>
+                                            </div>
+                                            <div class="progress" style="height: 10px;">
+                                                <div class="progress-bar bg-danger" style="width: 59%"></div>
+                                            </div>
                                             <div class="d-flex justify-content-between mt-1">
                                                 <small class="text-muted">目标: 100分</small>
-                                                <small class="text-muted">差距: {{ 100 - total_score }}分</small>
+                                                <small class="text-muted">差距: 159分</small>
                                             </div>
                                         </div>
                                         
@@ -889,10 +773,10 @@
                                             </div>
                                             <i class="bi bi-chevron-right text-muted"></i>
                                         </a>
-                                        <a href="/cron/openclaw" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+                                        <a href="/cron" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
                                             <div>
                                                 <i class="bi bi-clock-history me-2 text-primary"></i>
-                                                <span>定时管理</span>
+                                                <span>定时任务管理</span>
                                             </div>
                                             <i class="bi bi-chevron-right text-muted"></i>
                                         </a>
@@ -915,7 +799,7 @@
                                 <div class="card-body">
                                     <div class="d-grid gap-2">
                                         <a href="#scores" class="btn btn-outline-primary" data-bs-toggle="tab">
-                                            <i class="bi bi-eye me-1"></i>查看评分
+                                            <i class="bi bi-eye me-1"></i>查看评分记录
                                         </a>
                                         <a href="/tokens" class="btn btn-outline-success">
                                             <i class="bi bi-graph-up me-1"></i>检查Token消耗
@@ -1010,7 +894,7 @@ _This file is yours to evolve. As you learn who you are, update it._
 4. **模板优先**：使用预定义模板回复
 
 ### 开发优化  
-1. **脚本替代**：定时必须用脚本，零token
+1. **脚本替代**：定时任务必须用脚本，零token
 2. **模块复用**：已有代码直接复用，不重写
 3. **模板生成**：UI/代码用模板生成
 4. **缓存结果**：重复查询缓存结果
@@ -1060,37 +944,6 @@ _This file is yours to evolve. As you learn who you are, update it._
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         // 计算存在天数
-
-        // 手动加分函数
-        function addScore(event) {
-            event.preventDefault();
-            const data = {
-                year_month: document.getElementById('year_month').value,
-                week_number: parseInt(document.getElementById('week_number').value),
-                score_change: parseInt(document.getElementById('score_change').value),
-                category: document.getElementById('category').value,
-                reason: document.getElementById('reason').value
-            };
-            fetch('/api/scores', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            })
-            .then(resp => resp.json())
-            .then(result => {
-                if (result.success) {
-                    alert('加分成功！');
-                    document.getElementById('addScoreForm').reset();
-                } else {
-                    alert('加分失败：' + (result.error || '未知错误'));
-                }
-            })
-            .catch(err => {
-                alert('请求失败：' + err);
-            });
-            return false;
-        }
-
         function calculateDaysAlive() {
             const birthDate = new Date('2026-03-26');
             const today = new Date();
@@ -1108,269 +961,7 @@ _This file is yours to evolve. As you learn who you are, update it._
             var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
                 return new bootstrap.Tooltip(tooltipTriggerEl);
             });
-            
-            // 加载周趋势数据
-            loadWeeklyTrendData();
         });
-        
-        // 周趋势图功能
-        let weeklyTrendChart = null;
-        
-        async function loadWeeklyTrendData() {
-            try {
-                const response = await fetch('/api/scores/weekly-trend');
-                const data = await response.json();
-                
-                if (data && data.labels && data.labels.length > 0) {
-                    // 更新当前总分
-                    document.getElementById('currentTotal').textContent = data.current_total || 0;
-                    
-                    // 渲染图表
-                    renderWeeklyTrendChart(data);
-                    
-                    // 填充表格数据
-                    populateWeeklyTrendTable(data.details);
-                } else {
-                    document.getElementById('weeklyTrendData').innerHTML = 
-                        '<tr><td colspan="4" class="text-center text-muted">暂无周趋势数据</td></tr>';
-                }
-            } catch (error) {
-                console.error('加载周趋势数据失败:', error);
-                document.getElementById('weeklyTrendData').innerHTML = 
-                    '<tr><td colspan="4" class="text-center text-danger">加载数据失败</td></tr>';
-            }
-        }
-        
-        function renderWeeklyTrendChart(data) {
-            const ctx = document.getElementById('weeklyTrendChart').getContext('2d');
-            
-            // 销毁现有图表
-            if (weeklyTrendChart) {
-                weeklyTrendChart.destroy();
-            }
-            
-            // 创建新图表
-            weeklyTrendChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: data.labels,
-                    datasets: [
-                        {
-                            label: '周累计分数',
-                            data: data.data,
-                            borderColor: 'rgb(124, 58, 237)',
-                            backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.3,
-                            yAxisID: 'y'
-                        },
-                        {
-                            label: '累计总分',
-                            data: data.cumulative,
-                            borderColor: 'rgb(16, 185, 129)',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                            borderWidth: 2,
-                            borderDash: [5, 5],
-                            fill: false,
-                            tension: 0.3,
-                            yAxisID: 'y1'
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    interaction: {
-                        mode: 'index',
-                        intersect: false,
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    let label = context.dataset.label || '';
-                                    if (label) {
-                                        label += ': ';
-                                    }
-                                    label += context.parsed.y;
-                                    return label;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        x: {
-                            grid: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                maxRotation: 45,
-                                minRotation: 45
-                            }
-                        },
-                        y: {
-                            type: 'linear',
-                            display: true,
-                            position: 'left',
-                            title: {
-                                display: true,
-                                text: '周累计分数'
-                            },
-                            grid: {
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        y1: {
-                            type: 'linear',
-                            display: true,
-                            position: 'right',
-                            title: {
-                                display: true,
-                                text: '累计总分'
-                            },
-                            grid: {
-                                drawOnChartArea: false,
-                            },
-                        }
-                    }
-                }
-            });
-        }
-        
-        function populateWeeklyTrendTable(details) {
-            const tbody = document.getElementById('weeklyTrendData');
-            tbody.innerHTML = '';
-            
-            details.forEach(item => {
-                const row = document.createElement('tr');
-                
-                // 周累计分数样式
-                let weeklyClass = 'text-muted';
-                let weeklyIcon = '';
-                if (item.weekly_total > 0) {
-                    weeklyClass = 'text-success';
-                    weeklyIcon = '<i class="bi bi-arrow-up-right"></i> ';
-                } else if (item.weekly_total < 0) {
-                    weeklyClass = 'text-danger';
-                    weeklyIcon = '<i class="bi bi-arrow-down-right"></i> ';
-                }
-                
-                // 累计总分样式
-                let cumulativeClass = 'text-muted';
-                if (item.cumulative_total > 0) {
-                    cumulativeClass = 'text-success';
-                } else if (item.cumulative_total < 0) {
-                    cumulativeClass = 'text-danger';
-                }
-                
-                row.innerHTML = `
-                    <td>
-                        <span class="badge bg-info">${item.year_month}-w${item.week_number}</span>
-                    </td>
-                    <td class="${weeklyClass} fw-bold">
-                        ${weeklyIcon}${item.weekly_total}
-                    </td>
-                    <td class="${cumulativeClass} fw-bold">
-                        ${item.cumulative_total}
-                    </td>
-                    <td>
-                        <span class="badge bg-secondary">${item.record_count}</span>
-                    </td>
-                `;
-                
-                tbody.appendChild(row);
-            });
-        }
-        
-        // 当切换到趋势图标签时刷新数据
-        document.getElementById('trend-tab').addEventListener('shown.bs.tab', function() {
-            if (!weeklyTrendChart) {
-                loadWeeklyTrendData();
-            }
-        });
-
-        // 编辑评分记录
-        let editCache = {};
-        function editScore(id) {
-            // 从表格行获取数据
-            const row = editCache[id];
-            if (row) {
-                fillEditModal(row);
-                return;
-            }
-            // 从API获取
-            fetch('/api/scores')
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success && data.data) {
-                        const item = data.data.find(s => s.id === id);
-                        if (item) {
-                            editCache[id] = item;
-                            fillEditModal(item);
-                        }
-                    }
-                });
-        }
-
-        function fillEditModal(item) {
-            document.getElementById('edit-score-id').value = item.id;
-            document.getElementById('edit-score-change').value = item.score_change;
-            document.getElementById('edit-score-reason').value = item.reason;
-            document.getElementById('edit-score-category').value = item.category;
-            document.getElementById('edit-score-year-month').value = item.year_month;
-            document.getElementById('edit-score-week').value = item.week_number;
-            new bootstrap.Modal(document.getElementById('editScoreModal')).show();
-        }
-
-        function saveEditScore() {
-            const id = document.getElementById('edit-score-id').value;
-            const data = {
-                score_change: parseInt(document.getElementById('edit-score-change').value) || 0,
-                reason: document.getElementById('edit-score-reason').value,
-                category: document.getElementById('edit-score-category').value,
-                year_month: document.getElementById('edit-score-year-month').value,
-                week_number: parseInt(document.getElementById('edit-score-week').value) || 1
-            };
-            if (!data.reason) {
-                alert('请填写原因描述');
-                return;
-            }
-            fetch('/api/scores/' + id, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(data)
-            })
-            .then(r => r.json())
-            .then(result => {
-                if (result.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('editScoreModal')).hide();
-                    location.reload();
-                } else {
-                    alert('保存失败: ' + (result.error || '未知错误'));
-                }
-            })
-            .catch(e => alert('保存失败: ' + e.message));
-        }
-
-        // 删除评分记录
-        function deleteScore(id) {
-            if (!confirm('确定要删除这条评分记录吗？')) return;
-            fetch('/api/scores/' + id, { method: 'DELETE' })
-            .then(r => r.json())
-            .then(result => {
-                if (result.success) {
-                    location.reload();
-                } else {
-                    alert('删除失败: ' + (result.error || '未知错误'));
-                }
-            })
-            .catch(e => alert('删除失败: ' + e.message));
-        }
     </script>
 </body>
 </html>

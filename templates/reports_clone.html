@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pablo.Bee 行情日报</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            color: #e0e0e0;
+        }
+
+        /* ── 顶部导航 ── */
+        .topbar {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(12px);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .topbar h1 {
+            color: white;
+            font-size: 1.3rem;
+            white-space: nowrap;
+            font-weight: 700;
+        }
+
+        /* 视图切换标签 */
+        .view-tabs {
+            display: flex;
+            gap: 4px;
+            background: rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 3px;
+        }
+
+        .view-tab {
+            padding: 5px 14px;
+            border-radius: 7px;
+            border: none;
+            background: transparent;
+            color: rgba(255,255,255,0.6);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .view-tab.active {
+            background: rgba(255,255,255,0.18);
+            color: white;
+            font-weight: 600;
+        }
+
+        .topbar .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .topbar select {
+            padding: 6px 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            outline: none;
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .topbar select option { background: #1a1a2e; color: white; }
+
+        .topbar button {
+            padding: 6px 14px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.08);
+            color: rgba(255,255,255,0.85);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            transition: all 0.2s;
+        }
+
+        .topbar button:hover { background: rgba(255,255,255,0.18); }
+
+        .badge {
+            background: rgba(255,255,255,0.15);
+            color: rgba(255,255,255,0.7);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.78rem;
+        }
+
+        /* ── 主布局 ── */
+        .layout {
+            display: flex;
+            min-height: calc(100vh - 60px);
+        }
+
+        /* ── 左侧边栏 ── */
+        .sidebar {
+            width: 200px;
+            background: rgba(0,0,0,0.2);
+            padding: 16px 0;
+            overflow-y: auto;
+            flex-shrink: 0;
+            max-height: calc(100vh - 60px);
+            position: sticky;
+            top: 60px;
+        }
+
+        .sidebar-section { margin-bottom: 16px; }
+
+        .sidebar-label {
+            color: rgba(255,255,255,0.4);
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 0 16px 6px;
+        }
+
+        .stock-tag {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            color: rgba(255,255,255,0.75);
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.15s;
+            border-left: 3px solid transparent;
+        }
+
+        .stock-tag:hover { background: rgba(255,255,255,0.08); }
+        .stock-tag.active { background: rgba(255,255,255,0.15); border-left-color: #667eea; font-weight: 600; }
+
+        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .dot.US    { background: #60a5fa; }
+        .dot.CN_A  { background: #fb923c; }
+        .dot.CN_HK { background: #4ade80; }
+
+        .stock-tag .code { font-size: 0.7rem; color: rgba(255,255,255,0.35); margin-left: auto; }
+
+        .all-tag {
+            padding: 8px 16px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            border-left: 3px solid #667eea;
+            background: rgba(102,126,234,0.2);
+            font-size: 0.85rem;
+        }
+
+        /* ── 右侧内容 ── */
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            min-width: 0;
+        }
+
+        /* ── 日期分组 ── */
+        .date-group { margin-bottom: 32px; }
+
+        .date-header {
+            color: white;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .date-header .weekday {
+            font-size: 0.78rem;
+            opacity: 0.5;
+            font-weight: 400;
+        }
+
+        .date-header .summary-bar {
+            margin-left: auto;
+            font-size: 0.75rem;
+            opacity: 0.5;
+            font-weight: 400;
+            max-width: 280px;
+            text-align: right;
+        }
+
+        /* ── 周分组 ── */
+        .week-group { margin-bottom: 36px; }
+
+        .week-header {
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            background: rgba(102,126,234,0.15);
+            border-radius: 12px;
+            border: 1px solid rgba(102,126,234,0.25);
+        }
+
+        .week-header .count-badge {
+            margin-left: auto;
+            background: rgba(102,126,234,0.3);
+            color: #a5b4fc;
+            padding: 2px 10px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .week-dates {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.45);
+            font-weight: 400;
+        }
+
+        /* ── 报告卡片 ── */
+        .report-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin-bottom: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .report-card:hover { border-color: rgba(102,126,234,0.35); }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .stock-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .stock-meta { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+        .price { font-size: 1.1rem; font-weight: 700; color: white; }
+
+        .change-pct {
+            font-size: 0.9rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 8px;
+        }
+
+        .change-pct.up   { color: #fca5a5; background: rgba(239,68,68,0.15); }
+        .change-pct.down { color: #86efac; background: rgba(34,197,94,0.15); }
+        .change-pct.flat { color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.08); }
+
+        .market-badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+            color: white;
+        }
+
+        .market-badge.US    { background: rgba(96,165,250,0.3); }
+        .market-badge.CN_A  { background: rgba(251,146,60,0.3); }
+        .market-badge.CN_HK { background: rgba(74,222,128,0.3); }
+
+        /* ── 折叠区 ── */
+        .section-block {
+            margin-bottom: 10px;
+        }
+
+        .section-label {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: rgba(255,255,255,0.35);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .section-label .toggle-icon {
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+            opacity: 0.5;
+        }
+
+        .section-label.collapsed .toggle-icon { transform: rotate(-90deg); }
+
+        .section-content { padding-left: 4px; }
+
+        .section-content.hidden { display: none; }
+
+        /* 新闻列表 */
+        .news-item {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 6px;
+            font-size: 0.83rem;
+            line-height: 1.5;
+            align-items: flex-start;
+        }
+
+        .news-date {
+            color: rgba(255,255,255,0.35);
+            font-size: 0.75rem;
+            white-space: nowrap;
+            margin-top: 2px;
+            min-width: 52px;
+        }
+
+        .news-text { color: rgba(255,255,255,0.82); }
+
+        /* 催化剂列表 */
+        .catalysts li {
+            font-size: 0.83rem;
+            color: rgba(255,255,255,0.75);
+            margin-bottom: 4px;
+            padding-left: 8px;
+        }
+
+        .catalysts li::marker { color: rgba(102,126,234,0.7); }
+
+        /* 分析文本 */
+        .analysis-text {
+            font-size: 0.83rem;
+            color: rgba(255,255,255,0.75);
+            line-height: 1.65;
+            white-space: pre-wrap;
+        }
+
+        /* ── 预测高亮框 ── */
+        .prediction-box {
+            border-radius: 10px;
+            padding: 10px 14px;
+            margin-top: 10px;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 4px 12px;
+            align-items: start;
+        }
+
+        .prediction-box.bullish { background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2); }
+        .prediction-box.bearish  { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.2); }
+        .prediction-box.neutral  { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); }
+
+        .pred-label { font-weight: 700; font-size: 0.82rem; color: rgba(255,255,255,0.6); white-space: nowrap; }
+        .pred-value { font-size: 0.82rem; color: rgba(255,255,255,0.82); }
+
+        .pred-tag {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+        }
+
+        .pred-tag.up   { background: rgba(34,197,94,0.2); color: #86efac; }
+        .pred-tag.down { background: rgba(239,68,68,0.2); color: #fca5a5; }
+        .pred-tag.flat { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.5); }
+        .confidence { color: #fcd34d; letter-spacing: 1px; }
+
+        /* ── 操作按钮 ── */
+        .action-bar {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+        }
+
+        .btn-sm {
+            padding: 3px 10px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.05);
+            border-radius: 7px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            color: rgba(255,255,255,0.6);
+            transition: all 0.15s;
+        }
+
+        .btn-sm:hover { background: rgba(255,255,255,0.1); color: white; }
+        .btn-danger { color: #fca5a5; border-color: rgba(239,68,68,0.25); }
+        .btn-danger:hover { background: rgba(239,68,68,0.1); }
+
+        /* ── 空状态 ── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: rgba(255,255,255,0.35);
+        }
+
+        .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+
+        /* ── 弹窗 ── */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: #1a1a2e;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 24px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h2 { font-size: 1.15rem; margin-bottom: 16px; color: white; }
+
+        .form-group { margin-bottom: 12px; }
+
+        .form-group label {
+            display: block;
+            font-size: 0.78rem;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 4px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.06);
+            border-radius: 8px;
+            font-size: 0.88rem;
+            outline: none;
+            font-family: inherit;
+            color: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus { border-color: #667eea; }
+
+        .form-group textarea { resize: vertical; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+
+        .btn-primary {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .btn-ghost {
+            padding: 8px 20px;
+            background: transparent;
+            color: rgba(255,255,255,0.5);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.88rem;
+        }
+
+        /* ── 响应式 ── */
+        @media (max-width: 640px) {
+            .sidebar { display: none; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+<!-- ── 顶部导航 ── -->
+<div class="topbar">
+    <a href="/" style="text-decoration:none;display:flex;align-items:center;gap:6px;color:rgba(255,255,255,0.7);font-size:0.85rem;white-space:nowrap;transition:color 0.2s;" onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,0.7)'">← 主页</a>
+    <h1>📊 行情日报</h1>
+
+    <!-- 视图切换 -->
+    <div class="view-tabs">
+        <button class="view-tab active" id="tabDay" onclick="setView('day')">📅 日视图</button>
+        <button class="view-tab" id="tabWeek" onclick="setView('week')">📁 周归档</button>
+    </div>
+
+    <div class="controls">
+        <select id="marketFilter" onchange="onFilterChange()">
+            <option value="">全部市场</option>
+            <option value="US">🇺🇸 美股</option>
+            <option value="CN_A">🇨🇳 A股</option>
+            <option value="CN_HK">🇭🇰 港股</option>
+        </select>
+        <select id="dateFilter" onchange="onFilterChange()" style="display:none">
+            <option value="">全部日期</option>
+        </select>
+        <button onclick="openAddModal()">+ 添加记录</button>
+        <button onclick="importFromReport()">📥 文本导入</button>
+        <span class="badge" id="recordCount">—</span>
+    </div>
+</div>
+
+<!-- ── 主布局 ── -->
+<div class="layout">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="content" id="content"><div class="empty-state"><div class="icon">⏳</div><p>加载中...</p></div></div>
+</div>
+
+<!-- ── 添加/编辑弹窗 ── -->
+<div class="modal-overlay" id="modal">
+    <div class="modal">
+        <h2 id="modalTitle">添加日报记录</h2>
+        <div class="form-row">
+            <div class="form-group">
+                <label>市场</label>
+                <select id="fMarket">
+                    <option value="US">🇺🇸 美股</option>
+                    <option value="CN_A">🇨🇳 A股</option>
+                    <option value="CN_HK">🇭🇰 港股</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>日期</label>
+                <input type="date" id="fReportDate">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>股票代码</label>
+                <input type="text" id="fStockCode" placeholder="如 NVDA / 688629">
+            </div>
+            <div class="form-group">
+                <label>股票名称</label>
+                <input type="text" id="fStockName" placeholder="如 英伟达">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>现价</label>
+                <input type="number" step="0.01" id="fPrice" placeholder="价格">
+            </div>
+            <div class="form-group">
+                <label>涨跌幅（%）</label>
+                <input type="number" step="0.01" id="fChangePct" placeholder="如 2.35">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>货币</label>
+                <select id="fCurrency">
+                    <option value="USD">USD $</option>
+                    <option value="CNY">CNY ¥</option>
+                    <option value="HKD">HKD HK$</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>量价信号</label>
+                <select id="fVolumeSignal">
+                    <option value="放量">放量</option>
+                    <option value="缩量">缩量</option>
+                    <option value="平量">平量</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 新闻（新增） -->
+        <div class="form-group">
+            <label>📰 新闻（每行一条，含日期/来源，如「4/22 华尔街见闻：Q4营收超预期」）</label>
+            <textarea id="fNews" rows="3" placeholder="4/22 华尔街见闻：Q4营收681亿创历史新高&#10;4/23 TechCrunch：AI数据中心需求爆发"></textarea>
+        </div>
+
+        <!-- 分析（新增） -->
+        <div class="form-group">
+            <label>📈 技术面分析（量价/均线/KDJ/支撑压力位等）</label>
+            <textarea id="fAnalysis" rows="3" placeholder="5日涨幅+15%，RSI 72处超买区域，KDJ多方炮形态，&#10;量比2.1放量突破，支撑位$195（20日线），压力位$220"></textarea>
+        </div>
+
+        <!-- 催化剂 -->
+        <div class="form-group">
+            <label>⚡ 催化剂（每行一条）</label>
+            <textarea id="fCatalysts" rows="3" placeholder="Q4营收681亿创历史新高&#10;数据中心业务持续爆发"></textarea>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label>预测方向</label>
+                <select id="fPrediction">
+                    <option value="🟢↑">🟢↑ 看涨</option>
+                    <option value="🔴↓">🔴↓ 看跌</option>
+                    <option value="📊→">📊→ 震荡</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>目标区间</label>
+                <input type="text" id="fTarget" placeholder="如 ¥180-200">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>核心催化事件</label>
+                <input type="text" id="fCatalystText" placeholder="推动方向的核心事件">
+            </div>
+            <div class="form-group">
+                <label>最大风险</label>
+                <input type="text" id="fRisk" placeholder="跌破xx止损">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>置信度</label>
+                <select id="fConfidence">
+                    <option value="⭐⭐⭐ 高">⭐⭐⭐ 高</option>
+                    <option value="⭐⭐ 中">⭐⭐ 中</option>
+                    <option value="⭐ 低">⭐ 低</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>本周关键事件（汇总用）</label>
+            <textarea id="fWeekEvents" rows="2" placeholder="4/22 英伟达财报&#10;4/23 华为算力大会"></textarea>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-ghost" onclick="closeModal()">取消</button>
+            <button class="btn-primary" onclick="submitForm()">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- ── 文本导入弹窗 ── -->
+<div class="modal-overlay" id="importModal">
+    <div class="modal">
+        <h2>📥 从文本导入报告</h2>
+        <p style="font-size:0.8rem;color:rgba(255,255,255,0.4);margin-bottom:12px;">
+            将自动化生成的纯文本日报粘贴进来，系统自动解析各股票段落。
+        </p>
+        <div class="form-group">
+            <label>日报文本</label>
+            <textarea id="importText" rows="14" placeholder="粘贴日报文本..." style="font-size:0.82rem;line-height:1.6;"></textarea>
+        </div>
+        <div class="form-row" style="margin-top:12px;">
+            <div class="form-group">
+                <label>所属日期</label>
+                <input type="date" id="importDate">
+            </div>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-ghost" onclick="closeImportModal()">取消</button>
+            <button class="btn-primary" onclick="doImport()">解析并导入</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ── 全局状态 ──────────────────────────────────────
+    let allEntries = [];
+    let weekGroups = {};
+    let activeStock = null;
+    let activeMarket = null;
+    let activeView = 'day';
+    let editId = null;
+
+    const CURRENCY_SYMBOL = { USD: '$', CNY: '¥', HKD: 'HK$' };
+    const WEEKDAY_CN = ['周日','周一','周二','周三','周四','周五','周六'];
+
+    // ── 初始化 ──────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+        renderSidebar();
+        await loadReports();
+    });
+
+    // ── 视图切换 ──────────────────────────────────────
+    function setView(view) {
+        activeView = view;
+        document.getElementById('tabDay').classList.toggle('active', view === 'day');
+        document.getElementById('tabWeek').classList.toggle('active', view === 'week');
+        document.getElementById('dateFilter').style.display = view === 'day' ? '' : 'none';
+        renderContent();
+    }
+
+    // ── 侧边栏 ──────────────────────────────────────
+    function renderSidebar() {
+        const stocks = {"CN_A": [{"code": "688629", "name": "\u534e\u4e30\u79d1\u6280"}, {"code": "300811", "name": "\u94c2\u79d1\u65b0\u6750"}, {"code": "002222", "name": "\u798f\u6676\u79d1\u6280"}, {"code": "688981", "name": "\u4e2d\u82af\u56fd\u9645"}, {"code": "002436", "name": "\u5174\u68ee\u79d1\u6280"}, {"code": "002384", "name": "\u4e1c\u5c71\u7cbe\u5bc6"}, {"code": "000880", "name": "\u6f4d\u67f4\u91cd\u673a"}, {"code": "688802", "name": "\u6c90\u66e6"}, {"code": "688795", "name": "\u6469\u5c14\u7ebf\u7a0b"}, {"code": "300260", "name": "\u65b0\u83b1\u5e94\u6750"}], "CN_HK": [{"code": "9660.HK", "name": "\u5730\u5e73\u7ebf\u673a\u5668\u4eba"}, {"code": "2432.HK", "name": "\u8d8a\u7586\u673a\u5668\u4eba"}, {"code": "3690.HK", "name": "\u7f8e\u56e2"}], "US": [{"code": "NVDA", "name": "\u82f1\u4f1f\u8fbe"}, {"code": "CRWV", "name": "CoreWeave"}, {"code": "MARA", "name": "Marathon"}, {"code": "CEG", "name": "Constellation"}, {"code": "BTDR", "name": "Bitdeer"}, {"code": "SMR", "name": "NuScale"}]};
+        const markets = [
+            { key: 'US',    label: '🇺🇸 美股' },
+            { key: 'CN_A',  label: '🇨🇳 A股' },
+            { key: 'CN_HK', label: '🇭🇰 港股' },
+        ];
+
+        let html = `<div class="sidebar-section"><div class="all-tag" onclick="setStockFilter(null)">📋 全部股票</div></div>`;
+        markets.forEach(m => {
+            html += `<div class="sidebar-section">
+                <div class="sidebar-label">${m.label}</div>`;
+            (stocks[m.key] || []).forEach(s => {
+                const active = activeStock === s.code ? ' active' : '';
+                html += `<div class="stock-tag${active}" onclick="setStockFilter('${s.code}')">
+                    <span class="dot ${m.key}"></span>
+                    ${s.name}
+                    <span class="code">${s.code}</span>
+                </div>`;
+            });
+            html += '</div>';
+        });
+        document.getElementById('sidebar').innerHTML = html;
+    }
+
+    function setStockFilter(code) {
+        activeStock = code;
+        renderSidebar();
+        loadReports();
+    }
+
+    function onFilterChange() {
+        activeMarket = document.getElementById('marketFilter').value || null;
+        loadReports();
+    }
+
+    // ── 加载报告 ──────────────────────────────────────
+    async function loadReports() {
+        const params = new URLSearchParams();
+        if (activeStock) params.set('stock_code', activeStock);
+        if (activeMarket) params.set('market', activeMarket);
+        params.set('limit', '500');
+
+        const res = await fetch('/api/reports?' + params.toString());
+        const json = await res.json();
+        allEntries = json.data || [];
+
+        // 构建周分组
+        weekGroups = {};
+        allEntries.forEach(e => {
+            const d = e.report_date;
+            if (!d) return;
+            const dt = new Date(d + 'T12:00:00');
+            const iso = dt.getISOWeek ? dt.getISOWeek() : _isoWeek(dt);
+            const weekKey = `${iso.year}年第${iso.week}周`;
+            if (!weekGroups[weekKey]) {
+                weekGroups[weekKey] = {
+                    label: weekKey,
+                    start_date: d,
+                    dates: [],
+                    entries: {}
+                };
+            }
+            if (!weekGroups[weekKey].entries[d]) weekGroups[weekKey].entries[d] = [];
+            weekGroups[weekKey].entries[d].push(e);
+            if (!weekGroups[weekKey].dates.includes(d)) weekGroups[weekKey].dates.push(d);
+        });
+
+        // 按日期加载日期筛选器
+        if (activeView === 'day') {
+            const sel = document.getElementById('dateFilter');
+            const dates = [...new Set(allEntries.map(e => e.report_date).filter(Boolean))].sort((a,b)=>b.localeCompare(a));
+            sel.innerHTML = '<option value="">全部日期</option>';
+            dates.forEach(d => {
+                const dt = new Date(d + 'T12:00:00');
+                const label = dt.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit', weekday: 'short' });
+                sel.innerHTML += `<option value="${d}">${label}</option>`;
+            });
+        }
+
+        document.getElementById('recordCount').textContent = allEntries.length + ' 条';
+        renderContent();
+    }
+
+    // ISO week 计算（兼容 Safari）
+    function _isoWeek(date) {
+        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+        d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay()||7));
+        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+        const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+        return { year: d.getUTCFullYear(), week };
+    }
+
+    // ── 渲染内容 ──────────────────────────────────────
+    function renderContent() {
+        if (activeView === 'week') {
+            renderWeekView();
+        } else {
+            renderDayView();
+        }
+    }
+
+    // ── 日视图 ──────────────────────────────────────
+    function renderDayView() {
+        const el = document.getElementById('content');
+        const dateVal = document.getElementById('dateFilter').value;
+        let entries = dateVal ? allEntries.filter(e => e.report_date === dateVal) : allEntries;
+
+        if (!entries.length) {
+            el.innerHTML = emptyStateHTML();
+            return;
+        }
+
+        // 按日期分组
+        const groups = {};
+        entries.forEach(e => {
+            const d = e.report_date || '未分类';
+            if (!groups[d]) groups[d] = [];
+            groups[d].push(e);
+        });
+
+        const sorted = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+        let html = '';
+        sorted.forEach(date => {
+            const dt = new Date(date + 'T12:00:00');
+            const dayStr = dt.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+            const weekday = WEEKDAY_CN[dt.getDay()];
+            const ev = _firstNonEmpty(entries, 'week_events');
+            const dayEntries = groups[date];
+
+            html += `<div class="date-group">
+                <div class="date-header">
+                    ${dayStr}
+                    <span class="weekday">${weekday}</span>
+                    ${ev ? `<span class="summary-bar">${ev.split('\n')[0]}</span>` : ''}
+                </div>`;
+            dayEntries.forEach(e => { html += renderCard(e); });
+            html += '</div>';
+        });
+
+        el.innerHTML = html;
+    }
+
+    // ── 周归档视图 ──────────────────────────────────────
+    function renderWeekView() {
+        const el = document.getElementById('content');
+        const sortedWeeks = Object.keys(weekGroups).sort((a, b) =>
+            weekGroups[b].start_date.localeCompare(weekGroups[a].start_date)
+        );
+
+        if (!sortedWeeks.length) {
+            el.innerHTML = emptyStateHTML();
+            return;
+        }
+
+        let html = '';
+        sortedWeeks.forEach(weekKey => {
+            const week = weekGroups[weekKey];
+            const sortedDates = week.dates.sort((a,b) => b.localeCompare(a));
+            const dateRange = sortedDates.length >= 2
+                ? `${sortedDates[sortedDates.length-1]} ~ ${sortedDates[0]}`
+                : sortedDates[0] || '';
+            const totalCount = Object.values(week.entries).reduce((s, arr) => s + arr.length, 0);
+
+            html += `<div class="week-group">
+                <div class="week-header">
+                    📁 ${weekKey}
+                    <span class="week-dates">${dateRange}</span>
+                    <span class="count-badge">${totalCount} 条记录</span>
+                </div>`;
+
+            sortedDates.forEach(date => {
+                const dt = new Date(date + 'T12:00:00');
+                const dayStr = dt.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' });
+                const weekday = WEEKDAY_CN[dt.getDay()];
+                const dayEntries = week.entries[date] || [];
+
+                html += `<div class="date-group" style="margin-left:8px;">
+                    <div class="date-header" style="font-size:0.9rem;">
+                        ${dayStr} <span class="weekday">${weekday}</span>
+                    </div>`;
+                dayEntries.forEach(e => { html += renderCard(e, true); });
+                html += '</div>';
+            });
+
+            html += '</div>';
+        });
+
+        el.innerHTML = html;
+    }
+
+    function _firstNonEmpty(arr, key) {
+        for (const e of arr) { if (e[key]) return e[key]; }
+        return '';
+    }
+
+    // ── 渲染单张卡片 ──────────────────────────────────────
+    function renderCard(e, compact = false) {
+        const sym = CURRENCY_SYMBOL[e.currency] || '$';
+        const pct = parseFloat(e.change_pct || 0);
+        const dir = pct > 0.1 ? 'up' : pct < -0.1 ? 'down' : 'flat';
+        const predDir = e.prediction.includes('🟢') ? 'bullish'
+                      : e.prediction.includes('🔴') ? 'bearish' : 'neutral';
+        const predTag = e.prediction.includes('🟢') ? 'up'
+                      : e.prediction.includes('🔴') ? 'down' : 'flat';
+
+        // 新闻
+        const newsItems = (e.news || '').split('\n').filter(Boolean);
+        const newsHTML = newsItems.length
+            ? `<div class="section-block">
+                <div class="section-label" onclick="toggleSection(this)">
+                    <span class="toggle-icon">▼</span> 📰 新闻（${newsItems.length}条）
+                </div>
+                <div class="section-content">
+                    ${newsItems.map(n => {
+                        const dateMatch = n.match(/^(\d[\d/\-]*)\s+/);
+                        const date = dateMatch ? `<span class="news-date">${dateMatch[1]}</span>` : '';
+                        const text = dateMatch ? n.slice(dateMatch[0].length) : n;
+                        return `<div class="news-item">${date}<span class="news-text">${text}</span></div>`;
+                    }).join('')}
+                </div>
+               </div>`
+            : '';
+
+        // 催化剂
+        const catalystItems = (e.catalysts || '').split('\n').filter(Boolean);
+        const catalystsHTML = catalystItems.length
+            ? `<div class="section-block">
+                <div class="section-label" onclick="toggleSection(this)">
+                    <span class="toggle-icon">▼</span> ⚡ 催化剂
+                </div>
+                <div class="section-content">
+                    <ul class="catalysts" style="padding-left:16px;margin:0;">
+                        ${catalystItems.map(c => `<li>${c}</li>`).join('')}
+                    </ul>
+                </div>
+               </div>`
+            : '';
+
+        // 分析
+        const analysisHTML = e.analysis
+            ? `<div class="section-block">
+                <div class="section-label" onclick="toggleSection(this)">
+                    <span class="toggle-icon">▼</span> 📈 技术分析
+                </div>
+                <div class="section-content">
+                    <div class="analysis-text">${e.analysis}</div>
+                </div>
+               </div>`
+            : '';
+
+        // 预测框
+        const predictionHTML = `<div class="prediction-box ${predDir}">
+            <span class="pred-label">🎯 预测</span>
+            <span class="pred-value"><span class="pred-tag ${predTag}">${e.prediction || '—'}</span></span>
+            <span class="pred-label">📍 目标</span>
+            <span class="pred-value">${e.target || '—'}</span>
+            <span class="pred-label">⚡ 核心催化</span>
+            <span class="pred-value">${e.catalyst_text || '—'}</span>
+            <span class="pred-label">⚠️ 最大风险</span>
+            <span class="pred-value">${e.risk || '—'}</span>
+            <span class="pred-label">⭐ 置信度</span>
+            <span class="pred-value confidence">${e.confidence || '—'}</span>
+        </div>`;
+
+        return `<div class="report-card">
+            <div class="card-header">
+                <span class="stock-name">${e.stock_name || e.stock_code}</span>
+                <span class="market-badge ${e.market}">${marketLabel(e.market)}</span>
+                <span class="price">${sym}${e.price || '—'}</span>
+                <span class="change-pct ${dir}">${pct > 0 ? '+' : ''}${pct.toFixed(2)}%</span>
+                <div class="stock-meta">
+                    ${e.volume_signal ? `<span style="font-size:0.75rem;color:rgba(255,255,255,0.4);">${e.volume_signal}</span>` : ''}
+                </div>
+            </div>
+
+            ${newsHTML}
+            ${catalystsHTML}
+            ${analysisHTML}
+            ${predictionHTML}
+
+            <div class="action-bar">
+                <button class="btn-sm" onclick="openEditModal(${e.id})">✏️ 编辑</button>
+                <button class="btn-sm btn-danger" onclick="deleteEntry(${e.id})">🗑️ 删除</button>
+            </div>
+        </div>`;
+    }
+
+    function toggleSection(label) {
+        label.classList.toggle('collapsed');
+        label.nextElementSibling.classList.toggle('hidden');
+    }
+
+    function marketLabel(m) {
+        return { US: '美股', CN_A: 'A股', CN_HK: '港股' }[m] || m;
+    }
+
+    function emptyStateHTML() {
+        return `<div class="empty-state">
+            <div class="icon">📊</div>
+            <p>暂无数据</p>
+            <p style="font-size:0.85rem;margin-top:6px;">点击右上角「添加记录」或「文本导入」</p>
+        </div>`;
+    }
+
+    // ── 弹窗 ──────────────────────────────────────
+    function openAddModal() {
+        editId = null;
+        document.getElementById('modalTitle').textContent = '添加日报记录';
+        document.getElementById('fReportDate').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('fMarket').value = activeMarket || 'US';
+        document.getElementById('fStockCode').value = activeStock || '';
+        document.getElementById('fStockName').value = '';
+        document.getElementById('fPrice').value = '';
+        document.getElementById('fChangePct').value = '';
+        document.getElementById('fCurrency').value = 'USD';
+        document.getElementById('fVolumeSignal').value = '放量';
+        document.getElementById('fNews').value = '';
+        document.getElementById('fAnalysis').value = '';
+        document.getElementById('fCatalysts').value = '';
+        document.getElementById('fPrediction').value = '🟢↑';
+        document.getElementById('fTarget').value = '';
+        document.getElementById('fCatalystText').value = '';
+        document.getElementById('fRisk').value = '';
+        document.getElementById('fConfidence').value = '⭐⭐⭐ 高';
+        document.getElementById('fWeekEvents').value = '';
+        document.getElementById('modal').classList.add('show');
+    }
+
+    function openEditModal(id) {
+        const e = allEntries.find(x => x.id === id);
+        if (!e) return;
+        editId = id;
+        document.getElementById('modalTitle').textContent = '编辑日报记录';
+        document.getElementById('fMarket').value = e.market || 'US';
+        document.getElementById('fReportDate').value = e.report_date || '';
+        document.getElementById('fStockCode').value = e.stock_code || '';
+        document.getElementById('fStockName').value = e.stock_name || '';
+        document.getElementById('fPrice').value = e.price || '';
+        document.getElementById('fChangePct').value = e.change_pct || '';
+        document.getElementById('fCurrency').value = e.currency || 'USD';
+        document.getElementById('fVolumeSignal').value = e.volume_signal || '放量';
+        document.getElementById('fNews').value = e.news || '';
+        document.getElementById('fAnalysis').value = e.analysis || '';
+        document.getElementById('fCatalysts').value = e.catalysts || '';
+        document.getElementById('fPrediction').value = e.prediction || '🟢↑';
+        document.getElementById('fTarget').value = e.target || '';
+        document.getElementById('fCatalystText').value = e.catalyst_text || '';
+        document.getElementById('fRisk').value = e.risk || '';
+        document.getElementById('fConfidence').value = e.confidence || '⭐⭐⭐ 高';
+        document.getElementById('fWeekEvents').value = e.week_events || '';
+        document.getElementById('modal').classList.add('show');
+    }
+
+    function closeModal() {
+        document.getElementById('modal').classList.remove('show');
+        editId = null;
+    }
+
+    async function submitForm() {
+        const data = {
+            market:         document.getElementById('fMarket').value,
+            report_date:    document.getElementById('fReportDate').value,
+            stock_code:     document.getElementById('fStockCode').value.trim(),
+            stock_name:     document.getElementById('fStockName').value.trim(),
+            price:          parseFloat(document.getElementById('fPrice').value) || 0,
+            change_pct:     parseFloat(document.getElementById('fChangePct').value) || 0,
+            currency:       document.getElementById('fCurrency').value,
+            volume_signal:  document.getElementById('fVolumeSignal').value,
+            news:           document.getElementById('fNews').value.trim(),
+            analysis:       document.getElementById('fAnalysis').value.trim(),
+            catalysts:      document.getElementById('fCatalysts').value.trim(),
+            prediction:     document.getElementById('fPrediction').value,
+            target:         document.getElementById('fTarget').value.trim(),
+            catalyst_text:  document.getElementById('fCatalystText').value.trim(),
+            risk:           document.getElementById('fRisk').value.trim(),
+            confidence:     document.getElementById('fConfidence').value,
+            week_events:    document.getElementById('fWeekEvents').value.trim(),
+        };
+
+        if (!data.stock_code || !data.report_date) {
+            alert('股票代码和日期必填');
+            return;
+        }
+
+        if (editId) {
+            await fetch(`/api/reports/${editId}`, { method: 'DELETE' });
+        }
+
+        const res = await fetch('/api/reports', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const json = await res.json();
+        if (json.success) {
+            closeModal();
+            await loadReports();
+        } else {
+            alert('保存失败: ' + (json.error || '未知错误'));
+        }
+    }
+
+    async function deleteEntry(id) {
+        if (!confirm('确认删除这条记录？')) return;
+        await fetch(`/api/reports/${id}`, { method: 'DELETE' });
+        await loadReports();
+    }
+
+    // ── 文本导入 ──────────────────────────────────────
+    function importFromReport() {
+        document.getElementById('importDate').value = new Date().toISOString().slice(0, 10);
+        document.getElementById('importText').value = '';
+        document.getElementById('importModal').classList.add('show');
+    }
+
+    function closeImportModal() {
+        document.getElementById('importModal').classList.remove('show');
+    }
+
+    async function doImport() {
+        const text = document.getElementById('importText').value.trim();
+        const reportDate = document.getElementById('importDate').value;
+        if (!text || !reportDate) { alert('请填写内容和日期'); return; }
+
+        const lines = text.split('\n');
+        const entries = [];
+        let current = null;
+        let catalystLines = [];
+        let newsLines = [];
+        let analysisLines = [];
+        let inPrediction = false;
+        let predictionLines = [];
+
+        const STOCK_PATTERNS = [
+            '英伟达', 'NVDA', 'CoreWeave', 'CRWV', 'Marathon', 'MARA',
+            'NuScale', 'SMR', 'Constellation', 'CEG', 'Bitdeer', 'BTDR',
+            '华丰科技', '铂科新材', '福晶科技', '中芯国际', '兴森科技',
+            '东山精密', '潍柴重机', '沐曦', '摩尔线程', '新莱应材',
+            '地平线机器人', '越疆机器人', '美团',
+            '688629', '300811', '002222', '688981', '002436', '002384',
+            '000880', '688802', '688795', '300260',
+            '9660.HK', '2432.HK', '3690.HK'
+        ];
+
+        for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed) continue;
+
+            const isHeader = STOCK_PATTERNS.some(s =>
+                trimmed.startsWith(s) || trimmed.startsWith('**' + s) || trimmed.startsWith('① ' + s)
+            );
+
+            if (isHeader) {
+                if (current) {
+                    current.catalysts = catalystLines.join('\n');
+                    current.news = newsLines.join('\n');
+                    current.analysis = analysisLines.join('\n');
+                    entries.push(current);
+                }
+                const name = trimmed.replace(/[#*\d①\d②\d③\d④\d⑤\d⑥\d⑦\d⑧【】\[\]（）()]/g, '').trim();
+                const code = '';
+                current = {
+                    stock_code: code, stock_name: name || trimmed,
+                    market: 'US', report_date: reportDate,
+                    price: 0, change_pct: 0, currency: 'USD',
+                    volume_signal: '', catalysts: '', news: '', analysis: '',
+                    prediction: '🟢↑', target: '', catalyst_text: '', risk: '',
+                    confidence: '⭐⭐⭐ 高', week_events: ''
+                };
+                catalystLines = []; newsLines = []; analysisLines = [];
+                inPrediction = false;
+            } else if (current) {
+                if (trimmed.includes('📰') || trimmed.includes('新闻') || /\d[\d\/]/.test(trimmed.slice(0,10))) {
+                    if (trimmed.includes('📰')) newsLines.push(trimmed.replace(/📰/g, '').trim());
+                    else newsLines.push(trimmed);
+                } else if (trimmed.includes('📈') || trimmed.includes('技术') || trimmed.includes('分析')) {
+                    if (!trimmed.includes('📈')) analysisLines.push(trimmed);
+                    else analysisLines.push(trimmed.replace(/📈/g, '').trim());
+                } else if (trimmed.includes('🎯') || trimmed.includes('预测') || trimmed.includes('━━━━') || inPrediction) {
+                    inPrediction = true;
+                    if (trimmed.includes('目标')) {
+                        const m = trimmed.match(/目标[：:]\s*([^\n]+)/);
+                        if (m) current.target = m[1].trim();
+                    }
+                    if (trimmed.includes('风险') || trimmed.includes('止损')) {
+                        current.risk = trimmed.replace(/[⚠️⚠]/g, '').trim();
+                    }
+                    if (trimmed.includes('🟢') || trimmed.includes('🔴') || trimmed.includes('📊')) {
+                        const m = trimmed.match(/(🟢↑|🔴↓|📊→)/);
+                        if (m) current.prediction = m[1];
+                    }
+                    if (trimmed.includes('⭐')) current.confidence = trimmed.trim();
+                } else {
+                    catalystLines.push(trimmed);
+                }
+            }
+        }
+        if (current) {
+            current.catalysts = catalystLines.join('\n');
+            current.news = newsLines.join('\n');
+            current.analysis = analysisLines.join('\n');
+            entries.push(current);
+        }
+
+        if (!entries.length) { alert('未能解析出任何股票数据'); return; }
+
+        const res = await fetch('/api/reports/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(entries)
+        });
+        const json = await res.json();
+        if (json.success) {
+            closeImportModal();
+            await loadReports();
+            alert(`成功导入 ${json.saved} 条`);
+        } else {
+            alert('导入失败');
+        }
+    }
+</script>
+</body>
+</html>

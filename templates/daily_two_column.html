@@ -1,0 +1,125 @@
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 新闻信息
+            if (news.length > 0) {
+                html += `
+                    <div class="content-card">
+                        <div class="card-title">
+                            <i class="bi bi-newspaper"></i>今日新闻 (${news.length}条)
+                        </div>
+                `;
+                
+                news.forEach(item => {
+                    html += `
+                        <div class="news-item">
+                            <h6>${item.title || '无标题'}</h6>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-clock me-1"></i>${item.published_at || '--'} | 
+                                <i class="bi bi-tag me-1"></i>${item.category || '未分类'} |
+                                <i class="bi bi-building me-1"></i>${item.source_name || item.source || '未知来源'}
+                            </p>
+                            <p>${item.summary || item.content || '无摘要'}</p>
+                            ${item.url ? `<a href="${item.url}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">查看原文</a>` : ''}
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            }
+            
+            // 股票信息
+            if (stocks.length > 0) {
+                html += `
+                    <div class="content-card">
+                        <div class="card-title">
+                            <i class="bi bi-graph-up"></i>关注股票 (${stocks.length}只)
+                        </div>
+                        <div class="table-responsive">
+                            <table class="stock-table">
+                                <thead>
+                                    <tr>
+                                        <th>代码</th>
+                                        <th>名称</th>
+                                        <th>价格</th>
+                                        <th>涨跌</th>
+                                        <th>涨跌幅</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+                
+                stocks.forEach(stock => {
+                    const changeClass = stock.change_percent >= 0 ? 'positive' : 'negative';
+                    const changeIcon = stock.change_percent >= 0 ? '↑' : '↓';
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${stock.symbol || '--'}</strong></td>
+                            <td>${stock.name || '--'}</td>
+                            <td>${stock.price ? stock.price.toFixed(2) : '--'}</td>
+                            <td class="${changeClass}">${stock.change ? stock.change.toFixed(2) : '--'}</td>
+                            <td class="${changeClass}">${changeIcon} ${stock.change_percent ? Math.abs(stock.change_percent).toFixed(2) : '--'}%</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 如果没有数据
+            if (!html) {
+                html = `
+                    <div class="empty-state">
+                        <i class="bi bi-inbox"></i>
+                        <h4>暂无数据</h4>
+                        <p>${formatDate(date)} 没有日报内容</p>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // 刷新所有数据
+        function refreshAllData() {
+            dailyDataCache = {}; // 清空缓存
+            loadDateList();
+            
+            if (currentDate) {
+                loadDailyContent(currentDate);
+            }
+        }
+        
+        // 工具函数
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+        
+        function getDayOfWeek(dateStr) {
+            const date = new Date(dateStr);
+            const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            return days[date.getDay()];
+        }
+        
+        function isTodayDate(dateStr) {
+            const today = new Date().toISOString().split('T')[0];
+            return dateStr === today;
+        }
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,266 @@
+[...继续上面的HTML文件]
+
+        let currentFilter = 'all';
+        let currentTasks = [...allTasks];
+        
+        // 格式化时间
+        function formatTime(isoString) {
+            if (!isoString) return '从未执行';
+            const date = new Date(isoString);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // 格式化时间差
+        function formatTimeDiff(isoString) {
+            if (!isoString) return '--';
+            const now = new Date();
+            const target = new Date(isoString);
+            const diffMs = target - now;
+            
+            if (diffMs < 0) return '已过期';
+            
+            const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            
+            if (diffHours > 0) {
+                return `${diffHours}小时${diffMinutes}分钟后`;
+            } else {
+                return `${diffMinutes}分钟后`;
+            }
+        }
+        
+        // 更新统计信息
+        function updateStats() {
+            const totalTasks = allTasks.length;
+            const activeTasks = allTasks.filter(t => t.enabled).length;
+            const totalTokenEstimate = allTasks
+                .filter(t => t.enabled)
+                .reduce((sum, task) => sum + parseInt(task.token_estimate || 0), 0);
+            
+            // 找到最近的下次执行时间
+            const nextRuns = allTasks
+                .filter(t => t.enabled && t.nextRun)
+                .map(t => new Date(t.nextRun))
+                .filter(d => !isNaN(d.getTime()));
+            
+            let nextRunTime = '--:--';
+            if (nextRuns.length > 0) {
+                const earliest = new Date(Math.min(...nextRuns.map(d => d.getTime())));
+                nextRunTime = earliest.toLocaleTimeString('zh-CN', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+            }
+            
+            document.getElementById('totalTasks').textContent = totalTasks;
+            document.getElementById('activeTasks').textContent = activeTasks;
+            document.getElementById('totalTokenEstimate').textContent = totalTokenEstimate.toLocaleString();
+            document.getElementById('nextRunTime').textContent = nextRunTime;
+        }
+        
+        // 渲染任务卡片
+        function renderTasks(tasks) {
+            const container = document.getElementById('tasksContainer');
+            if (tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem; color: #9ca3af;"></i>
+                        <p class="mt-3 text-muted">没有找到符合条件的任务</p>
+                    </div>
+                `;
+                document.getElementById('taskCount').textContent = '0个任务';
+                return;
+            }
+            
+            let html = '';
+            tasks.forEach(task => {
+                const statusClass = task.enabled ? 'enabled' : 'disabled';
+                const statusText = task.enabled ? '已启用' : '已禁用';
+                const statusBadgeClass = task.enabled ? 'badge-enabled' : 'badge-disabled';
+                
+                // 计算调度频率
+                let scheduleText = '';
+                if (task.schedule.kind === 'cron') {
+                    scheduleText = `Cron: ${task.schedule.expr}`;
+                } else if (task.schedule.kind === 'every') {
+                    const minutes = Math.floor(task.schedule.everyMs / 60000);
+                    scheduleText = `每${minutes}分钟`;
+                }
+                
+                html += `
+                    <div class="task-card ${statusClass}" onclick="showTaskDetail('${task.id}')" style="cursor: pointer;">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center mb-2">
+                                    <h6 class="mb-0 me-3">${task.name}</h6>
+                                    <span class="badge-custom ${statusBadgeClass}">${statusText}</span>
+                                </div>
+                                <p class="text-muted mb-2">${task.description}</p>
+                                <div class="d-flex gap-2">
+                                    <span class="badge schedule-badge">
+                                        <i class="bi bi-clock me-1"></i>
+                                        ${scheduleText}
+                                    </span>
+                                    <span class="badge token-badge">
+                                        <i class="bi bi-lightning-charge me-1"></i>
+                                        ~${task.token_estimate} tokens/次
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="mb-2">
+                                    <small class="text-muted">下次执行:</small>
+                                    <div class="fw-bold">${formatTime(task.nextRun)}</div>
+                                    <small class="text-info">${formatTimeDiff(task.nextRun)}</small>
+                                </div>
+                                <div>
+                                    <small class="text-muted">执行次数:</small>
+                                    <span class="fw-bold">${task.execution_count}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+            document.getElementById('taskCount').textContent = `${tasks.length}个任务`;
+        }
+        
+        // 过滤任务
+        function filterTasks(filterType) {
+            currentFilter = filterType;
+            
+            // 更新过滤按钮状态
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            let filteredTasks = [...allTasks];
+            
+            switch (filterType) {
+                case 'enabled':
+                    filteredTasks = filteredTasks.filter(t => t.enabled);
+                    break;
+                case 'disabled':
+                    filteredTasks = filteredTasks.filter(t => !t.enabled);
+                    break;
+                case 'high_token':
+                    filteredTasks = filteredTasks.filter(t => 
+                        parseInt(t.token_estimate || 0) > 500
+                    );
+                    break;
+                case 'frequent':
+                    filteredTasks = filteredTasks.filter(t => 
+                        t.schedule.kind === 'every' || 
+                        (t.schedule.kind === 'cron' && t.schedule.expr.includes('*'))
+                    );
+                    break;
+                // 'all' 不进行过滤
+            }
+            
+            currentTasks = filteredTasks;
+            renderTasks(filteredTasks);
+        }
+        
+        // 显示任务详情
+        function showTaskDetail(taskId) {
+            const task = allTasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            // 更新模态框内容
+            document.getElementById('taskDetailTitle').textContent = task.name;
+            document.getElementById('detailId').textContent = task.id;
+            
+            const statusBadge = document.getElementById('detailStatus');
+            statusBadge.textContent = task.enabled ? '已启用' : '已禁用';
+            statusBadge.className = `badge-custom ${task.enabled ? 'badge-enabled' : 'badge-disabled'}`;
+            
+            document.getElementById('detailDescription').textContent = task.description;
+            document.getElementById('detailScheduleType').textContent = 
+                task.schedule.kind === 'cron' ? 'Cron表达式' : '固定间隔';
+            document.getElementById('detailNextRun').textContent = formatTime(task.nextRun);
+            document.getElementById('detailLastRun').textContent = formatTime(task.lastRun);
+            document.getElementById('detailExecutionCount').textContent = task.execution_count;
+            
+            document.getElementById('detailTokenEstimate').textContent = task.token_estimate;
+            document.getElementById('detailAvgToken').textContent = task.avg_token;
+            document.getElementById('detailTotalToken').textContent = 
+                parseInt(task.total_token || 0).toLocaleString();
+            
+            document.getElementById('detailSchedule').textContent = 
+                JSON.stringify(task.schedule, null, 2);
+            document.getElementById('detailPayload').textContent = 
+                JSON.stringify(task.payload, null, 2);
+            
+            // 更新按钮
+            const toggleBtn = document.getElementById('toggleTaskBtn');
+            toggleBtn.innerHTML = task.enabled ? 
+                '<i class="bi bi-toggle-on me-1"></i>禁用任务' : 
+                '<i class="bi bi-toggle-off me-1"></i>启用任务';
+            
+            toggleBtn.onclick = () => toggleTask(taskId);
+            document.getElementById('runNowBtn').onclick = () => runTaskNow(taskId);
+            
+            // 显示模态框
+            const modal = new bootstrap.Modal(document.getElementById('taskDetailModal'));
+            modal.show();
+        }
+        
+        // 切换任务状态
+        function toggleTask(taskId) {
+            const task = allTasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            task.enabled = !task.enabled;
+            
+            // 在实际应用中，这里应该调用API更新服务器状态
+            console.log(`任务 ${taskId} 状态已切换为: ${task.enabled ? '启用' : '禁用'}`);
+            
+            // 更新UI
+            updateStats();
+            filterTasks(currentFilter);
+            
+            // 关闭模态框
+            bootstrap.Modal.getInstance(document.getElementById('taskDetailModal')).hide();
+            
+            // 显示成功消息
+            alert(`任务 "${task.name}" 已${task.enabled ? '启用' : '禁用'}`);
+        }
+        
+        // 立即执行任务
+        function runTaskNow(taskId) {
+            const task = allTasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            // 在实际应用中，这里应该调用API触发任务执行
+            console.log(`立即执行任务: ${taskId}`);
+            
+            // 模拟执行
+            alert(`任务 "${task.name}" 已加入执行队列，将在后台运行`);
+            
+            // 关闭模态框
+            bootstrap.Modal.getInstance(document.getElementById('taskDetailModal')).hide();
+        }
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+            renderTasks(allTasks);
+            
+            // 初始化工具提示
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html>

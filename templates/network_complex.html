@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>内网设备管理 - Pablo 的智能演进看板</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --secondary-color: #a855f7;
+            --success-color: #10b981;
+            --info-color: #3b82f6;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #1e293b;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .stat-card {
+            text-align: center;
+            padding: 12px 15px;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.06);
+            transition: all 0.2s;
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin: 5px 0;
+            line-height: 1.2;
+        }
+        
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.85rem;
+            margin-top: 2px;
+        }
+        
+        .table-custom {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+        
+        .table-custom thead {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .device-status {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background-color: var(--success-color);
+            box-shadow: 0 0 8px var(--success-color);
+        }
+        
+        .status-warning {
+            background-color: var(--warning-color);
+            box-shadow: 0 0 8px var(--warning-color);
+        }
+        
+        .status-offline {
+            background-color: #9ca3af;
+        }
+        
+        .mac-address {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #4b5563;
+        }
+        
+        .vendor-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+            margin: 2px;
+        }
+        
+        .vendor-apple { background: #f3f4f6; color: #1f2937; border: 1px solid #d1d5db; }
+        .vendor-huawei { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+        .vendor-xiaomi { background: #fef3c7; color: #92400e; border: 1px solid #fbbf24; }
+        .vendor-network { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .vendor-other { background: #f3f4f6; color: #6b7280; border: 1px solid #d1d5db; }
+        
+        .btn-scan {
+            background: linear-gradient(135deg, var(--success-color), #0ea5e9);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            color: white;
+            transition: all 0.3s;
+        }
+        
+        .btn-scan:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+        
+        .btn-scan:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        
+        .notes-textarea {
+            width: 100%;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 0.85em;
+            resize: none;
+            height: 32px;
+            line-height: 24px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+        
+        .notes-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+            overflow: auto;
+            white-space: normal;
+            height: auto;
+            min-height: 32px;
+            max-height: 80px;
+        }
+        
+        .notes-textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+        
+        .last-seen {
+            font-size: 0.85em;
+            color: #6b7280;
+        }
+        
+        .device-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.2s;
+        }
+        
+        .device-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .dashboard-container {
+                padding: 10px;
+            }
+            
+            .glass-card {
+                padding: 20px;
+            }
+            
+            .table-responsive {
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- 头部信息 -->
+        <div class="glass-card header-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 fw-bold">
+                        <i class="bi bi-wifi me-2"></i>内网设备管理
+                    </h1>
+                    <p class="lead mb-0">监控局域网设备，记录设备信息，管理网络资产</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="/" class="btn btn-outline-light me-2">
+                        <i class="bi bi-house-door me-1"></i>返回主页
+                    </a>
+                    <button class="btn btn-scan" onclick="startScan()" id="scanBtn">
+                        <i class="bi bi-radar me-1"></i>开始扫描
+                    </button>
+                    <div class="mt-2">
+                        <small class="text-white-50">
+                            <i class="bi bi-clock-history me-1"></i>
+                            最后扫描: <span id="lastScanTime">{{ last_scan[:16] if last_scan else '从未扫描' }}</span>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 统计卡片 -->
+        <div class="row mb-3">
+            <div class="col-md-3 col-sm-6 mb-2">
+                <div class="stat-card">
+                    <div class="stat-value text-primary">{{ total_devices }}</div>
+                    <div class="stat-label">总设备数</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <div class="stat-card">
+                    <div class="stat-value text-success">{{ stats.active_24h }}</div>
+                    <div class="stat-label">24小时活跃</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <div class="stat-card">
+                    <div class="stat-value text-info">{{ stats.vendor_dist|length }}</div>
+                    <div class="stat-label">厂商品牌</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-2">
+                <div class="stat-card">
+                    <div class="stat-value text-warning">{{ stats.device_types|length }}</div>
+                    <div class="stat-label">设备类型</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 设备列表 -->
+        <div class="glass-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0">
+                    <i class="bi bi-pc-display-horizontal me-2"></i>设备列表
+                </h3>
+                <div class="d-flex align-items-center">
+                    <div class="me-3">
+                        <span class="device-status status-online"></span>
+                        <small class="text-muted">在线</small>
+                        <span class="device-status status-offline ms-3"></span>
+                        <small class="text-muted">离线</small>
+                    </div>
+                    <select class="form-select form-select-sm" style="width: 150px;" onchange="filterByVendor(this.value)">
+                        <option value="all">所有厂商</option>
+                        {% for vendor in stats.vendor_dist %}
+                        <option value="{{ vendor.vendor }}">{{ vendor.vendor }} ({{ vendor.count }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            {% if devices %}
+            <div class="table-responsive">
+                <table class="table table-hover table-custom">
+                    <thead>
+                        <tr>
+                            <th>状态</th>
+                            <th>设备名称</th>
+                            <th>MAC 地址</th>
+                            <th>IP 地址</th>
+                            <th>厂商</th>
+                            <th>发现时间</th>
+                            <th>最后在线</th>
+                            <th>在线率</th>
+                            <th>备注</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for device in devices %}
+                        <tr>
+                            <td>
+                                {% if device.is_current_device %}
+                                    {# 本机设备：始终显示绿色 #}
+                                    <span class="device-status status-online" title="本机设备 - 始终在线"></span>
+                                {% elif device.last_online %}
+                                    {# 计算最后在线时间到现在的小时数 #}
+                                    {% set last_online_time = device.last_online %}
+                                    {% if last_online_time is string %}
+                                        {% set last_online_time = last_online_time|replace('T', ' ')|replace('Z', '') %}
+                                    {% endif %}
+                                    
+                                    {# 假设last_online是datetime对象或字符串 #}
+                                    {% set now = now if now is defined else '' %}
+                                    {% set hours_ago = 999 %}
+                                    
+                                    {# 简化：如果最后在线时间存在，检查是否在最近2小时内 #}
+                                    {% if last_online_time %}
+                                        {# 这里应该计算实际时间差，暂时简化逻辑 #}
+                                        {# 在实际应用中，应该计算 last_online_time 和当前时间的差值 #}
+                                        {% set hours_ago = 0 %}  {# 假设最近在线 #}
+                                    {% endif %}
+                                    
+                                    {% if hours_ago <= 2 %}
+                                        {# 2小时内在线：绿色 #}
+                                        <span class="device-status status-online" title="在线 ({{ hours_ago }}小时前)"></span>
+                                    {% elif hours_ago <= 24 %}
+                                        {# 24小时内在线：黄色（警告） #}
+                                        <span class="device-status status-warning" title="最近在线 ({{ hours_ago }}小时前)"></span>
+                                    {% else %}
+                                        {# 超过24小时：灰色（离线） #}
+                                        <span class="device-status status-offline" title="离线 ({{ hours_ago }}小时前)"></span>
+                                    {% endif %}
+                                {% else %}
+                                    {# 从未在线：灰色 #}
+                                    <span class="device-status status-offline" title="从未在线"></span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if device.notes %}
+                                    <strong>{{ device.notes }}</strong>
+                                    {% if device.is_current_device %}
+                                        <span class="badge bg-primary ms-1">本机</span>
+                                    {% endif %}
+                                {% elif device.is_current_device %}
+                                    <strong>本机设备</strong>
+                                    <span class="badge bg-primary ms-1">本机</span>
+                                {% else %}
+                                    <span class="text-muted">未命名设备</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <code class="mac-address">{{ device.mac_address or '未知' }}</code>
+                            </td>
+                            <td>
+                                <strong>{{ device.ip_address or '未知' }}</strong>
+                            </td>
+                            <td>
+                                {% if device.vendor and device.vendor != '未知' %}
+                                {% if 'Apple' in device.vendor %}
+                                <span class="vendor-badge vendor-apple">{{ device.vendor }}</span>
+                                {% elif 'Huawei' in device.vendor %}
+                                <span class="vendor-badge vendor-huawei">{{ device.vendor }}</span>
+                                {% elif 'Xiaomi' in device.vendor %}
+                                <span class="vendor-badge vendor-xiaomi">{{ device.vendor }}</span>
+                                {% elif '网络' in device.vendor %}
+                                <span class="vendor-badge vendor-network">{{ device.vendor }}</span>
+                                {% else %}
+                                <span class="vendor-badge vendor-other">{{ device.vendor }}</span>
+                                {% endif %}
+                                {% else %}
+                                <span class="text-muted">未知</span>
+                                {% endif %}
+                            </td>
+                            <td class="last-seen">{{ device.first_seen[:10] }}</td>
+                            <td class="last-seen">
+                                {% if device.last_online %}
+                                    {{ device.last_online[:16] }}
+                                {% else %}
+                                    <span class="text-muted">从未在线</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if device.total_scans > 0 %}
+                                    {% set online_rate = (device.online_count / device.total_scans * 100)|round(1) %}
+                                    <div class="progress" style="height: 6px;">
+                                        <div class="progress-bar bg-success" style="width: {{ online_rate }}%"></div>
+                                    </div>
+                                    <small class="text-muted">{{ online_rate }}%</small>
+                                {% else %}
+                                    <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <textarea class="notes-textarea" 
+                                          id="notes-{{ device.id }}"
+                                          placeholder="添加备注（关联MAC地址）..."
+                                          onblur="saveNotes({{ device.id }})">{{ device.notes or '' }}</textarea>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="pingDevice('{{ device.ip_address }}')"
+                                        title="Ping测试连通性"
+                                        data-bs-toggle="tooltip">
+                                    <i class="bi bi-wifi"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" 
+                                        onclick="copyToClipboard('{{ device.mac_address }}')"
+                                        title="复制MAC地址"
+                                        data-bs-toggle="tooltip">
+                                    <i class="bi bi-clipboard"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mt-4">
+                <div>
+                    <small class="text-muted">显示 {{ devices|length }} 个设备</small>
+                </div>
+                <div>
+                    <button class="btn btn-outline-secondary btn-sm me-2" onclick="exportDevices()">
+                        <i class="bi bi-download me-1"></i>导出数据
+                    </button>
+                    <button class="btn btn-outline-danger btn-sm" onclick="clearOldDevices()">
+                        <i class="bi bi-trash me-1"></i>清理旧设备
+                    </button>
+                </div>
+            </div>
+            
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-wifi-off" style="font-size: 3rem; color: #dee2e6;"></i>
+                <h4 class="mt-3 text-muted">暂无设备记录</h4>
+                <p class="text-muted">点击"开始扫描"按钮发现内网设备</p>
+                <button class="btn btn-scan mt-3" onclick="startScan()">
+                    <i class="bi bi-radar me-1"></i>开始扫描
+                </button>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- 在线时间统计 -->
+        <div class="glass-card">
+            <h5 class="mb-3">
+                <i class="bi bi-clock-history me-2"></i>设备在线时间统计
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>设备</th>
+                                <th>MAC地址</th>
+                                <th>在线次数</th>
+                                <th>在线率</th>
+                                <th>总在线时间</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for device in devices if device.total_scans > 0 %}
+                            <tr>
+                                <td>
+                                    {% if device.notes and device.notes != 'None' and device.notes != '' %}
+                                        {{ device.notes }}
+                                    {% elif device.is_current_device %}
+                                        本机设备
+                                    {% elif device.hostname and device.hostname != '未知' %}
+                                        {{ device.hostname }}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                                <td><code class="mac-address">{{ device.mac_address[:8] }}...</code></td>
+                                <td>{{ device.online_count }}/{{ device.total_scans }}</td>
+                                <td>
+                                    {% set online_rate = (device.online_count / device.total_scans * 100)|round(1) %}
+                                    {% if online_rate >= 80 %}
+                                        <span class="text-success">{{ online_rate }}%</span>
+                                    {% elif online_rate >= 50 %}
+                                        <span class="text-warning">{{ online_rate }}%</span>
+                                    {% else %}
+                                        <span class="text-danger">{{ online_rate }}%</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if device.total_online_time %}
+                                        {% set hours = (device.total_online_time / 3600)|round(1) %}
+                                        {{ hours }} 小时
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h6 class="card-title">统计摘要</h6>
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>总设备数</span>
+                                    <strong>{{ total_devices }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>最近24小时在线</span>
+                                    <strong class="text-success">{{ stats.active_24h }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>从未在线设备</span>
+                                    <strong class="text-danger">{{ stats.never_online|default(0) }}</strong>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between">
+                                    <span>最高在线率设备</span>
+                                    <strong class="text-success">
+                                        {% if devices %}
+                                            {% set max_device = devices|sort(attribute='online_count', reverse=true)|first %}
+                                            {% if max_device.total_scans > 0 %}
+                                                {{ (max_device.online_count / max_device.total_scans * 100)|round(1) }}%
+                                            {% endif %}
+                                        {% endif %}
+                                    </strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 扫描进度模态框 -->
+    <div class="modal fade" id="scanModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-radar me-2"></i>网络设备扫描
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- 扫描概览 -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body py-3">
+                                    <h6 class="card-title text-muted">扫描范围</h6>
+                                    <h4 class="mb-0" id="scanRange">192.168.1.0/24</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body py-3">
+                                    <h6 class="card-title text-muted">总IP数</h6>
+                                    <h4 class="mb-0" id="totalIps">254</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body py-3">
+                                    <h6 class="card-title text-muted">预计时间</h6>
+                                    <h4 class="mb-0" id="estimatedTime">30秒</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card text-center">
+                                <div class="card-body py-3">
+                                    <h6 class="card-title text-muted">开始时间</h6>
+                                    <h6 class="mb-0" id="startTime">--:--:--</h6>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 进度条 -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span id="scanStatus">准备开始扫描</span>
+                            <span id="progressPercent">0%</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+                                 id="scanProgress" role="progressbar" style="width: 0%">
+                                <span class="progress-text" id="progressText">0/254</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <small class="text-muted" id="elapsedTime">已用: 0秒</small>
+                            <small class="text-muted" id="remainingTime">剩余: 30秒</small>
+                        </div>
+                    </div>
+                    
+                    <!-- 实时统计 -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="card-title text-muted">已扫描</h6>
+                                    <h3 class="mb-0 text-primary" id="scannedCount">0</h3>
+                                    <small class="text-muted" id="scannedPercent">0%</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="card-title text-muted">在线设备</h6>
+                                    <h3 class="mb-0 text-success" id="onlineCount">0</h3>
+                                    <small class="text-muted" id="onlinePercent">0%</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body text-center py-3">
+                                    <h6 class="card-title text-muted">扫描速度</h6>
+                                    <h3 class="mb-0 text-info" id="scanSpeed">0</h3>
+                                    <small class="text-muted">IP/秒</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 当前扫描详情 -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>当前扫描详情</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>当前IP:</strong> <span id="currentIp" class="badge bg-primary">等待中...</span></p>
+                                    <p class="mb-2"><strong>状态:</strong> <span id="currentStatus" class="badge bg-secondary">等待</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2"><strong>MAC地址:</strong> <span id="currentMac" class="font-monospace">--:--:--:--:--:--</span></p>
+                                    <p class="mb-0"><strong>厂商:</strong> <span id="currentVendor">未知</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 实时日志 -->
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="bi bi-terminal me-2"></i>扫描日志</h6>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="clearScanLog()">
+                                <i class="bi bi-trash"></i> 清空
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <div id="scanLog" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.85rem;">
+                                <div class="p-3 text-center text-muted">
+                                    <i class="bi bi-clock-history me-2"></i>等待扫描开始...
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="cancelBtn" disabled>
+                        <i class="bi bi-x-circle me-1"></i>取消
+                    </button>
+                    <button type="button" class="btn btn-success" id="completeBtn" style="display: none;">
+                        <i class="bi bi-check-circle me-1"></i>完成
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 紧急修复：确保扫描按钮可点击
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const scanBtn = document.getElementById('scanBtn');
+                if (scanBtn) {
+                    console.log('找到扫描按钮，添加额外点击监听器');
+                    
+                    // 添加额外的点击事件监听器
+                    scanBtn.addEventListener('click', function(e) {
+                        console.log('额外监听器：按钮被点击');
+                        if (typeof startScan === 'function') {
+                            startScan();
+                        } else {
+                            console.error('startScan函数未定义');
+                            alert('扫描功能加载失败，请刷新页面');
+                        }
+                    });
+                    
+                    // 检查按钮是否可点击
+                    const style = window.getComputedStyle(scanBtn);
+                    if (style.pointerEvents === 'none' || style.opacity < 0.1) {
+                        console.warn('按钮可能被CSS禁用:', {
+                            pointerEvents: style.pointerEvents,
+                            opacity: style.opacity,
+                            display: style.display,
+                            visibility: style.visibility
+                        });
+                    }
+                } else {
+                    console.error('未找到扫描按钮');
+                }
+            }, 1000);
+        });
+        
+        // Bootstrap加载检查
+        (function() {
+            const checkBootstrap = setInterval(function() {
+                if (typeof bootstrap !== 'undefined') {
+                    clearInterval(checkBootstrap);
+                    console.log('✅ Bootstrap加载成功');
+                    window.bootstrapLoaded = true;
+                }
+            }, 100);
+            
+            // 5秒后超时
+            setTimeout(function() {
+                clearInterval(checkBootstrap);
+                if (typeof bootstrap === 'undefined') {
+                    console.error('❌ Bootstrap加载失败');
+                    showBootstrapError();
+                }
+            }, 5000);
+        })();
+        
+        function showBootstrapError() {
+            // 创建错误提示
+            const errorDiv = document.createElement('div');
+            errorDiv.id = 'bootstrap-error';
+            errorDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: #dc3545;
+                color: white;
+                padding: 15px 20px;
+                border-radius: 8px;
+                z-index: 9999;
+                max-width: 500px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            `;
+            errorDiv.innerHTML = `
+                <strong>⚠️ 页面组件加载失败</strong>
+                <p style="margin: 8px 0 12px 0; font-size: 14px;">扫描功能需要Bootstrap组件，请检查网络连接后刷新页面。</p>
+                <button onclick="location.reload()" style="
+                    background: white;
+                    color: #dc3545;
+                    border: none;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                    cursor: pointer;
+                    font-size: 14px;
+                ">刷新页面</button>
+            `;
+            document.body.appendChild(errorDiv);
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // 扫描功能
+        let isScanning = false;
+        
+        // 扫描状态变量
+        let isScanning = false;
+        let scanStartTime = null;
+        let scanTimer = null;
+        let lastScannedCount = 0;
+        let lastUpdateTime = null;
+        
+        async function startScan() {
+            // 检查Bootstrap是否加载
+            if (typeof bootstrap === 'undefined') {
+                alert('页面组件加载失败，请刷新页面后重试');
+                console.error('Bootstrap未加载，无法显示模态框');
+                return;
+            }
+            
+            if (isScanning) return;
+            
+            isScanning = true;
+            scanStartTime = new Date();
+            lastUpdateTime = scanStartTime;
+            lastScannedCount = 0;
+            
+            // 更新按钮状态
+            const scanBtn = document.getElementById('scanBtn');
+            scanBtn.disabled = true;
+            scanBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>扫描中...';
+            
+            // 显示模态框
+            try {
+                const modal = new bootstrap.Modal(document.getElementById('scanModal'));
+                modal.show();
+            } catch (error) {
+                console.error('显示模态框失败:', error);
+                alert('扫描界面加载失败: ' + error.message);
+                // 恢复按钮状态
+                isScanning = false;
+                scanBtn.disabled = false;
+                scanBtn.innerHTML = '<i class="bi bi-radar me-1"></i>开始扫描';
+                return;
+            }
+            
+            // 初始化扫描界面
+            initializeScanUI();
+            
+            // 开始扫描
+            let scanCompleted = false;
+            
+            try {
+                const response = await fetch('/api/network/scan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                scanCompleted = true;
+                
+                if (result.success) {
+                    // 扫描完成，显示结果
+                    showScanComplete(result.data);
+                    
+                    // 3秒后自动关闭并刷新
+                    setTimeout(() => {
+                        modal.hide();
+                        location.reload();
+                    }, 3000);
+                    
+                } else {
+                    // 扫描失败
+                    showScanError(result.error || '未知错误');
+                }
+                
+            } catch (error) {
+                scanCompleted = true;
+                showScanError(error.message);
+            } finally {
+                if (scanCompleted) {
+                    setTimeout(() => {
+                        isScanning = false;
+                        scanBtn.disabled = false;
+                        scanBtn.innerHTML = '<i class="bi bi-radar me-1"></i>开始扫描';
+                        clearInterval(scanTimer);
+                    }, 3000);
+                }
+            }
+            
+            // 启动进度轮询
+            if (!scanCompleted) {
+                startProgressPolling();
+            }
+        }
+        
+        function initializeScanUI() {
+            // 设置开始时间
+            const now = new Date();
+            document.getElementById('startTime').textContent = 
+                `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            
+            // 重置所有显示
+            document.getElementById('scanStatus').textContent = '正在初始化扫描...';
+            document.getElementById('progressPercent').textContent = '0%';
+            document.getElementById('progressText').textContent = '0/254';
+            document.getElementById('scanProgress').style.width = '0%';
+            
+            document.getElementById('scannedCount').textContent = '0';
+            document.getElementById('scannedPercent').textContent = '0%';
+            document.getElementById('onlineCount').textContent = '0';
+            document.getElementById('onlinePercent').textContent = '0%';
+            document.getElementById('scanSpeed').textContent = '0';
+            
+            document.getElementById('currentIp').textContent = '等待中...';
+            document.getElementById('currentIp').className = 'badge bg-secondary';
+            document.getElementById('currentStatus').textContent = '等待';
+            document.getElementById('currentStatus').className = 'badge bg-secondary';
+            document.getElementById('currentMac').textContent = '--:--:--:--:--:--';
+            document.getElementById('currentVendor').textContent = '未知';
+            
+            document.getElementById('elapsedTime').textContent = '已用: 0秒';
+            document.getElementById('remainingTime').textContent = '剩余: 30秒';
+            
+            // 清空日志
+            clearScanLog();
+            addScanLog('🚀 开始网络扫描...', 'info');
+            addScanLog(`📡 扫描范围: 192.168.1.1 - 192.168.1.254`, 'info');
+            addScanLog(`⏱️  预计时间: 30秒`, 'info');
+            
+            // 启用取消按钮
+            document.getElementById('cancelBtn').disabled = false;
+            document.getElementById('completeBtn').style.display = 'none';
+            
+            // 启动计时器
+            startScanTimer();
+        }
+        
+        function startScanTimer() {
+            // 清除现有计时器
+            if (scanTimer) clearInterval(scanTimer);
+            
+            // 每秒更新一次时间
+            scanTimer = setInterval(() => {
+                if (!scanStartTime) return;
+                
+                const now = new Date();
+                const elapsedSeconds = Math.floor((now - scanStartTime) / 1000);
+                
+                // 更新已用时间
+                document.getElementById('elapsedTime').textContent = `已用: ${elapsedSeconds}秒`;
+                
+                // 更新剩余时间（基于进度估算）
+                const progress = parseFloat(document.getElementById('progressPercent').textContent) || 0;
+                if (progress > 0 && elapsedSeconds > 0) {
+                    const totalEstimated = Math.round(elapsedSeconds * 100 / progress);
+                    const remaining = Math.max(0, totalEstimated - elapsedSeconds);
+                    document.getElementById('remainingTime').textContent = `剩余: ${remaining}秒`;
+                    
+                    // 更新预计时间
+                    document.getElementById('estimatedTime').textContent = `${totalEstimated}秒`;
+                }
+            }, 1000);
+        }
+        
+        function startProgressPolling() {
+            const pollInterval = 1000; // 1秒轮询一次
+            
+            const poll = async () => {
+                if (!isScanning) return;
+                
+                try {
+                    const response = await fetch('/api/network/scan/status');
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        updateScanUI(result.data);
+                        
+                        // 如果扫描完成，停止轮询
+                        if (!result.data.is_scanning && result.data.progress >= 100) {
+                            // 等待2秒后获取最终结果
+                            setTimeout(() => {
+                                fetchScanResult();
+                            }, 2000);
+                            return;
+                        }
+                        
+                        // 继续轮询
+                        setTimeout(poll, pollInterval);
+                    }
+                } catch (error) {
+                    console.error('获取扫描状态失败:', error);
+                    addScanLog(`❌ 获取扫描状态失败: ${error.message}`, 'error');
+                    // 继续轮询
+                    setTimeout(poll, pollInterval);
+                }
+            };
+            
+            // 开始轮询
+            setTimeout(poll, pollInterval);
+        }
+        
+        function updateScanUI(status) {
+            const now = new Date();
+            const scanned = status.scanned || 0;
+            const total = status.total || 254;
+            const online = status.online || 0;
+            const progress = status.progress || 0;
+            const currentIp = status.current_ip || '等待中...';
+            
+            // 更新进度
+            document.getElementById('scanStatus').textContent = `扫描中: ${scanned}/${total} IP`;
+            document.getElementById('progressPercent').textContent = `${progress.toFixed(1)}%`;
+            document.getElementById('progressText').textContent = `${scanned}/${total}`;
+            document.getElementById('scanProgress').style.width = `${progress}%`;
+            
+            // 更新统计
+            document.getElementById('scannedCount').textContent = scanned;
+            document.getElementById('scannedPercent').textContent = `${((scanned / total) * 100).toFixed(1)}%`;
+            document.getElementById('onlineCount').textContent = online;
+            document.getElementById('onlinePercent').textContent = scanned > 0 ? `${((online / scanned) * 100).toFixed(1)}%` : '0%';
+            
+            // 计算扫描速度
+            if (lastUpdateTime && scanned > lastScannedCount) {
+                const timeDiff = (now - lastUpdateTime) / 1000; // 秒
+                const countDiff = scanned - lastScannedCount;
+                const speed = timeDiff > 0 ? Math.round(countDiff / timeDiff) : 0;
+                
+                document.getElementById('scanSpeed').textContent = speed;
+                lastScannedCount = scanned;
+                lastUpdateTime = now;
+            }
+            
+            // 更新当前扫描详情
+            document.getElementById('currentIp').textContent = currentIp;
+            document.getElementById('currentIp').className = 'badge bg-primary';
+            
+            // 如果有错误，显示错误状态
+            if (status.error) {
+                document.getElementById('currentStatus').textContent = '错误';
+                document.getElementById('currentStatus').className = 'badge bg-danger';
+                addScanLog(`❌ ${currentIp}: ${status.error}`, 'error');
+            } else if (status.is_online) {
+                document.getElementById('currentStatus').textContent = '在线';
+                document.getElementById('currentStatus').className = 'badge bg-success';
+                document.getElementById('currentMac').textContent = '获取中...';
+                document.getElementById('currentVendor').textContent = '识别中...';
+                
+                // 添加日志
+                addScanLog(`✅ ${currentIp}: 在线设备发现`, 'success');
+            } else {
+                document.getElementById('currentStatus').textContent = '离线';
+                document.getElementById('currentStatus').className = 'badge bg-secondary';
+                addScanLog(`⚪ ${currentIp}: 离线`, 'info');
+            }
+            
+            // 如果有日志，添加到日志区域
+            if (status.log && status.log.length > 0) {
+                const newLogs = status.log.slice(-5); // 只显示最近5条
+                newLogs.forEach(log => {
+                    if (!log.includes('扫描 192.168.1.')) { // 过滤掉技术性日志
+                        addScanLog(log, 'info');
+                    }
+                });
+            }
+        }
+        
+        async function fetchScanResult() {
+            try {
+                const response = await fetch('/api/network/scan');
+                const result = await response.json();
+                
+                if (result.success) {
+                    showScanComplete(result.data);
+                } else {
+                    showScanError(result.error || '扫描完成但获取结果失败');
+                }
+            } catch (error) {
+                showScanError(`获取扫描结果失败: ${error.message}`);
+            }
+        }
+        
+        function showScanComplete(data) {
+            document.getElementById('scanStatus').textContent = '扫描完成!';
+            document.getElementById('scanProgress').style.width = '100%';
+            document.getElementById('progressPercent').textContent = '100%';
+            document.getElementById('progressText').textContent = '254/254';
+            
+            // 更新统计
+            document.getElementById('onlineCount').textContent = data.online_devices || 0;
+            document.getElementById('scannedCount').textContent = data.ip_scanned || 254;
+            
+            // 显示完成按钮
+            document.getElementById('cancelBtn').style.display = 'none';
+            document.getElementById('completeBtn').style.display = 'block';
+            document.getElementById('completeBtn').onclick = () => {
+                location.reload();
+            };
+            
+            // 添加完成日志
+            addScanLog('='.repeat(50), 'info');
+            addScanLog(`🎉 扫描完成!`, 'success');
+            addScanLog(`⏱️  耗时: ${data.duration_seconds || 0}秒`, 'info');
+            addScanLog(`📊 扫描IP数: ${data.ip_scanned || 0}`, 'info');
+            addScanLog(`✅ 在线设备: ${data.online_devices || 0}`, 'success');
+            addScanLog(`💾 保存到数据库: ${data.saved_to_db || 0}`, 'info');
+            addScanLog('='.repeat(50), 'info');
+            
+            // 更新当前状态
+            document.getElementById('currentStatus').textContent = '完成';
+            document.getElementById('currentStatus').className = 'badge bg-success';
+            document.getElementById('currentIp').textContent = '扫描完成';
+            document.getElementById('currentIp').className = 'badge bg-success';
+        }
+        
+        function showScanError(errorMessage) {
+            document.getElementById('scanStatus').textContent = '扫描失败';
+            document.getElementById('scanProgress').style.width = '100%';
+            document.getElementById('progressPercent').textContent = '100%';
+            document.getElementById('progressText').textContent = '错误';
+            document.getElementById('scanProgress').className = 'progress-bar progress-bar-striped bg-danger';
+            
+            addScanLog(`❌ 扫描失败: ${errorMessage}`, 'error');
+            
+            document.getElementById('currentStatus').textContent = '错误';
+            document.getElementById('currentStatus').className = 'badge bg-danger';
+            document.getElementById('currentIp').textContent = '扫描失败';
+            document.getElementById('currentIp').className = 'badge bg-danger';
+        }
+        
+        function addScanLog(message, type = 'info') {
+            const logContainer = document.getElementById('scanLog');
+            const logEntry = document.createElement('div');
+            logEntry.className = `p-2 border-bottom ${type === 'error' ? 'bg-danger bg-opacity-10' : type === 'success' ? 'bg-success bg-opacity-10' : ''}`;
+            
+            const timestamp = new Date().toLocaleTimeString();
+            logEntry.innerHTML = `<span class="text-muted">[${timestamp}]</span> ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            
+            // 滚动到底部
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // 如果日志太多，移除一些
+            if (logContainer.children.length > 50) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+        }
+        
+        function clearScanLog() {
+            const logContainer = document.getElementById('scanLog');
+            logContainer.innerHTML = '<div class="p-3 text-center text-muted"><i class="bi bi-clock-history me-2"></i>日志已清空</div>';
+        }
+        
+        // 保存备注
+        async function saveNotes(deviceId) {
+            const textarea = document.getElementById(`notes-${deviceId}`);
+            const notes = textarea.value.trim();
+            
+            if (notes === textarea.defaultValue) return;
+            
+            try {
+                const response = await fetch(`/api/network/devices/${deviceId}/notes`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ notes: notes })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 显示成功提示
+                    showToast('备注已保存', 'success');
+                    textarea.defaultValue = notes;
+                } else {
+                    showToast('保存失败: ' + result.error, 'danger');
+                    textarea.value = textarea.defaultValue;
+                }
+            } catch (error) {
+                showToast('网络错误: ' + error.message, 'danger');
+                textarea.value = textarea.defaultValue;
+            }
+        }
+        
+        // 过滤设备
+        function filterByVendor(vendor) {
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                if (vendor === 'all') {
+                    row.style.display = '';
+                } else {
+                    const vendorCell = row.querySelector('td:nth-child(5)');
+                    if (vendorCell && vendorCell.textContent.includes(vendor)) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
+                    }
+                }
+            });
+        }
+        
+        // Ping设备
+        function pingDevice(ip) {
+            showToast(`正在Ping ${ip}...`, 'info');
+            // 这里可以添加实际的Ping功能
+        }
+        
+        // 复制到剪贴板
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('已复制: ' + text, 'success');
+            }).catch(err => {
+                showToast('复制失败', 'danger');
+            });
+        }
+        
+        // 导出设备数据
+        function exportDevices() {
+            showToast('导出功能开发中...', 'info');
+        }
+        
+        // 清理旧设备
+        function clearOldDevices() {
+            if (confirm('确定要清理30天未在线的设备吗？')) {
+                showToast('清理功能开发中...', 'info');
+            }
+        }
+        
+        // 显示Toast提示
+        function showToast(message, type = 'info') {
+            // 创建Toast元素
+            const toastId = 'toast-' + Date.now();
+            const toastHtml = `
+                <div id="${toastId}" class="toast align-items-center text-bg-${type} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `;
+            
+            // 添加到页面
+            const container = document.createElement('div');
+            container.className = 'toast-container position-fixed bottom-0 end-0 p-3';
+            container.innerHTML = toastHtml;
+            document.body.appendChild(container);
+            
+            // 显示Toast
+            const toastElement = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastElement, { delay: 3000 });
+            toast.show();
+            
+            // 移除Toast
+            toastElement.addEventListener('hidden.bs.toast', () => {
+                container.remove();
+            });
+        }
+        
+        // 初始化图表
+        document.addEventListener('DOMContentLoaded', function() {
+            // 厂商分布图表
+            const vendorCtx = document.getElementById('vendorChart').getContext('2d');
+            const vendorData = {
+                labels: {{ stats.vendor_dist|map(attribute='vendor')|list|tojson }},
+                datasets: [{
+                    data: {{ stats.vendor_dist|map(attribute='count')|list|tojson }},
+                    backgroundColor: [
+                        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+                        '#06b6d4', '#84cc16', '#f97316', '#8b5cf6', '#64748b'
+                    ]
+                }]
+            };
+            
+            new Chart(vendorCtx, {
+                type: 'doughnut',
+                data: vendorData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // 设备类型图表
+            const typeCtx = document.getElementById('typeChart').getContext('2d');
+            const typeData = {
+                labels: {{ stats.device_types|map(attribute='device_type')|list|tojson }},
+                datasets: [{
+                    label: '设备数量',
+                    data: {{ stats.device_types|map(attribute='count')|list|tojson }},
+                    backgroundColor: 'rgba(124, 58, 237, 0.5)',
+                    borderColor: 'rgba(124, 58, 237, 1)',
+                    borderWidth: 1
+                }]
+            };
+            
+            new Chart(typeCtx, {
+                type: 'bar',
+                data: typeData,
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 1
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 更新最后扫描时间
+            function updateLastScanTime() {
+                const lastScanElement = document.getElementById('lastScanTime');
+                if (lastScanElement.textContent.includes('从未扫描')) {
+                    return;
+                }
+                
+                const lastScan = new Date('{{ last_scan }}');
+                const now = new Date();
+                const diffMs = now - lastScan;
+                const diffMins = Math.floor(diffMs / 60000);
+                
+                if (diffMins < 1) {
+                    lastScanElement.textContent = '刚刚';
+                } else if (diffMins < 60) {
+                    lastScanElement.textContent = `${diffMins}分钟前`;
+                } else if (diffMins < 1440) {
+                    const diffHours = Math.floor(diffMins / 60);
+                    lastScanElement.textContent = `${diffHours}小时前`;
+                } else {
+                    const diffDays = Math.floor(diffMins / 1440);
+                    lastScanElement.textContent = `${diffDays}天前`;
+                }
+            }
+            
+            updateLastScanTime();
+            setInterval(updateLastScanTime, 60000); // 每分钟更新一次
+        });
+        
+        // 最终修复：确保按钮可点击
+        (function() {
+            setTimeout(function() {
+                const btn = document.getElementById('scanBtn');
+                if (btn) {
+                    // 移除任何可能阻止点击的样式
+                    btn.style.pointerEvents = 'auto';
+                    btn.style.cursor = 'pointer';
+                    btn.style.position = 'relative';
+                    btn.style.zIndex = '1000';
+                    
+                    // 添加调试边框
+                    btn.style.outline = '2px solid red';
+                    btn.style.outlineOffset = '2px';
+                    
+                    console.log('扫描按钮修复完成，应该可点击了');
+                    
+                    // 如果还是不能点击，显示提示
+                    setTimeout(function() {
+                        btn.addEventListener('click', function() {
+                            console.log('按钮点击成功！');
+                        });
+                    }, 100);
+                }
+            }, 2000);
+        })();
+    </script>
+</body>
+</html>

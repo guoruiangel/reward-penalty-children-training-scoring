@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>简单测试</title>
+</head>
+<body>
+    <h1>简单测试</h1>
+    <div id="result"></div>
+    
+    <script>
+        async function test() {
+            const result = document.getElementById('result');
+            
+            try {
+                const response = await fetch('/api/openclaw/cron/tasks');
+                const data = await response.json();
+                
+                const networkTask = data.tasks.find(t => t.name === '网络设备扫描');
+                if (networkTask) {
+                    result.innerHTML = `
+                        <h2>网络设备扫描任务</h2>
+                        <p>nextRun值: "${networkTask.nextRun}"</p>
+                        <p>nextRun类型: ${typeof networkTask.nextRun}</p>
+                        <p>nextRun是否为空: ${networkTask.nextRun === null || networkTask.nextRun === undefined || networkTask.nextRun === ''}</p>
+                        <p>nextRun长度: ${networkTask.nextRun ? networkTask.nextRun.length : 0}</p>
+                    `;
+                }
+            } catch (error) {
+                result.innerHTML = `<p>错误: ${error.message}</p>`;
+            }
+        }
+        
+        test();
+    </script>
+</body>
+</html>

@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日报系统 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --secondary-color: #a855f7;
+            --success-color: #10b981;
+            --info-color: #3b82f6;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+        }
+        
+        .news-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid #e5e7eb;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .news-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+        
+        .improvement-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid var(--primary-color);
+            margin-bottom: 20px;
+        }
+        
+        .score-badge {
+            font-size: 1.2rem;
+            padding: 8px 16px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+        
+        .score-positive {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .score-negative {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .improvement-section {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        
+        .improvement-item {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid var(--info-color);
+        }
+        
+        .improvement-icon {
+            font-size: 1.2rem;
+            margin-right: 10px;
+            color: var(--info-color);
+        }
+        
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .date-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- 头部 -->
+        <div class="glass-card header-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="bi bi-newspaper me-3"></i>日报系统
+                    </h1>
+                    <p class="mb-0 opacity-90">新闻摘要、股票信息、改进报告每日沉淀</p>
+                </div>
+                <div>
+                    <a href="/" class="btn btn-light">
+                        <i class="bi bi-house me-2"></i>返回主页
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 控制面板 -->
+        <div class="glass-card">
+            <h4 class="mb-4">
+                <i class="bi bi-sliders me-2"></i>筛选控制
+            </h4>
+            <div class="filter-controls">
+                <div class="date-selector">
+                    <label class="form-label mb-0">日期：</label>
+                    <input type="date" id="dateFilter" class="form-control" style="width: 180px;">
+                    <button id="todayBtn" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar-day me-1"></i>今天
+                    </button>
+                </div>
+                
+                <div>
+                    <label class="form-label mb-0">内容类型：</label>
+                    <select id="contentType" class="form-select" style="width: 200px;">
+                        <option value="all">全部内容</option>
+                        <option value="news">仅新闻</option>
+                        <option value="stocks">仅股票</option>
+                        <option value="improvements">仅改进报告</option>
+                    </select>
+                </div>
+                
+                <div class="d-flex align-items-end">
+                    <button id="refreshBtn" class="btn btn-primary">
+                        <i class="bi bi-arrow-clockwise me-1"></i>刷新数据
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 数据展示区域 -->
+        <div id="dataContainer">
+            <div class="loading-spinner">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div>
+                <p class="mt-3">正在加载日报数据...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 全局数据
+        let dailyData = {
+            news: [],
+            stocks: [],
+            weather: null,
+            improvements: [],
+            date: new Date().toISOString().split('T')[0]
+        };
+        
+        // DOM元素
+        const dateFilter = document.getElementById('dateFilter');
+        const contentType = document.getElementById('contentType');
+        const todayBtn = document.getElementById('todayBtn');
+        const refreshBtn = document.getElementById('refreshBtn');
+        const dataContainer = document.getElementById('dataContainer');
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置今天日期
+            const today = new Date().toISOString().split('T')[0];
+            dateFilter.value = today;
+            
+            // 加载数据
+            loadDailyData(today);
+            
+            // 事件监听
+            dateFilter.addEventListener('change', function() {
+                loadDailyData(this.value);
+            });
+            
+            todayBtn.addEventListener('click', function() {
+                dateFilter.value = today;
+                loadDailyData(today);
+            });
+            
+            contentType.addEventListener('change', renderData);
+            
+            refreshBtn.addEventListener('click', function() {
+                loadDailyData(dateFilter.value);
+            });
+        });
+        
+        // 加载日报数据
+        async function loadDailyData(date) {
+            showLoading();
+            
+            try {
+                // 调用后端API获取数据
+                const response = await fetch(`/api/daily/${date}`);
+                const result = await response.json();
+                
+                if (result.status === 'success') {
+                    dailyData = {
+                        news: result.news || [],
+                        stocks: result.stocks || [],
+                        weather: result.weather || null,
+                        improvements: result.improvements || [],
+                        date: date
+                    };
+                    
+                    // 如果没有数据，显示空状态
+                    if (dailyData.news.length === 0 && dailyData.stocks.length === 0 && 
+                        !dailyData.weather && dailyData.improvements.length === 0) {
+                        showEmptyState(date);
+                    } else {
+                        renderData();
+                    }
+                } else {
+                    throw new Error(result.message || 'API返回错误');
+                }
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                showError('加载数据失败: ' + error.message);
+            }
+        }
+        
+        // 渲染数据
+        function renderData() {
+            const selectedType = contentType.value;
+            
+            let filteredNews = dailyData.news;
+            let filteredStocks = dailyData.stocks;
+            let filteredImprovements = dailyData.improvements;
+            let showWeather = dailyData.weather;
+            
+            // 按类型筛选
+            if (selectedType === 'news') {
+                filteredStocks = [];
+                filteredImprovements = [];
+                showWeather = null;
+            } else if (selectedType === 'stocks') {
+                filteredNews = [];
+                filteredImprovements = [];
+                showWeather = null;
+            } else if (selectedType === 'improvements') {
+                filteredNews = [];
+                filteredStocks = [];
+                showWeather = null;
+            }
+            
+            // 生成HTML
+            let html = '';
+            
+            // 天气部分（放在最上面）
+            if (showWeather && selectedType !== 'stocks' && selectedType !== 'improvements') {
+                html += weatherSection(showWeather);
+            }
+            
+            // 改进报告部分（折叠式）
+            if (filteredImprovements.length > 0) {
+                filteredImprovements.forEach((improvement, index) => {
+                    const scoreClass = improvement.score_change >= 0 ? 'score-positive' : 'score-negative';
+                    const scoreSign = improvement.score_change >= 0 ? '+' : '';
+                    const collapseId = `improvementCollapse${index}`;
+                    
+                    html += `
+                        <div class="glass-card">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h4 class="mb-2">
+                                        <i class="bi bi-clipboard-check me-2"></i>${improvement.title}
+                                    </h4>
+                                    <p class="text-muted mb-0">${improvement.summary || ''}</p>
+                                </div>
+                                <div class="text-end">
+                                    <div class="score-badge ${scoreClass}">
+                                        ${scoreSign}${improvement.score_change}分
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 折叠按钮 -->
+                            <div class="text-center mt-3">
+                                <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#${collapseId}" aria-expanded="false" aria-controls="${collapseId}">
+                                    <i class="bi bi-chevron-down me-1"></i>查看详细报告
+                                </button>
+                            </div>
+                            
+                            <!-- 折叠内容 -->
+                            <div class="collapse mt-3" id="${collapseId}">
+                                <div class="improvement-section">
+                                    ${formatImprovementContent(improvement.content)}
+                                </div>
+                                
+                                <div class="text-muted small mt-3">
+                                    <i class="bi bi-calendar me-1"></i>报告日期: ${dailyData.date}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            // 新闻部分
+            if (filteredNews.length > 0) {
+                html += `
+                    <div class="glass-card">
+                        <h4 class="mb-4">
+                            <i class="bi bi-newspaper me-2"></i>新闻摘要
+                            <span class="badge bg-primary ms-2">${filteredNews.length}条</span>
+                        </h4>
+                        <div class="news-grid">
+                `;
+                
+                filteredNews.forEach(news => {
+                    html += `
+                        <div class="news-card">
+                            <div class="news-source">
+                                <span class="badge bg-secondary">${news.source_name || news.source}</span>
+                                <span class="ms-2">${news.category || '未分类'}</span>
+                                <span class="ms-2">${formatTime(news.published_at)}</span>
+                            </div>
+                            <div class="news-title">${news.title}</div>
+                            <div class="news-summary">${news.summary || '无摘要'}</div>
+                            <div class="news-meta">
+                                <span>${formatDate(news.published_at)}</span>
+                                ${news.url && news.url !== '#' && !news.url.includes('example.com') ? 
+                                    `<a href="${news.url}" class="btn btn-sm btn-outline-primary" target="_blank">查看详情</a>` : 
+                                    '<span class="text-muted small">无链接</span>'}
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 股票部分
+            if (filteredStocks.length > 0) {
+                html += `
+                    <div class="glass-card">
+                        <h4 class="mb-4">
+                            <i class="bi bi-graph-up me-2"></i>股票信息
+                            <span class="badge bg-primary ms-2">${filteredStocks.length}只</span>
+                        </h4>
+                        <div class="row">
+                `;
+                
+                filteredStocks.forEach(stock => {
+                    const changeClass = stock.change >= 0 ? 'change-up' : 'change-down';
+                    const changeSign = stock.change >= 0 ? '+' : '';
+                    
+                    html += `
+                        <div class="col-md-4 mb-3">
+                            <div class="news-card">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <div class="h5 mb-1">${stock.symbol}</div>
+                                        <div class="text-muted small">${stock.name}</div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="h4">$${stock.price.toFixed(2)}</div>
+                                        <div class="badge ${changeClass}">
+                                            ${changeSign}${stock.change.toFixed(2)} (${changeSign}${stock.change_percent.toFixed(2)}%)
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="small text-muted mb-2">
+                                    <div>成交量: ${stock.volume}</div>
+                                    <div>市值: ${stock.market_cap}</div>
+                                </div>
+                                <div class="border-top pt-2">
+                                    <div class="small"><strong>分析:</strong> ${stock.analysis || '无分析'}</div>
+                                    <div class="text-muted extra-small mt-1">更新: ${formatTime(stock.last_updated)}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 天气部分已移到最上面
+            
+            // 空状态
+            if (filteredNews.length === 0 && filteredStocks.length === 0 && 
+                !showWeather && filteredImprovements.length === 0) {
+                html = `
+                    <div class="glass-card">
+                        <div class="empty-state">
+                            <i class="bi bi-inbox"></i>
+                            <h4 class="mt-3">暂无数据</h4>
+                            <p class="text-muted">选择其他日期或内容类型试试</p>
+                            <button id="todayBtn2" class="btn btn-primary mt-2">
+                                <i class="bi bi-calendar-day me-1"></i>查看今天的数据
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            dataContainer.innerHTML = html;
+            
+            // 重新绑定今天按钮事件
+            const todayBtn2 = document.getElementById('todayBtn2');
+            if (todayBtn2) {
+                todayBtn2.addEventListener('click', function() {
+                    const today = new Date().toISOString().split('T')[0];
+                    dateFilter.value = today;
+                    loadDailyData(today);
+                });
+            }
+        }
+        
+        // 天气部分HTML生成
+        function weatherSection(weather) {
+            const isHoliday = weather.is_holiday;
+            const holidayClass = isHoliday ? 'score-positive' : 'score-negative';
+            const holidayText = isHoliday ? '节假日' : '工作日';
+            
+            let forecastHtml = '';
+            if (weather.forecast && typeof weather.forecast === 'object') {
+                const forecasts = [
+                    weather.forecast.today,
+                    weather.forecast.tomorrow,
+                    weather.forecast.day2,
+                    weather.forecast.day3
+                ].filter(f => f);
+                
+                forecasts.forEach((forecast, index) => {
+                    const dayName = index === 0 ? '今天' : index === 1 ? '明天' : `第${index+1}天`;
+                    forecastHtml += `
+                        <div class="col-md-3 mb-3">
+                            <div style="background: white; border-radius: 8px; padding: 15px; text-align: center; border: 1px solid #e5e7eb;">
+                                <div class="small text-muted mb-1">${dayName}</div>
+                                <div class="h5 mb-1">${forecast.high}°/${forecast.low}°</div>
+                                <div class="small mb-2">${forecast.condition}</div>
+                                <div style="font-size: 0.75rem; color: #6b7280;">
+                                    <div>${forecast.wind}</div>
+                                    <div>湿度 ${forecast.humidity}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            return `
+                <div class="glass-card" style="border-left: 5px solid #3b82f6;">
+                    <div class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                            <h3 class="mb-2">
+                                <i class="bi bi-cloud-sun-fill me-2"></i>天气信息
+                            </h3>
+                        </div>
+                        <div class="score-badge ${holidayClass}">
+                            ${holidayText}
+                        </div>
+                    </div>
+                    
+                    <!-- 当日天气 -->
+                    <div class="row align-items-center mb-4">
+                        <div class="col-md-4 text-center">
+                            <div class="display-3 fw-bold">${weather.temperature}°C</div>
+                            <div class="h5 mb-2">${weather.condition}</div>
+                            <div class="text-muted small">体感 ${weather.feels_like || weather.temperature}°C</div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <div class="text-muted small">湿度</div>
+                                        <div class="h5">${weather.humidity}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="text-muted small">风速</div>
+                                        <div class="h5">${weather.wind_speed}</div>
+                                        <div class="small text-muted">${weather.wind_direction || ''}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="mb-3">
+                                        <div class="text-muted small">位置</div>
+                                        <div class="h5">${weather.location}</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="text-muted small">更新时间</div>
+                                        <div class="h5">${formatTime(weather.updated_at)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 阴历和备忘 -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="alert alert-info mb-0">
+                                <i class="bi bi-moon-stars me-2"></i>
+                                <strong>阴历：</strong>${weather.lunar_date || '二零二六年二月十二'}
+                                <div class="small mt-1">${weather.lunar_month || '二月'} ${weather.lunar_day || '十二'}</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="alert alert-warning mb-0">
+                                <i class="bi bi-bell me-2"></i>
+                                <strong>备忘：</strong>${weather.memo || '记得带伞，夜间有小雨'}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 3天预报 -->
+                    <div>
+                        <h6 class="mb-3">
+                            <i class="bi bi-calendar3 me-2"></i>未来3天预报
+                        </h6>
+                        <div class="row">
+                            ${forecastHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 格式化改进报告内容
+        function formatImprovementContent(content) {
+            if (!content) return '<p class="text-muted">无内容</p>';
+            
+            // 简单的Markdown转换
+            let html = content
+                .replace(/^## (.*$)/gm, '<h5 class="mt-3 mb-2">$1</h5>')
+                .replace(/^### (.*$)/gm, '<h6 class="mt-2 mb-1">$1</h6>')
+                .replace(/^- (.*$)/gm, '<div class="improvement-item"><i class="bi bi-check-circle improvement-icon"></i><div>$1</div></div>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\n\n/g, '</div><div class="mt-2">')
+                .replace(/\n/g, '<br>');
+            
+            return `<div>${html}</div>`;
+        }
+        
+        // 显示空状态
+        function showEmptyState(date) {
+            const dateObj = new Date(date);
+            const formattedDate = dateObj.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                weekday: 'long'
+            });
+            
+            dataContainer.innerHTML = `
+                <div class="glass-card">
+                    <div class="empty-state">
+                        <i class="bi bi-calendar-x"></i>
+                        <h4 class="mt-3">${formattedDate} 暂无数据</h4>
+                        <p class="text-muted">定时任务将在以下时间自动收集数据：</p>
+                        <div class="mt-4">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>定时任务安排：</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>7:00 - 新闻摘要收集</li>
+                                    <li>9:00 - 股票信息更新</li>
+                                    <li>10:30 - 日报生成</li>
+                                    <li>20:00 - 改进报告生成</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <button id="todayBtn2" class="btn btn-primary mt-3">
+                            <i class="bi bi-calendar-day me-1"></i>查看今天的数据
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // 重新绑定今天按钮事件
+            const todayBtn2 = document.getElementById('todayBtn2');
+            if (todayBtn2) {
+                todayBtn2.addEventListener('click', function() {
+                    const today = new Date().toISOString().split('T')[0];
+                    dateFilter.value = today;
+                    loadDailyData(today);
+                });
+            }
+        }
+        
+        // 显示加载状态
+        function showLoading() {
+            dataContainer.innerHTML = `
+                <div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-3">正在加载日报数据...</p>
+                </div>
+            `;
+        }
+        
+        // 显示错误
+        function showError(message) {
+            dataContainer.innerHTML = `
+                <div class="glass-card">
+                    <div class="empty-state">
+                        <i class="bi bi-exclamation-triangle text-danger"></i>
+                        <h4 class="mt-3">加载失败</h4>
+                        <p class="text-muted">${message}</p>
+                        <button id="retryBtn" class="btn btn-primary mt-2">
+                            <i class="bi bi-arrow-clockwise me-1"></i>重试
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            const retryBtn = document.getElementById('retryBtn');
+            if (retryBtn) {
+                retryBtn.addEventListener('click', function() {
+                    loadDailyData(dateFilter.value);
+                });
+            }
+        }
+        
+        // 格式化日期
+        function formatDate(dateTimeStr) {
+            if (!dateTimeStr) return '';
+            const date = new Date(dateTimeStr);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+        }
+        
+        // 格式化时间
+        function formatTime(dateTimeStr) {
+            if (!dateTimeStr) return '';
+            const date = new Date(dateTimeStr);
+            return date.toLocaleTimeString('zh-CN', {
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

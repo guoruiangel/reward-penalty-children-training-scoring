@@ -1,0 +1,60 @@
+绿色'
+                    },
+                    description: '每天18:30自动扫描网络，更新设备在线状态',
+                    nextRun: '2026-03-28T18:30:00+08:00',
+                    lastRun: '2026-03-27T18:30:00+08:00',
+                    token_estimate: '1200',
+                    avg_token: '1250',
+                    total_token: '3750',
+                    execution_count: 3
+                },
+                {
+                    id: 'service_monitor',
+                    name: 'Pablo服务监控',
+                    enabled: true,
+                    schedule: {
+                        kind: 'every',
+                        everyMs: 300000
+                    },
+                    payload: {
+                        kind: 'agentTurn',
+                        message: '检查Pablo Web服务状态，运行健康检查，如有问题发送告警'
+                    },
+                    description: '每5分钟检查服务健康状态',
+                    nextRun: '2026-03-28T18:05:00+08:00',
+                    lastRun: '2026-03-28T18:00:00+08:00',
+                    token_estimate: '350',
+                    avg_token: '320',
+                    total_token: '9600',
+                    execution_count: 30
+                },
+                {
+                    id: 'daily_improvement_review',
+                    name: '每日改进回顾',
+                    enabled: true,
+                    schedule: {
+                        kind: 'cron',
+                        expr: '0 20 * * *',
+                        tz: 'Asia/Shanghai'
+                    },
+                    payload: {
+                        kind: 'agentTurn',
+                        message: '回顾今日评分情况，分析扣分原因，更新改进计划，总结学习收获'
+                    },
+                    description: '每日20:00回顾评分和改进进展',
+                    nextRun: '2026-03-28T20:00:00+08:00',
+                    lastRun: null,
+                    token_estimate: '800',
+                    avg_token: '0',
+                    total_token: '0',
+                    execution_count: 0
+                }
+            ];
+            
+            renderTasks(allTasks);
+            updateTaskFilterOptions();
+            updateStats();
+        }
+    </script>
+</body>
+</html>

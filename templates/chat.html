@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📋 Pablo · KK 对话记录</title>
+<style>
+:root {
+  --primary: #667eea;
+  --primary-dark: #5a6fd6;
+  --bg: #f0f2f5;
+  --sidebar-bg: #ffffff;
+  --text-dark: #1a1a2e;
+  --text-muted: #8e8ea0;
+  --border: #e8e8ee;
+  --active-bg: #eef0ff;
+  --bubble-pablo: var(--primary);
+  --bubble-kk: #ffffff;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 头部 */
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 14px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+.header a {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+.header a:hover { background: rgba(255,255,255,0.35); }
+.header h1 { font-size: 18px; font-weight: 600; }
+
+/* 主体：左导航 + 右内容 */
+.main {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* 左侧日期导航 */
+.sidebar {
+  width: 160px;
+  min-width: 160px;
+  background: var(--sidebar-bg);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.sidebar .title {
+  padding: 14px 12px 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.date-nav-item {
+  padding: 10px 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-left: 3px solid transparent;
+  transition: all 0.12s;
+  font-size: 14px;
+  color: var(--text-dark);
+}
+.date-nav-item:hover { background: #f5f5ff; }
+.date-nav-item.active {
+  background: var(--active-bg);
+  border-left-color: var(--primary);
+  font-weight: 600;
+  color: var(--primary);
+}
+.date-nav-item .count {
+  margin-left: auto;
+  font-size: 11px;
+  background: var(--bg);
+  padding: 2px 7px;
+  border-radius: 10px;
+  color: var(--text-muted);
+  min-width: 20px;
+  text-align: center;
+}
+.date-nav-item.active .count {
+  background: var(--primary);
+  color: white;
+}
+
+/* 右侧内容区 */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.content-header {
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: white;
+  flex-shrink: 0;
+}
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.message {
+  max-width: 80%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 15px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+.message.pablo {
+  align-self: flex-end;
+  background: var(--bubble-pablo);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.message.kk {
+  align-self: flex-start;
+  background: var(--bubble-kk);
+  color: var(--text-dark);
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.message .sender {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  opacity: 0.7;
+}
+.message .time {
+  font-size: 10px;
+  opacity: 0.5;
+  margin-top: 5px;
+  text-align: right;
+}
+.message.pablo .time { color: rgba(255,255,255,0.7); }
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #bbb;
+  font-size: 14px;
+  gap: 8px;
+}
+.empty-state .icon { font-size: 48px; }
+
+/* 发送消息区域 */
+.send-area {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  background: white;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.send-area textarea {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 14px;
+  resize: none;
+  outline: none;
+  font-family: inherit;
+  line-height: 1.4;
+  height: 42px;
+  max-height: 120px;
+  transition: height 0.15s;
+}
+.send-area textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(102,126,234,0.15);
+}
+.send-btn {
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.send-btn:hover { background: var(--primary-dark); }
+.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.send-btn.sending::after {
+  content: '';
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 640px) {
+  .sidebar { width: 120px; min-width: 120px; }
+  .message { max-width: 90%; font-size: 14px; }
+}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="/">‹</a>
+  <h1>📋 Pablo · KK 对话记录</h1>
+</div>
+
+<div class="main">
+  <div class="sidebar" id="sidebar">
+    <div class="title">📅 日期</div>
+  </div>
+  <div class="content">
+    <div class="content-header" id="contentHeader">选择左侧日期查看对话</div>
+    <div class="messages" id="messages">
+      <div class="empty-state" id="emptyState">
+        <div class="icon">💬</div>
+        <div>选择日期查看对话内容</div>
+      </div>
+    </div>
+    <!-- 发送消息区域 -->
+    <div class="send-area">
+      <textarea id="msgInput" placeholder="输入消息，按 Enter 发送..." rows="1" onkeydown="onInputKeydown(event)" oninput="autoResize(this)"></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">发送</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 工具 ──
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+function formatTime(ts) {
+  const d = new Date(ts);
+  return String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+function dateLabel(dStr) {
+  const d = new Date(dStr + 'T00:00:00');
+  const today = new Date();
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0');
+  const ty = today.getFullYear(), tm = String(today.getMonth()+1).padStart(2,'0'), td = String(today.getDate()).padStart(2,'0');
+  if (`${y}-${m}-${day}` === `${ty}-${tm}-${td}`) return '今天';
+  const yd = new Date(today); yd.setDate(yd.getDate()-1);
+  const yyd = yd.getFullYear(), yym = String(yd.getMonth()+1).padStart(2,'0'), ydd = String(yd.getDate()).padStart(2,'0');
+  if (`${y}-${m}-${day}` === `${yyd}-${yym}-${ydd}`) return '昨天';
+  const weekdays = ['日','一','二','三','四','五','六'];
+  return `${m}月${day}日 周${weekdays[d.getDay()]}`;
+}
+
+// ── 数据 ──
+let conversations = [];
+let grouped = {};   // date -> [{direction, sender, receiver, content, created_at, ...}]
+let dates = [];
+
+// ── 渲染左侧导航 ──
+function renderSidebar(selectedDate) {
+  const sidebar = document.getElementById('sidebar');
+  // 保留 title
+  sidebar.innerHTML = '<div class="title">📅 日期</div>';
+  for (const d of dates) {
+    const item = document.createElement('div');
+    item.className = 'date-nav-item' + (d === selectedDate ? ' active' : '');
+    item.dataset.date = d;
+    item.innerHTML = `${dateLabel(d)} <span class="count">${grouped[d].length}</span>`;
+    item.addEventListener('click', () => selectDate(d));
+    sidebar.appendChild(item);
+  }
+}
+
+// ── 选择日期 ──
+function selectDate(dateStr) {
+  // 更新高亮
+  document.querySelectorAll('.date-nav-item').forEach(el => el.classList.remove('active'));
+  const activeEl = document.querySelector(`.date-nav-item[data-date="${dateStr}"]`);
+  if (activeEl) activeEl.classList.add('active');
+
+  // 更新头部
+  document.getElementById('contentHeader').textContent = `📅 ${dateLabel(dateStr)} · ${grouped[dateStr].length} 条消息`;
+
+  // 渲染消息
+  const container = document.getElementById('messages');
+  container.innerHTML = '';
+  const msgs = grouped[dateStr];
+  if (!msgs || msgs.length === 0) {
+    container.innerHTML = '<div class="empty-state"><div class="icon">💬</div><div>当天没有对话</div></div>';
+    return;
+  }
+
+  // 按时间排序
+  msgs.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
+
+  for (const m of msgs) {
+    const sender = m.direction === 'pablo_to_kk' ? 'pablo' : 'kk';
+    const div = document.createElement('div');
+    div.className = 'message ' + sender;
+    div.innerHTML = '<div class="sender">' + (sender === 'pablo' ? '🔵 Pablo' : '🟢 KK') + '</div>'
+      + '<div class="content">' + escapeHtml(m.content) + '</div>'
+      + '<div class="time">' + formatTime(m.created_at) + '</div>';
+    container.appendChild(div);
+  }
+  container.scrollTop = container.scrollHeight;
+}
+
+// ── 加载数据 ──
+async function loadData() {
+  try {
+    const res = await fetch('/api/conversations');
+    const data = await res.json();
+    conversations = data.conversations || [];
+
+    // 按日期分组
+    grouped = {};
+    for (const c of conversations) {
+      const d = c.created_at.slice(0, 10);
+      if (!grouped[d]) grouped[d] = [];
+      grouped[d].push(c);
+    }
+    dates = Object.keys(grouped).sort().reverse();
+
+    renderSidebar(dates[0] || null);
+    if (dates.length > 0) selectDate(dates[0]);
+  } catch (e) {
+    document.getElementById('messages').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><div>加载失败: ' + e.message + '</div></div>';
+  }
+}
+
+// ── 发送消息 ──
+let _pendingEnglish = null;  // {content, timer}
+
+function autoResize(el) {
+  el.style.height = '42px';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function hasChinese(text) {
+  return /[\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]/.test(text);
+}
+
+function clearPending() {
+  if (_pendingEnglish) {
+    clearTimeout(_pendingEnglish.timer);
+    _pendingEnglish = null;
+    const btn = document.getElementById('sendBtn');
+    if (btn) btn.textContent = '发送';
+  }
+}
+
+function onInputKeydown(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const input = e.target;
+    const content = input.value.trim();
+    if (!content) return;
+
+    // 有中文 → 直接发
+    if (hasChinese(content)) {
+      sendMessage(content);
+      return;
+    }
+
+    // 纯英文 → 进入确认状态
+    const btn = document.getElementById('sendBtn');
+    if (!_pendingEnglish || _pendingEnglish.content !== content) {
+      // 第一次或内容变了 → 显示确认
+      clearPending();
+      _pendingEnglish = {
+        content,
+        timer: setTimeout(() => {
+          clearPending();
+        }, 3000)
+      };
+      btn.textContent = '再次回车发送';
+    } else {
+      // 内容未变，第二次回车 → 发送
+      sendMessage(content);
+      clearPending();
+    }
+  } else {
+    // 按了其他键，如果有待确认状态就清除
+    if (_pendingEnglish) {
+      clearPending();
+      const btn = document.getElementById('sendBtn');
+      if (btn) btn.textContent = '发送';
+    }
+  }
+}
+
+async function sendMessage(content) {
+  const input = document.getElementById('msgInput');
+  const btn = document.getElementById('sendBtn');
+  const text = content || input.value.trim();
+  if (!text) return;
+
+  // 清除待确认状态
+  clearPending();
+
+  btn.disabled = true;
+  btn.textContent = '发送中...';
+  try {
+    const res = await fetch('/api/kk/send', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({content: text})
+    });
+    const data = await res.json();
+    if (data.success) {
+      input.value = '';
+      input.style.height = '42px';
+      // 刷新消息列表
+      await loadData();
+    } else {
+      alert('发送失败: ' + (data.error || '未知错误'));
+    }
+  } catch (e) {
+    alert('发送失败: ' + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '发送';
+  }
+}
+
+loadData();
+</script>
+</body>
+</html>

@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token评分规则说明 - Pablo Web</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(124, 58, 237, 0.2);
+        }
+        
+        .alert-warning-custom {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-left: 5px solid #f59e0b;
+            color: #92400e;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+        
+        .rule-interpretation {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .interpretation-option {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .interpretation-option:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .option-selected {
+            border: 3px solid #7c3aed;
+            background: #f5f3ff;
+        }
+        
+        .option-1 {
+            background: #dbeafe;
+            border-left: 5px solid #3b82f6;
+        }
+        
+        .option-2 {
+            background: #d1fae5;
+            border-left: 5px solid #10b981;
+        }
+        
+        .option-3 {
+            background: #fef3c7;
+            border-left: 5px solid #f59e0b;
+        }
+        
+        .test-case {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #e2e8f0;
+        }
+        
+        .test-result {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+        
+        .result-positive {
+            color: #10b981;
+        }
+        
+        .result-negative {
+            color: #ef4444;
+        }
+        
+        .result-neutral {
+            color: #6b7280;
+        }
+        
+        .calculation-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .calculation-table th,
+        .calculation-table td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .calculation-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #475569;
+        }
+        
+        .today-highlight {
+            background: #f0f9ff;
+            border: 2px solid #3b82f6;
+        }
+        
+        .btn-test {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-test:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="mb-3">
+                <i class="bi bi-question-circle me-2"></i>Token评分规则说明
+            </h1>
+            <p class="mb-0">规则存在歧义，请选择正确的解释方式</p>
+        </div>
+        
+        <!-- 警告提示 -->
+        <div class="alert-warning-custom">
+            <h5>
+                <i class="bi bi-exclamation-triangle me-2"></i>规则歧义说明
+            </h5>
+            <p class="mb-0">
+                用户提供的规则文字存在逻辑重叠，需要明确计算方式。请选择以下解释方式之一：
+            </p>
+        </div>
+        
+        <!-- 用户原始规则 -->
+        <div class="rule-interpretation">
+            <h4 class="mb-3">
+                <i class="bi bi-file-text me-2"></i>用户原始规则
+            </h4>
+            <div class="code-block bg-dark text-light p-3 rounded mb-3">
+                - 日消耗 > 10M tokens: -10分<br>
+                - 日消耗 5-10M tokens: -5分<br>  
+                - 日消耗 2-5M tokens: -3分<br>
+                - 日消耗 1-2M tokens: -2分<br>
+                - 日消耗 0.8-1M tokens: -1分<br>
+                - 日消耗 小于0.8M tokens: -0分<br>  
+                - 日消耗 小于0.5M tokens: +1分<br>
+                - 日消耗 < 0.1M tokens: +3分<br>
+                - 日消耗 < 0.05M tokens: +5分<br>
+                - 日消耗 小于0.01M tokens：+10分
+            </div>
+            <p class="text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                问题：规则有重叠，例如0.03M tokens同时满足"小于0.8M"、"小于0.5M"、"<0.1M"、"<0.05M"、"小于0.01M"
+            </p>
+        </div>
+        
+        <!-- 解释选项 -->
+        <h3 class="mt-4 mb-3">
+            <i class="bi bi-gear me-2"></i>请选择规则解释方式
+        </h3>
+        
+        <div class="interpretation-option option-1" id="option1" onclick="selectOption(1)">
+            <h5>
+                <i class="bi bi-1-circle me-2"></i>选项1：互斥区间（当前实现）
+            </h5>
+            <p class="mb-2">
+                <strong>解释</strong>：每个条件独立，消耗量落在哪个区间就按哪个区间计分。
+            </p>
+            <p class="mb-2">
+                <strong>计算方式</strong>：0.03M tokens → 落在"<0.05M"区间 → +5分
+            </p>
+            <p class="mb-0">
+                <strong>区间划分</strong>：>10M, 5-10M, 2-5M, 1-2M, 0.8-1M, 0.5-0.8M, 0.1-0.5M, 0.05-0.1M, 0.01-0.05M, <0.01M
+            </p>
+        </div>
+        
+        <div class="interpretation-option option-2" id="option2" onclick="selectOption(2)">
+            <h5>
+                <i class="bi bi-2-circle me-2"></i>选项2：最高奖励原则
+            </h5>
+            <p class="mb-2">
+                <strong>解释</strong>：满足多个条件时，取最高奖励分数。
+            </p>
+            <p class="mb-2">
+                <strong>计算方式</strong>：0.03M tokens → 满足"<0.05M"(+5)和"<0.01M"(+10) → 取最高+10分
+            </p>
+            <p class="mb-0">
+                <strong>逻辑</strong>：先检查是否满足最高奖励条件，依次向下检查。
+            </p>
+        </div>
+        
+        <div class="interpretation-option option-3" id="option3" onclick="selectOption(3)">
+            <h5>
+                <i class="bi bi-3-circle me-2"></i>选项3：累积奖励原则
+            </h5>
+            <p class="mb-2">
+                <strong>解释</strong>：满足多个条件时，分数累加。
+            </p>
+            <p class="mb-2">
+                <strong>计算方式</strong>：0.03M tokens → 0分(小于0.8M) +1分(小于0.5M) +3分(<0.1M) +5分(<0.05M) +10分(<0.01M) = 19分
+            </p>
+            <p class="mb-0">
+                <strong>注意</strong>：这种方式可能导致分数异常高，可能不是用户本意。
+            </p>
+        </div>
+        
+        <!-- 测试案例 -->
+        <div class="rule-interpretation mt-4">
+            <h4 class="mb-3">
+                <i class="bi bi-calculator me-2"></i>测试案例
+            </h4>
+            
+            <div class="test-case today-highlight">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="mb-1">案例1：今天实际消耗</h6>
+                        <p class="mb-0 text-muted">43,600 tokens (0.0436M)</p>
+                    </div>
+                    <div>
+                        <span class="badge bg-primary">今日数据</span>
+                    </div>
+                </div>
+                <div class="test-result" id="testCase1">
+                    等待选择计算方式...
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <h6 class="mb-1">案例2：极低消耗</h6>
+                <p class="mb-2 text-muted">8,000 tokens (0.008M)</p>
+                <div class="test-result" id="testCase2">
+                    等待选择计算方式...
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <h6 class="mb-1">案例3：中等消耗</h6>
+                <p class="mb-2 text-muted">250,000 tokens (0.25M)</p>
+                <div class="test-result" id="testCase3">
+                    等待选择计算方式...
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <h6 class="mb-1">案例4：较高消耗</h6>
+                <p class="mb-2 text-muted">900,000 tokens (0.9M)</p>
+                <div class="test-result" id="testCase4">
+                    等待选择计算方式...
+                </div>
+            </div>
+            
+            <div class="test-case">
+                <h6 class="mb-1">案例5：严重超标</h6>
+                <p class="mb-2 text-muted">12,000,000 tokens (12M)</p>
+                <div class="test-result" id="testCase5">
+                    等待选择计算方式...
+                </div>
+            </div>
+        </div>
+        
+        <!-- 计算表格 -->
+        <div class="rule-interpretation mt-4">
+            <h4 class="mb-3">
+                <i class="bi bi-table me-2"></i>详细计算表格
+            </h4>
+            
+            <table class="calculation-table" id="calculationTable">
+                <thead>
+                    <tr>
+                        <th>消耗量 (M)</th>
+                        <th>选项1<br>互斥区间</th>
+                        <th>选项2<br>最高奖励</th>
+                        <th>选项3<br>累积奖励</th>
+                        <th>说明</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <!-- 动态生成 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 操作按钮 -->
+        <div class="text-center mt-4 mb-5">
+            <button class="btn btn-test me-3" onclick="applyOption(1)">
+                <i class="bi bi-check-circle me-1"></i>应用选项1
+            </button>
+            <button class="btn btn-test me-3" onclick="applyOption(2)">
+                <i class="bi bi-check-circle me-1"></i>应用选项2
+            </button>
+            <button class="btn btn-test" onclick="applyOption(3)">
+                <i class="bi bi-check-circle me-1"></i>应用选项3
+            </button>
+        </div>
+        
+        <div class="text-center text-muted mb-4">
+            <p>
+                <i class="bi bi-lightbulb me-1"></i>
+                建议选择<strong>选项2：最高奖励原则</strong>，这是最常见的评分系统设计。
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        let selectedOption = 1;
+        
+        // 测试数据
+        const testCases = [
+            { tokens: 43600, m: 0.0436, label: '今天实际消耗', isToday: true },
+            { tokens: 8000, m: 0.008, label: '极低消耗' },
+            { tokens: 250000, m: 0.25, label: '中等消耗' },
+            { tokens: 900000, m: 0.9, label: '较高消耗' },
+            { tokens: 12000000, m: 12, label: '严重超标' }
+        ];
+        
+        // 计算函数
+        function calculateScoreOption1(m) {
+            // 互斥区间
+            if (m > 10) return -10;
+            if (m >= 5) return -5;
+            if (m >= 2) return -3;
+            if (m >= 1) return -2;
+            if (m >= 0.8) return -1;
+            if (m >= 0.5) return 0;
+            if (m >= 0.1) return 1;
+            if (m >= 0.05) return 3;
+            if (m >= 0.01) return 5;
+            return 10;
+        }
+        
+        function calculateScoreOption2(m) {
+            // 最高奖励
+            if (m > 10) return -10;
+            if (m >= 5) return -5;
+            if (m >= 2) return -3;
+            if (m >= 1) return -2;
+            if (m >= 0.8) return -1;
+            if (m >= 0.5) return 0;
+            
+            // 奖励部分：取最高
+            if (m < 0.01) return 10;
+            if (m < 0.05) return 5;
+            if (m < 0.1) return 3;
+            if (m < 0.5) return 1;
+            return 0;
+        }
+        
+        function calculateScoreOption3(m) {
+            // 累积奖励
+            if (m > 10) return -10;
+            if (m >= 5) return -5;
+            if (m >= 2) return -3;
+            if (m >= 1) return -2;
+            if (m >= 0.8) return -1;
+            
+            let score = 0;
+            if (m < 0.8) score += 0;  // 小于0.8M: -0分（实际上是0分）
+            if (m < 0.5) score += 1;
+            if (m < 0.1) score += 3;
+            if (m < 0.05) score += 5;
+            if (m < 0.01) score += 10;
+            
+            return score;
+        }
+        
+        function getScoreReason(m, score) {
+            if (score === -10) return '日消耗 > 10M tokens';
+            if (score === -5) return '日消耗 5-10M tokens';
+            if (score === -3) return '日消耗 2-5M tokens';
+            if (score === -2) return            if (score === -1) return '日消耗 0.8-1M tokens';
+            if (score === 0) return '日消耗 0.5-0.8M tokens';
+            if (score === 1) return '日消耗 小于0.5M tokens';
+            if (score === 3) return '日消耗 < 0.1M tokens';
+            if (score === 5) return '日消耗 < 0.05M tokens';
+            if (score === 10) return '日消耗 < 0.01M tokens';
+            return '未知';
+        }
+        
+        // 选择选项
+        function selectOption(option) {
+            selectedOption = option;
+            
+            // 更新UI
+            document.getElementById('option1').classList.remove('option-selected');
+            document.getElementById('option2').classList.remove('option-selected');
+            document.getElementById('option3').classList.remove('option-selected');
+            document.getElementById('option' + option).classList.add('option-selected');
+            
+            // 更新测试案例
+            updateTestCases();
+            updateTable();
+        }
+        
+        // 更新测试案例
+        function updateTestCases() {
+            testCases.forEach((testCase, index) => {
+                const m = testCase.m;
+                let score;
+                
+                if (selectedOption === 1) {
+                    score = calculateScoreOption1(m);
+                } else if (selectedOption === 2) {
+                    score = calculateScoreOption2(m);
+                } else {
+                    score = calculateScoreOption3(m);
+                }
+                
+                const element = document.getElementById('testCase' + (index + 1));
+                const scoreClass = score > 0 ? 'result-positive' : score < 0 ? 'result-negative' : 'result-neutral';
+                const scoreText = score > 0 ? `+${score}` : score;
+                
+                element.innerHTML = `
+                    <span class="${scoreClass}">${scoreText}分</span> - ${getScoreReason(m, score)}
+                `;
+            });
+        }
+        
+        // 更新表格
+        function updateTable() {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = '';
+            
+            // 测试数据点
+            const testPoints = [
+                15, 8, 3.5, 1.5, 0.9, 0.6, 0.25, 0.08, 0.03, 0.005
+            ];
+            
+            testPoints.forEach(m => {
+                const score1 = calculateScoreOption1(m);
+                const score2 = calculateScoreOption2(m);
+                const score3 = calculateScoreOption3(m);
+                
+                const row = document.createElement('tr');
+                
+                // 高亮今天的数据
+                const isToday = Math.abs(m - 0.0436) < 0.001;
+                if (isToday) {
+                    row.classList.add('today-highlight');
+                }
+                
+                row.innerHTML = `
+                    <td>${m}M${isToday ? ' <span class="badge bg-primary">今天</span>' : ''}</td>
+                    <td>${score1 > 0 ? '+' : ''}${score1}</td>
+                    <td>${score2 > 0 ? '+' : ''}${score2}</td>
+                    <td>${score3 > 0 ? '+' : ''}${score3}</td>
+                    <td>${getScoreReason(m, selectedOption === 1 ? score1 : selectedOption === 2 ? score2 : score3)}</td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        }
+        
+        // 应用选项
+        function applyOption(option) {
+            selectedOption = option;
+            
+            // 更新数据库（这里应该调用API）
+            alert(`已选择选项${option}，正在更新系统...`);
+            
+            // 重新计算今天分数
+            const todayTokens = 43600;
+            const todayM = 0.0436;
+            let todayScore;
+            
+            if (option === 1) {
+                todayScore = calculateScoreOption1(todayM);
+            } else if (option === 2) {
+                todayScore = calculateScoreOption2(todayM);
+            } else {
+                todayScore = calculateScoreOption3(todayM);
+            }
+            
+            // 显示结果
+            const resultText = `今天消耗: ${todayTokens.toLocaleString()} tokens (${todayM}M)\n应得分数: ${todayScore > 0 ? '+' : ''}${todayScore}分`;
+            alert(resultText);
+            
+            // 刷新页面
+            selectOption(option);
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            selectOption(1); // 默认选择选项1
+        });
+    </script>
+</body>
+</html>

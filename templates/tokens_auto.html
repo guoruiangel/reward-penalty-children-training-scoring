@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token消耗自动管理 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --secondary-color: #a855f7;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .input-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .category-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .progress-lg {
+            height: 25px;
+            border-radius: 12px;
+        }
+        
+        .budget-meter {
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            background: #e5e7eb;
+        }
+        
+        .budget-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+        
+        .stat-card {
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            margin-bottom: 15px;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .category-card {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            border-left: 5px solid;
+        }
+        
+        .category-development { border-left-color: var(--primary-color); background: rgba(124, 58, 237, 0.1); }
+        .category-search { border-left-color: var(--info-color); background: rgba(59, 130, 246, 0.1); }
+        .category-communication { border-left-color: var(--success-color); background: rgba(16, 185, 129, 0.1); }
+        .category-other { border-left-color: var(--warning-color); background: rgba(245, 158, 11, 0.1); }
+        
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+        }
+        
+        .form-control-lg {
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e5e7eb;
+            font-size: 1.1rem;
+        }
+        
+        .form-control-lg:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+        
+        .slider-container {
+            padding: 20px 0;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .slider-value {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #e5e7eb;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            cursor: pointer;
+            border: 3px solid white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .history-table th {
+            background: #f8fafc;
+            font-weight: 600;
+            color: #4b5563;
+        }
+        
+        .history-table tr:hover {
+            background: #f9fafb;
+        }
+        
+        .alert-custom {
+            border-radius: 12px;
+            border: none;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success-custom {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+        }
+        
+        .alert-warning-custom {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+        }
+        
+        .alert-info-custom {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #1e40af;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- 标题和导航 -->
+        <div class="glass-card header-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2">
+                        <i class="bi bi-calculator me-3"></i>Token消耗自动管理系统
+                    </h1>
+                    <p class="mb-0 opacity-90">自动记录、分析、预测token消耗，减少人工介入</p>
+                </div>
+                <div>
+                    <a href="/" class="btn btn-outline-light me-2">
+                        <i class="bi bi-house-door me-1"></i>返回主页
+                    </a>
+                    <a href="/tokens" class="btn btn-light">
+                        <i class="bi bi-bar-chart me-1"></i>原统计页面
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <!-- 左侧：数据输入和预估 -->
+            <div class="col-lg-6">
+                <!-- Token输入卡片 -->
+                <div class="glass-card input-card">
+                    <h3 class="mb-4">
+                        <i class="bi bi-keyboard me-2"></i>每日Token消耗录入
+                    </h3>
+                    
+                    <div class="alert alert-info-custom alert-custom">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>使用说明：</strong>输入当日总token消耗，系统自动按预设比例分配到各类别，并更新数据库和页面。
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold mb-2">
+                            <i class="bi bi-calculator me-1"></i>今日总Token消耗
+                        </label>
+                        <div class="input-group input-group-lg">
+                            <input type="number" id="totalTokens" class="form-control form-control-lg" 
+                                   placeholder="输入总token数，如：1190000" min="0" step="1000">
+                            <span class="input-group-text bg-light">tokens</span>
+                        </div>
+                        <div class="form-text">
+                            示例：1,190,000 tokens = 1.19M，昨日消耗：<span id="yesterdayTokens">1,190,000</span> tokens
+                        </div>
+                    </div>
+                    
+                    <!-- 类别比例调整 -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">
+                            <i class="bi bi-pie-chart me-2"></i>类别消耗比例调整
+                        </h5>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span><i class="bi bi-code me-2"></i>开发类</span>
+                                <span class="slider-value" id="devPercent">55%</span>
+                            </div>
+                            <input type="range" id="devSlider" min="10" max="80" value="55" class="slider">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span><i class="bi bi-search me-2"></i>搜索类</span>
+                                <span class="slider-value" id="searchPercent">15%</span>
+                            </div>
+                            <input type="range" id="searchSlider" min="5" max="40" value="15" class="slider">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span><i class="bi bi-chat-dots me-2"></i>沟通类</span>
+                                <span class="slider-value" id="commPercent">20%</span>
+                            </div>
+                            <input type="range" id="commSlider" min="5" max="40" value="20" class="slider">
+                        </div>
+                        
+                        <div class="slider-container">
+                            <div class="slider-label">
+                                <span><i class="bi bi-gear me-2"></i>其他类</span>
+                                <span class="slider-value" id="otherPercent">10%</span>
+                            </div>
+                            <input type="range" id="otherSlider" min="5" max="40" value="10" class="slider" disabled>
+                            <div class="form-text text-muted">其他类自动计算：100% - (开发+搜索+沟通)%</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 预估结果 -->
+                    <div class="mb-4">
+                        <h5 class="mb-3">
+                            <i class="bi bi-eye me-2"></i>预估结果
+                        </h5>
+                        <div id="previewResults" class="p-3 bg-light rounded">
+                            <p class="text-center text-muted mb-0">输入总token数后显示预估分配</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 提交按钮 -->
+                    <div class="d-grid">
+                        <button id="submitBtn" class="btn btn-submit btn-lg">
+                            <i class="bi bi-cloud-upload me-2"></i>提交并更新系统
+                        </button>
+                    </div>
+                    
+                    <div class="mt-3 text-center text-muted">
+                        <small>提交后系统将自动：1)保存到数据库 2)计算评分 3)更新所有页面</small>
+                    </div>
+                </div>
+                
+                <!-- 预算和目标 -->
+                <div class="glass-card mt-4">
+                    <h4 class="mb-3">
+                        <i class="bi bi-bullseye me-2"></i>Token消耗目标
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card" style="background: linear-gradient(135deg, var(--danger-color), #f87171);">
+                                <div class="stat-label">严重超标</div>
+                                <div class="stat-value">&gt;10M</div>
+                                <div class="stat-label">-10分</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card" style="background: linear-gradient(135deg, var(--warning-color), #fbbf24);">
+                                <div class="stat-label">较高消耗</div>
+                                <div class="stat-value">&gt;5M</div>
+                                <div class="stat-label">-5分</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card" style="background: linear-gradient(135deg, #6b7280, #9ca3af);">
+                                <div class="stat-label">正常范围</div>
+                                <div class="stat-value">&gt;1M</div>
+                                <div class="stat-label">-1分</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card" style="background: linear-gradient(135deg, var(--success-color), #34d399);">
+                                <div class="stat-label">优秀表现</div>
+                                <div class="stat-value">&lt;0.5M</div>
+                                <div class="stat-label">+5分</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning-custom alert-custom">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        <strong>今日目标：</strong>消耗 &lt; 0.5M tokens，争取+5分奖励。昨日消耗：1.19M，相比前日减少89.7%。
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧：数据展示和分析 -->
+            <div class="col-lg-6">
+                <!-- 今日概览 -->
+                <div class="glass-card">
+                    <h4 class="mb-3">
+                        <i class="bi bi-speedometer2 me-2"></i>今日概览
+                    </h4>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card" style="background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));">
+                                <div class="stat-label">今日消耗</div>
+                                <div class="stat-value" id="todayTotal">0</div>
+                                <div class="stat-label">tokens</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="stat-card" style="background: linear-gradient(135deg, var(--info-color), #60a5fa);">
+                                <div class="stat-label">相比昨日</div>
+                                <div class="stat-value" id="changePercent">0%</div>
+                                <div class="stat-label" id="changeDirection">无变化</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mb-3">类别消耗分布</h5>
+                    <div class="category-card category-development">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold">开发类</span>
+                            <span id="devAmount">0 tokens (0%)</span>
+                        </div>
+                        <div class="progress progress-lg">
+                            <div class="progress-bar" id="devProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="category-card category-search">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold">搜索类</span>
+                            <span id="searchAmount">0 tokens (0%)</span>
+                        </div>
+                        <div class="progress progress-lg">
+                            <div class="progress-bar bg-info" id="searchProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="category-card category-communication">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold">沟通类</span>
+                            <span id="commAmount">0 tokens (0%)</span>
+                        </div>
+                        <div class="progress progress-lg">
+                            <div class="progress-bar bg-success" id="commProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="category-card category-other">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold">其他类</span>
+                            <span id="otherAmount">0 tokens (0%)</span>
+                        </div>
+                        <div class="progress progress-lg">
+                            <div class="progress-bar bg-warning" id="otherProgress" role="progressbar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 历史记录 -->
+                <div class="glass-card mt-4">
+                    <h4 class="mb-3">
+                        <i class="bi bi-clock-history me-2"></i>最近7天记录
+                    </h4>
+                    
+                    <div class="table-responsive">
+                        <table class="history-table">
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>总消耗</th>
+                                    <th>开发类</th>
+                                    <th>评分</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTable">
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted">
+                                        加载历史数据中...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3 text-end">
+                        <a href="/tokens" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-bar-chart me-1"></i>查看详细统计
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- 图表区域 -->
+                <div class="glass-card mt-4">
+                    <h4 class="mb-3">
+                        <i class="bi bi-graph-up me-2"></i>消耗趋势
+                    </h4>
+                    <div class="chart-container" style="position: relative; height: 250px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 系统状态 -->
+        <div class="glass-card mt-4">
+            <div class="row">
+                <div class="col-md-4">
+                    <h6><i class="bi bi-database me-2"></i>数据状态</h6>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">数据库连接</div>
+                            <small class="text-muted">正常</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">API服务</div>
+                            <small class="text-muted">运行中</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6><i class="bi bi-gear me-2"></i>自动功能</h6>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">数据计算</div>
+                            <small class="text-muted">自动分配比例</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2">
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">评分系统</div>
+                            <small class="text-muted">自动计算</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <h6><i class="bi bi-clock me-2"></i>下次更新</h6>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2">
+                            <i class="bi bi-alarm text-primary"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">今日录入</div>
+                            <small class="text-muted">随时可提交</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-2">
+                        <div class="me-2">
+                            <i class="bi bi-calendar-check text-info"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">明日预估</div>
+                            <small class="text-muted">基于历史数据</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4 text-muted">
+            <p class="mb-0">
+                <i class="bi bi-cpu me-1"></i>Pablo Token自动管理系统 v1.0 | 
+                设计目标：减少人工介入，实现自动记录和分析
+            </p>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        // 全局变量
+        let categoryPercentages = {
+            development: 55,
+            search: 15,
+            communication: 20,
+            other: 10
+        };
+        
+        let yesterdayData = {
+            tokens: 1190000,
+            date: '2026-04-01'
+        };
+        
+        // 页面加载初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadYesterdayData();
+            setupSliders();
+            setupInputListener();
+            loadHistoryData();
+            updatePreview();
+        });
+        
+        // 加载昨日数据
+        async function loadYesterdayData() {
+            try {
+                const response = await fetch('/api/tokens/today');
+                const data = await response.json();
+                
+                if (data.status === 'success' && data.data_source === 'yesterday') {
+                    yesterdayData.tokens = data.display_tokens;
+                    yesterdayData.date = data.display_date;
+                    
+                    document.getElementById('yesterdayTokens').textContent = 
+                        yesterdayData.tokens.toLocaleString();
+                    
+                    // 设置输入框示例值
+                    document.getElementById('totalTokens').placeholder = 
+                        `昨日：${yesterdayData.tokens.toLocaleString()}，输入今日消耗`;
+                }
+            } catch (error) {
+                console.error('加载昨日数据失败:', error);
+            }
+        }
+        
+        // 设置滑块监听
+        function setupSliders() {
+            const sliders = ['devSlider', 'searchSlider', 'commSlider'];
+            
+            sliders.forEach(sliderId => {
+                const slider = document.getElementById(sliderId);
+                const percentId = sliderId.replace('Slider', 'Percent');
+                
+                slider.addEventListener('input', function() {
+                    // 更新百分比显示
+                    document.getElementById(percentId).textContent = this.value + '%';
+                    
+                    // 更新类别百分比
+                    const category = sliderId.replace('Slider', '');
+                    categoryPercentages[category] = parseInt(this.value);
+                    
+                    // 重新计算其他类百分比
+                    recalculateOtherPercentage();
+                    
+                    // 更新预览
+                    updatePreview();
+                });
+            });
+        }
+        
+        // 重新计算其他类百分比
+        function recalculateOtherPercentage() {
+            const total = categoryPercentages.development + 
+                         categoryPercentages.search + 
+                         categoryPercentages.communication;
+            
+            categoryPercentages.other = 100 - total;
+            document.getElementById('otherPercent').textContent = categoryPercentages.other + '%';
+            document.getElementById('otherSlider').value = categoryPercentages.other;
+        }
+        
+        // 设置输入框监听
+        function setupInputListener() {
+            const input = document.getElementById('totalTokens');
+            
+            input.addEventListener('input', function() {
+                updatePreview();
+            });
+            
+            // 回车提交
+            input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    submitTokenData();
+                }
+            });
+        }
+        
+        // 更新预览
+        function updatePreview() {
+            const totalTokens = parseInt(document.getElementById('totalTokens').value) || 0;
+            
+            if (totalTokens === 0) {
+                document.getElementById('previewResults').innerHTML = 
+                    '<p class="text-center text-muted mb-0">输入总token数后显示预估分配</p>';
+                return;
+            }
+            
+            // 计算各类别数量
+            const devTokens = Math.round(totalTokens * categoryPercentages.development / 100);
+            const searchTokens = Math.round(totalTokens * categoryPercentages.search / 100);
+            const commTokens = Math.round(totalTokens * categoryPercentages.communication / 100);
+            const otherTokens = Math.round(totalTokens * categoryPercentages.other / 100);
+            
+            // 计算总M
+            const totalM = (totalTokens / 1000000).toFixed(2);
+            
+            // 计算评分
+            let score = 0;
+            let scoreText = '';
+            
+            if (totalM > 10) {
+                score = -10;
+                scoreText = '严重超标，扣10分';
+            } else if (totalM > 5) {
+                score = -5;
+                scoreText = '较高消耗，扣5分';
+            } else if (totalM > 1) {
+                score = -1;
+                scoreText = '正常范围，扣1分';
+            } else if (totalM < 0.1) {
+                score = +10;
+                scoreText = '卓越表现，奖励10分';
+            } else if (totalM < 0.5) {
+                score = +5;
+                scoreText = '优秀表现，奖励5分';
+            } else {
+                scoreText = '在0.5-1M之间，不扣分不奖励';
+            }
+            
+            // 计算相比昨日变化
+            let changePercent = 0;
+            let changeText = '';
+            
+            if (yesterdayData.tokens > 0) {
+                const change = totalTokens - yesterdayData.tokens;
+                changePercent = Math.round((change / yesterdayData.tokens) * 100 * 10) / 10;
+                
+                if (change > 0) {
+                    changeText = `增加 ${Math.abs(changePercent)}%`;
+                } else if (change < 0) {
+                    changeText = `减少 ${Math.abs(changePercent)}%`;
+                } else {
+                    changeText = '无变化';
+                }
+            }
+            
+            // 生成预览HTML
+            const previewHTML = `
+                <div class="row">
+                    <div class="col-6">
+                        <div class="mb-2">
+                            <span class="fw-bold">总消耗：</span>
+                            <span>${totalTokens.toLocaleString()} tokens</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fw-bold">折算：</span>
+                            <span>${totalM}M</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fw-bold">评分：</span>
+                            <span class="${score < 0 ? 'text-danger' : score > 0 ? 'text-success' : ''}">
+                                ${scoreText}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="mb-2">
+                            <span class="fw-bold">相比昨日：</span>
+                            <span class="${changePercent > 0 ? 'text-danger' : changePercent < 0 ? 'text-success' : ''}">
+                                ${changeText}
+                            </span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fw-bold">开发类：</span>
+                            <span>${devTokens.toLocaleString()} tokens</span>
+                        </div>
+                        <div class="mb-2">
+                            <span class="fw-bold">搜索类：</span>
+                            <span>${searchTokens.toLocaleString()} tokens</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('previewResults').innerHTML = previewHTML;
+        }
+        
+        // 加载历史数据
+        async function loadHistoryData() {
+            try {
+                const response = await fetch('/api/tokens/history/7');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    updateHistoryTable(data.history);
+                    updateTrendChart(data.history);
+                }
+            } catch (error) {
+                console.error('加载历史数据失败:', error);
+            }
+        }
+        
+        // 更新历史表格
+        function updateHistoryTable(history) {
+            const tableBody = document.getElementById('historyTable');
+            
+            if (!history || history.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">
+                            暂无历史数据
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            history.forEach(item => {
+                const totalM = (item.total_tokens / 1000000).toFixed(2);
+                const devPercent = item.dev_tokens > 0 ? Math.round(item.dev_tokens / item.total_tokens * 100) : 0;
+                
+                // 计算评分
+                let score = 0;
+                if (totalM > 10) score = -10;
+                else if (totalM > 5) score = -5;
+                else if (totalM > 1) score = -1;
+                else if (totalM < 0.1) score = +10;
+                else if (totalM < 0.5) score = +5;
+                
+                html += `
+                    <tr>
+                        <td>${item.date}</td>
+                        <td>${item.total_tokens.toLocaleString()}</td>
+                        <td>${devPercent}%</td>
+                        <td class="${score < 0 ? 'text-danger' : score > 0 ? 'text-success' : ''}">
+                            ${score > 0 ? '+' : ''}${score}分
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+        
+        // 更新趋势图表
+        function updateTrendChart(history) {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            
+            // 按日期排序
+            const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            const dates = sortedHistory.map(item => item.date.substring(5)); // 显示月-日
+            const tokens = sortedHistory.map(item => item.total_tokens / 1000000); // 转换为M
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'Token消耗 (M)',
+                        data: tokens,
+                        borderColor: '#7c3aed',
+                        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '百万 tokens'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '日期'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 提交token数据
+        async function submitTokenData() {
+            const totalTokens = parseInt(document.getElementById('totalTokens').value);
+            
+            if (!totalTokens || totalTokens <= 0) {
+                alert('请输入有效的token数量');
+                return;
+            }
+            
+            const submitBtn = document.getElementById('submitBtn');
+            const originalText = submitBtn.innerHTML;
+            
+            // 禁用按钮并显示加载状态
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>提交中...';
+            
+            try {
+                // 准备数据
+                const data = {
+                    total_tokens: totalTokens,
+                    categories: {
+                        development: Math.round(totalTokens * categoryPercentages.development / 100),
+                        search: Math.round(totalTokens * categoryPercentages.search / 100),
+                        communication: Math.round(totalTokens * categoryPercentages.communication / 100),
+                        other: Math.round(totalTokens * categoryPercentages.other / 100)
+                    }
+                };
+                
+                // 调用API
+                const response = await fetch('/api/token/submit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 显示成功消息
+                    alert(`✅ Token数据提交成功！\n\n总消耗: ${result.token_data.total_tokens.toLocaleString()} tokens\n评分: ${result.score.reason}\n\n页面将自动刷新...`);
+                    
+                    // 更新页面显示
+                    updatePageWithNewData(result);
+                    
+                    // 3秒后刷新页面
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+                } else {
+                    throw new Error(result.error || '提交失败');
+                }
+            } catch (error) {
+                alert(`❌ 提交失败: ${error.message}`);
+            } finally {
+                // 恢复按钮状态
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+        }
+        
+        // 使用快速提交API（GET方式）
+        async function quickSubmit(totalTokens) {
+            try {
+                const response = await fetch(`/api/token/quick/${totalTokens}`);
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('快速提交失败:', error);
+                return null;
+            }
+        }
+        
+        // 使用新数据更新页面
+        function updatePageWithNewData(result) {
+            // 更新今日概览
+            document.getElementById('todayTotal').textContent = 
+                result.token_data.total_tokens.toLocaleString();
+            
+            // 更新变化百分比
+            const changePercent = result.token_data.change_percent || 0;
+            document.getElementById('changePercent').textContent = 
+                Math.abs(changePercent) + '%';
+            
+            if (changePercent > 0) {
+                document.getElementById('changeDirection').textContent = '增加';
+                document.getElementById('changeDirection').className = 'stat-label text-danger';
+            } else if (changePercent < 0) {
+                document.getElementById('changeDirection').textContent = '减少';
+                document.getElementById('changeDirection').className = 'stat-label text-success';
+            } else {
+                document.getElementById('changeDirection').textContent = '无变化';
+                document.getElementById('changeDirection').className = 'stat-label text-muted';
+            }
+            
+            // 更新类别分布
+            const categories = result.token_data.categories;
+            const total = result.token_data.total_tokens;
+            
+            // 开发类
+            const devPercent = Math.round(categories.development / total * 100);
+            document.getElementById('devAmount').textContent = 
+                `${categories.development.toLocaleString()} tokens (${devPercent}%)`;
+            document.getElementById('devProgress').style.width = `${devPercent}%`;
+            
+            // 搜索类
+            const searchPercent = Math.round(categories.search / total * 100);
+            document.getElementById('searchAmount').textContent = 
+                `${categories.search.toLocaleString()} tokens (${searchPercent}%)`;
+            document.getElementById('searchProgress').style.width = `${searchPercent}%`;
+            
+            // 沟通类
+            const commPercent = Math.round(categories.communication / total * 100);
+            document.getElementById('commAmount').textContent = 
+                `${categories.communication.toLocaleString()} tokens (${commPercent}%)`;
+            document.getElementById('commProgress').style.width = `${commPercent}%`;
+            
+            // 其他类
+            const otherPercent = Math.round(categories.other / total * 100);
+            document.getElementById('otherAmount').textContent = 
+                `${categories.other.toLocaleString()} tokens (${otherPercent}%)`;
+            document.getElementById('otherProgress').style.width = `${otherPercent}%`;
+            
+            // 显示成功消息
+            showSuccessMessage(result.summary);
+        }
+        
+        // 显示成功消息
+        function showSuccessMessage(summary) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success-custom alert-custom';
+            alertDiv.innerHTML = `
+                <i class="bi bi-check-circle-fill me-2"></i>
+                <strong>数据已更新！</strong> ${summary}
+            `;
+            
+            // 插入到标题下方
+            const headerCard = document.querySelector('.header-card');
+            headerCard.parentNode.insertBefore(alertDiv, headerCard.nextSibling);
+            
+            // 5秒后自动移除
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+        
+        // 绑定提交按钮
+        document.getElementById('submitBtn').addEventListener('click', submitTokenData);
+        
+        // 添加键盘快捷键：Ctrl+Enter 提交
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                const input = document.getElementById('totalTokens');
+                if (document.activeElement === input) {
+                    submitTokenData();
+                }
+            }
+        });
+        
+        // 自动填充昨日数据作为参考
+        document.getElementById('totalTokens').addEventListener('focus', function() {
+            if (!this.value && yesterdayData.tokens > 0) {
+                this.value = yesterdayData.tokens;
+                updatePreview();
+            }
+        });
+    </script>
+</body>
+</html>

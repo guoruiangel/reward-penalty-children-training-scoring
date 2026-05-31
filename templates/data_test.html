@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>数据测试 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background: #f8f9fa; padding: 20px; }
+        .container { max-width: 1200px; }
+        .test-card { margin-bottom: 20px; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; background: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">
+                <i class="bi bi-bug me-2"></i>数据测试页面
+            </h1>
+            <a href="/" class="btn btn-outline-primary">
+                <i class="bi bi-house-door me-1"></i>返回主页
+            </a>
+        </div>
+        
+        <div class="test-card">
+            <h2 class="mb-3">API测试结果</h2>
+            <div id="testResults"></div>
+        </div>
+    </div>
+    
+    <script>
+        async function testAllAPIs() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '<p>测试中...</p>';
+            
+            const tests = [
+                { name: '统计数据', url: '/api/tokens/stats?period=7d' },
+                { name: '图表数据', url: '/api/tokens/charts?period=7d' },
+                { name: '记录数据', url: '/api/tokens/records?page=1' },
+                { name: '分析数据', url: '/api/tokens/analysis?period=7d' }
+            ];
+            
+            let html = '<h2>API测试结果</h2>';
+            
+            for (const test of tests) {
+                try {
+                    const response = await fetch(test.url);
+                    const data = await response.json();
+                    
+                    html += `<div style="margin: 10px; padding: 10px; border: 1px solid #ccc;">
+                        <h3>${test.name}</h3>
+                        <p>状态: <strong style="color: ${data.success ? 'green' : 'red'}">${data.success ? '成功' : '失败'}</strong></p>`;
+                    
+                    if (data.success) {
+                        if (test.name === '统计数据') {
+                            html += `<p>总Tokens: ${data.stats.total_tokens}</p>`;
+                            html += `<p>分类: ${JSON.stringify(data.stats.categories)}</p>`;
+                        }
+                        html += `<p>数据大小: ${JSON.stringify(data).length} 字符</p>`;
+                    } else {
+                        html += `<p>错误: ${data.error}</p>`;
+                    }
+                    
+                    html += `</div>`;
+                } catch (error) {
+                    html += `<div style="margin: 10px; padding: 10px; border: 1px solid red;">
+                        <h3>${test.name}</h3>
+                        <p>错误: ${error.message}</p>
+                    </div>`;
+                }
+            }
+            
+            // 测试数据库直接查询
+            try {
+                const dbTest = await fetch('/api/tokens/stats?period=7d');
+                const dbData = await dbTest.json();
+                
+                html += `<div style="margin: 10px; padding: 10px; border: 1px solid blue;">
+                    <h3>数据库验证</h3>
+                    <p>总记录数: ${dbData.stats.categories.reduce((sum, cat) => sum + cat.record_count, 0)}</p>
+                    <p>总Tokens: ${dbData.stats.total_tokens}</p>
+                    <p>活跃天数: ${dbData.stats.days_active}</p>
+                </div>`;
+            } catch (error) {
+                html += `<p>数据库测试失败: ${error.message}</p>`;
+            }
+            
+            results.innerHTML = html;
+        }
+        
+        document.addEventListener('DOMContentLoaded', testAllAPIs);
+    </script>
+</body>
+</html>

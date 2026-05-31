@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日日报 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .header {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .date-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-left: 5px solid #7c3aed;
+        }
+        .date-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f1f5f9;
+        }
+        .date-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+        .date-badge {
+            background: #7c3aed;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8fafc;
+            border-radius: 8px;
+        }
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .section-title i {
+            margin-right: 10px;
+            color: #7c3aed;
+        }
+        .weather-card {
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        .news-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #3b82f6;
+        }
+        .stock-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .stock-table th {
+            background: #f1f5f9;
+            padding: 12px;
+            font-weight: 600;
+        }
+        .stock-table td {
+            padding: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .positive {
+            color: #10b981;
+        }
+        .negative {
+            color: #ef4444;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1><i class="bi bi-newspaper me-2"></i>每日日报</h1>
+                    <p class="mb-0">按日期排序，最新的在最上面</p>
+                </div>
+                <a href="/" class="btn btn-outline-light">
+                    <i class="bi bi-house-door me-1"></i>返回主页
+                </a>
+            </div>
+        </div>
+        
+        <!-- 日期选择 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5><i class="bi bi-calendar3 me-2"></i>选择日期</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <input type="date" id="datePicker" class="form-control" value="2026-04-02">
+                    </div>
+                    <div class="col-md-8">
+                        <button class="btn btn-primary" onclick="loadDate()">
+                            <i class="bi bi-search me-1"></i>查看该日期
+                        </button>
+                        <button class="btn btn-success" onclick="loadToday()">
+                            <i class="bi bi-calendar-check me-1"></i>今日
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="loadAllDates()">
+                            <i class="bi bi-list-ul me-1"></i>显示所有日期
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 日报内容 -->
+        <div id="dailyContent">
+            <div class="loading">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div>
+                <p class="mt-3">正在加载日报数据...</p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 加载指定日期的数据
+        function loadDate() {
+            const date = document.getElementById('datePicker').value;
+            loadDailyData(date);
+        }
+        
+        // 加载今日数据
+        function loadToday() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('datePicker').value = today;
+            loadDailyData(today);
+        }
+        
+        // 加载所有日期数据
+        function loadAllDates() {
+            const container = document.getElementById('dailyContent');
+            container.innerHTML = '<div class="loading"><div class="spinner-border text-primary"></div><p class="mt-3">加载所有日期...</p></div>';
+            
+            // 先获取日期列表
+            fetch('/api/daily/dates')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success' && data.dates.length > 0) {
+                        // 按日期倒序（最新的在最上面）
+                        const dates = data.dates.sort((a, b) => new Date(b) - new Date(a));
+                        loadAllDatesData(dates);
+                    } else {
+                        container.innerHTML = '<div class="empty-state"><i class="bi bi-inbox display-4"></i><h4>暂无数据</h4></div>';
+                    }
+                })
+                .catch(error => {
+                    container.innerHTML = `<div class="alert alert-danger">加载失败: ${error}</div>`;
+                });
+        }
+        
+        // 加载所有日期的数据
+        function loadAllDatesData(dates) {
+            const container = document.getElementById('dailyContent');
+            let html = '';
+            let loaded = 0;
+            
+            // 为每个日期加载数据
+            dates.forEach(date => {
+                fetch(`/api/daily/${date}`)
+                    .then(r => r.json())
+                    .then(data => {
+                        loaded++;
+                        
+                        if (data.status === 'success') {
+                            html += renderDailyCard(date, data);
+                        }
+                        
+                        // 更新显示
+                        if (loaded === dates.length) {
+                            container.innerHTML = html;
+                        }
+                    })
+                    .catch(error => {
+                        loaded++;
+                        console.error(`加载 ${date} 失败:`, error);
+                        if (loaded === dates.length) {
+                            container.innerHTML = html;
+                        }
+                    });
+            });
+        }
+        
+        // 加载单个日期的数据
+        function loadDailyData(date) {
+            const container = document.getElementById('dailyContent');
+            container.innerHTML = '<div class="loading"><div class="spinner-border text-primary"></div><p class="mt-3">加载中...</p></div>';
+            
+            fetch(`/api/daily/${date}`)
+                .then(r => r.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        container.innerHTML = renderDailyCard(date, data);
+                    } else {
+                        container.innerHTML = `<div class="empty-state"><h4>${date} 无数据</h4></div>`;
+                    }
+                })
+                .catch(error => {
+                    container.innerHTML = `<div class="alert alert-danger">加载失败: ${error}</div>`;
+                });
+        }
+        
+        // 渲染日报卡片
+        function renderDailyCard(date, data) {
+            const weather = data.weather || {};
+            const news = data.news || [];
+            const stocks = data.stocks || [];
+            
+            return `
+                <div class="date-card">
+                    <div class="date-header">
+                        <div class="date-title">
+                            <i class="bi bi-calendar-date me-2"></i>${formatDate(date)}
+                        </div>
+                        <span class="date-badge">${getDayOfWeek(date)}</span>
+                    </div>
+                    
+                    ${renderWeather(weather)}
+                    ${renderNews(news)}
+                    ${renderStocks(stocks)}
+                </div>
+            `;
+        }
+        
+        // 渲染天气
+        function renderWeather(weather) {
+            if (!weather || !weather.location) return '';
+            
+            return `
+                <div class="section">
+                    <div class="section-title">
+                        <i class="bi bi-cloud-sun"></i>天气信息
+                    </div>
+                    <div class="weather-card">
+                        <h5>${weather.location}</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><i class="bi bi-thermometer-half me-2"></i>温度: ${weather.temperature || '--'}°C</p>
+                                <p><i class="bi bi-wind me-2"></i>体感: ${weather.feels_like || '--'}°C</p>
+                                <p><i class="bi bi-cloud me-2"></i>天气: ${weather.condition || '--'}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><i class="bi bi-droplet me-2"></i>湿度: ${weather.humidity || '--'}</p>
+                                <p><i class="bi bi-wind me-2"></i>风速: ${weather.wind_speed || '--'}</p>
+                                <p><i class="bi bi-calendar3 me-2"></i>阴历: ${weather.lunar_date || '--'}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 渲染新闻
+        function renderNews(newsList) {
+            if (!newsList || newsList.length === 0) return '';
+            
+            let html = `
+                <div class="section">
+                    <div class="section-title">
+                        <i class="bi bi-newspaper"></i>今日新闻 (${newsList.length}条)
+                    </div>
+            `;
+            
+            newsList.forEach(news => {
+                html += `
+                    <div class="news-item">
+                        <h6>${news.title || '无标题'}</h6>
+                        <p class="text-muted small">
+                            <i class="bi bi-clock me-1"></i>${news.published_at || '--'} | 
+                            <i class="bi bi-building me-1"></i>${news.source_name || news.source || '未知来源'}
+                        </p>
+                        <p>${news.summary || news.content || '无摘要'}</p>
+                    </div>
+                `;
+            });
+            
+            html += `</div>`;
+            return html;
+        }
+        
+        // 渲染股票
+        function renderStocks(stocksList) {
+            if (!stocksList || stocksList.length === 0) return '';
+            
+            let html = `
+                <div class="section">
+                    <div class="section-title">
+                        <i class="bi bi-graph-up"></i>关注股票 (${stocksList.length}只)
+                    </div>
+                    <table class="stock-table">
+                        <thead>
+                            <tr>
+                                <th>代码</th>
+                                <th>名称</th>
+                                <th>价格</th>
+                                <th>涨跌幅</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            stocksList.forEach(stock => {
+                const changeClass = stock.change_percent >= 0 ? 'positive' : 'negative';
+                const changeIcon = stock.change_percent >= 0 ? '↑' : '↓';
+                
+                html += `
+                    <tr>
+                        <td><strong>${stock.symbol || '--'}</strong></td>
+                        <td>${stock.name || '--'}</td>
+                        <td>${stock.price ? stock.price.toFixed(2) : '--'}</td>
+                        <td class="${changeClass}">
+                            ${changeIcon} ${stock.change_percent ? Math.abs(stock.change_percent).toFixed(2) : '--'}%
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            return html;
+        }
+        
+        // 格式化日期
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+        
+        // 获取星期几
+        function getDayOfWeek(dateStr) {
+            const date = new Date(dateStr);
+            const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            return days[date.getDay()];
+        }
+        
+        // 页面加载时显示所有日期
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllDates();
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>测试Cron页面</title>
+</head>
+<body>
+    <h1>测试OpenClaw Cron API</h1>
+    <div id="output"></div>
+    
+    <script>
+        async function test() {
+            const output = document.getElementById('output');
+            
+            try {
+                // 调用API
+                const response = await fetch('/api/openclaw/cron/tasks');
+                const data = await response.json();
+                
+                output.innerHTML += `<h2>API响应状态: ${data.status}</h2>`;
+                output.innerHTML += `<p>总任务数: ${data.total}</p>`;
+                
+                // 找到网络设备扫描任务
+                const networkTask = data.tasks.find(t => t.name === '网络设备扫描');
+                if (networkTask) {
+                    output.innerHTML += `<h3>网络设备扫描任务</h3>`;
+                    output.innerHTML += `<p>ID: ${networkTask.id}</p>`;
+                    output.innerHTML += `<p>nextRun值: <code>${networkTask.nextRun}</code></p>`;
+                    output.innerHTML += `<p>nextRun类型: ${typeof networkTask.nextRun}</p>`;
+                    output.innerHTML += `<p>nextRun是否为空: ${networkTask.nextRun === null || networkTask.nextRun === undefined}</p>`;
+                    
+                    // 测试formatTime函数
+                    function formatTime(isoString) {
+                        console.log('formatTime输入:', isoString, '类型:', typeof isoString);
+                        if (!isoString) return '从未';
+                        const date = new Date(isoString);
+                        if (isNaN(date.getTime())) return '无效时间';
+                        return date.toLocaleString('zh-CN', {
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                    }
+                    
+                    const formatted = formatTime(networkTask.nextRun);
+                    output.innerHTML += `<p>格式化结果: ${formatted}</p>`;
+                    
+                    // 测试Date对象
+                    const dateObj = new Date(networkTask.nextRun);
+                    output.innerHTML += `<p>Date对象: ${dateObj}</p>`;
+                    output.innerHTML += `<p>Date有效? ${!isNaN(dateObj.getTime())}</p>`;
+                    output.innerHTML += `<p>toISOString: ${dateObj.toISOString()}</p>`;
+                } else {
+                    output.innerHTML += `<p>未找到网络设备扫描任务</p>`;
+                }
+                
+            } catch (error) {
+                output.innerHTML += `<p style="color: red;">错误: ${error.message}</p>`;
+            }
+        }
+        
+        // 页面加载后运行测试
+        window.onload = test;
+    </script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日报测试 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { background: #f8f9fa; padding: 20px; }
+        .card { margin-bottom: 20px; }
+        .news-content { font-size: 0.95rem; line-height: 1.6; }
+        .stock-prediction { background: #e8f4fd; padding: 10px; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">
+                <i class="bi bi-newspaper me-2"></i>日报测试
+            </h1>
+            <a href="/" class="btn btn-outline-primary">
+                <i class="bi bi-house-door me-1"></i>返回主页
+            </a>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">新闻内容测试</h5>
+            </div>
+            <div class="card-body">
+                <div id="newsTest"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">股票分析测试</h5>
+            </div>
+            <div class="card-body">
+                <div id="stocksTest"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        async function testDailyData() {
+            try {
+                console.log('测试日报数据...');
+                const date = '2026-03-29';
+                const response = await fetch(`/api/daily/${date}`);
+                const data = await response.json();
+                
+                console.log('API响应:', data);
+                
+                if (data.status === 'success') {
+                    // 测试新闻数据
+                    const newsContainer = document.getElementById('newsTest');
+                    const news = data.news || [];
+                    
+                    if (news.length > 0) {
+                        let newsHtml = `<p>共 ${news.length} 条新闻</p>`;
+                        news.forEach((item, index) => {
+                            const content = item.content || '';
+                            const wordCount = content.length;
+                            const meetsRequirement = wordCount >= 30 && wordCount <= 100;
+                            
+                            newsHtml += `
+                                <div class="mb-4 p-3 border rounded">
+                                    <h6>${index + 1}. ${item.title}</h6>
+                                    <div class="news-content mt-2">${content}</div>
+                                    <div class="mt-2 text-muted small">
+                                        <span class="badge ${meetsRequirement ? 'bg-success' : 'bg-warning'}">
+                                            字数: ${wordCount}字 (${meetsRequirement ? '符合' : '不符合'}要求)
+                                        </span>
+                                        <span class="ms-2">来源: ${item.source || '未知'}</span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        newsContainer.innerHTML = newsHtml;
+                    } else {
+                        newsContainer.innerHTML = '<p class="text-muted">暂无新闻数据</p>';
+                    }
+                    
+                    // 测试股票数据
+                    const stocksContainer = document.getElementById('stocksTest');
+                    const stocks = data.stocks || [];
+                    
+                    if (stocks.length > 0) {
+                        let stocksHtml = `<p>共 ${stocks.length} 只股票</p>`;
+                        stocks.forEach((item, index) => {
+                            const analysis = item.analysis || '';
+                            const hasPrediction = analysis.includes('10天内预测') || analysis.includes('未来10天');
+                            
+                            stocksHtml += `
+                                <div class="mb-4 p-3 border rounded">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <h6 class="mb-0">${item.symbol} - ${item.name}</h6>
+                                        <span class="badge ${item.change_percent >= 0 ? 'bg-success' : 'bg-danger'}">
+                                            $${item.price} (${item.change_percent >= 0 ? '+' : ''}${item.change_percent}%)
+                                        </span>
+                                    </div>
+                                    <div class="mt-2">
+                                        <strong>分析判断:</strong>
+                                        <p class="mb-1">${analysis}</p>
+                                    </div>
+                                    <div class="stock-prediction ${hasPrediction ? '' : 'bg-warning'}">
+                                        <strong>预测验证:</strong>
+                                        <span class="${hasPrediction ? 'text-success' : 'text-danger'}">
+                                            ${hasPrediction ? '✅ 包含10天内预测' : '❌ 缺少10天内预测'}
+                                        </span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        stocksContainer.innerHTML = stocksHtml;
+                    } else {
+                        stocksContainer.innerHTML = '<p class="text-muted">暂无股票数据</p>';
+                    }
+                    
+                } else {
+                    document.getElementById('newsTest').innerHTML = 
+                        `<div class="alert alert-danger">API返回错误: ${data.message}</div>`;
+                }
+                
+            } catch (error) {
+                console.error('测试失败:', error);
+                document.getElementById('newsTest').innerHTML = 
+                    `<div class="alert alert-danger">测试失败: ${error.message}</div>`;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', testDailyData);
+    </script>
+</body>
+</html>

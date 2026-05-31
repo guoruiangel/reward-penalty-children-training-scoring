@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日摘要 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { background: #f8f9fa; padding: 20px; }
+        .card { margin-bottom: 20px; }
+        .weather-temp { font-size: 2.5rem; font-weight: bold; color: #0d6efd; }
+        .stock-change-up { color: #198754; font-weight: bold; }
+        .stock-change-down { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">
+                <i class="bi bi-newspaper me-2"></i>每日摘要 - 2026年3月30日
+            </h1>
+            <a href="/" class="btn btn-outline-primary">
+                <i class="bi bi-house-door me-1"></i>返回主页
+            </a>
+        </div>
+        
+        <!-- 天气信息 -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-cloud-sun me-2"></i>天气信息
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <div class="weather-temp">22°C</div>
+                        <p class="mb-0">晴</p>
+                        <small class="text-muted">廊坊市广阳区</small>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="row">
+                            <div class="col-6">
+                                <p><strong>湿度:</strong> 45%</p>
+                                <p><strong>风速:</strong> 3.2m/s</p>
+                                <p><strong>风向:</strong> 东南风</p>
+                            </div>
+                            <div class="col-6">
+                                <p><strong>体感温度:</strong> 23°C</p>
+                                <p><strong>气压:</strong> 1012hPa</p>
+                                <p><strong>能见度:</strong> 15km</p>
+                            </div>
+                        </div>
+                        <p><strong>阴历:</strong> 农历二月十二</p>
+                        <p><strong>预报:</strong> 今天晴，18-25°C；明天多云，16-23°C</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 新闻摘要 -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-newspaper me-2"></i>新闻摘要 (5条)
+            </div>
+            <div class="card-body">
+                <div class="mb-4 pb-3 border-bottom">
+                    <h5>1. Python 3.13性能提升显著，异步编程更高效</h5>
+                    <p class="mb-2">Python 3.13版本发布，异步编程性能提升约15%。改进了asyncio事件循环和垃圾回收机制，特别适合AI应用开发和大规模数据处理。</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-success me-2">字数: 70</span>
+                            <span class="badge bg-secondary">技术新闻</span>
+                        </div>
+                        <small class="text-muted">科技</small>
+                    </div>
+                </div>
+                
+                <div class="mb-4 pb-3 border-bottom">
+                    <h5>2. OpenClaw发布新版本，增强定时任务和技能管理</h5>
+                    <p class="mb-2">OpenClaw v2.1.0发布，增强定时任务和技能管理功能。支持更灵活的任务调度和技能自动更新，提升系统稳定性和用户体验。</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-success me-2">字数: 63</span>
+                            <span class="badge bg-secondary">开源项目</span>
+                        </div>
+                        <small class="text-muted">科技</small>
+                    </div>
+                </div>
+                
+                <div class="mb-4 pb-3 border-bottom">
+                    <h5>3. 气候变化报告：2025年全球气温再创新高</h5>
+                    <p class="mb-2">联合国气候报告显示，2025年全球平均气温较工业化前水平上升1.5°C，创历史新高。极端天气事件频发，海平面持续上升。报告呼吁各国加快能源转型，减少温室气体排放，以应对日益严峻的气候挑战。</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-success me-2">字数: 94</span>
+                            <span class="badge bg-secondary">环境新闻</span>
+                        </div>
+                        <small class="text-muted">环境</small>
+                    </div>
+                </div>
+                
+                <div class="mb-4 pb-3 border-bottom">
+                    <h5>4. AI芯片市场竞争加剧，多家公司发布新产品</h5>
+                    <p class="mb-2">随着AI应用需求增长，芯片市场竞争日趋激烈。英伟达、AMD、英特尔等公司相继发布新一代AI芯片，性能提升显著。同时，中国芯片企业也在加速研发，预计未来两年将有更多国产AI芯片面世。</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-success me-2">字数: 90</span>
+                            <span class="badge bg-secondary">科技产业</span>
+                        </div>
+                        <small class="text-muted">科技</small>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5>5. 电动汽车销量持续增长，充电基础设施加速建设</h5>
+                    <p class="mb-2">全球电动汽车销量同比增长35%，中国市场表现尤为突出。为应对充电需求，各国政府加大充电基础设施建设投入。预计到2027年，全球公共充电桩数量将增加三倍，推动电动汽车普及。</p>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-success me-2">字数: 85</span>
+                            <span class="badge bg-secondary">汽车产业</span>
+                        </div>
+                        <small class="text-muted">产业</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 股票信息 -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="bi bi-graph-up me-2"></i>股票信息 (5只)
+            </div>
+            <div class="card-body">
+                <div class="mb-4 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">TSLA - 特斯拉</h6>
+                        <div>
+                            <span class="h5">$175.21</span>
+                            <span class="badge bg-success ms-2">+3.35%</span>
+                        </div>
+                    </div>
+                    <p class="mb-2">新款车型预订超预期，股价大幅反弹，技术指标转强。</p>
+                    <div class="alert alert-info p-2 mb-0">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>10天内预测:</strong> 短期看涨，未来10天目标价位185美元，关注季度交付数据公布
+                    </div>
+                </div>
+                
+                <div class="mb-4 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">NVDA - 英伟达</h6>
+                        <div>
+                            <span class="h5">$950.02</span>
+                            <span class="badge bg-success ms-2">+2.74%</span>
+                        </div>
+                    </div>
+                    <p class="mb-2">AI芯片需求持续旺盛，业绩超预期，股价创历史新高。</p>
+                    <div class="alert alert-info p-2 mb-0">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>10天内预测:</strong> 技术面强势，未来10天有望测试980美元阻力位，但需注意高位回调风险
+                    </div>
+                </div>
+                
+                <div class="mb-4 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">MSFT - 微软</h6>
+                        <div>
+                            <span class="h5">$415.67</span>
+                            <span class="badge bg-success ms-2">+0.84%</span>
+                        </div>
+                    </div>
+                    <p class="mb-2">云计算业务稳健增长，AI工具Copilot用户数超预期。</p>
+                    <div class="alert alert-info p-2 mb-0">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>10天内预测:</strong> 技术面良好，未来10天有望挑战420美元关口，长期趋势向上
+                    </div>
+                </div>
+                
+                <div class="mb-4 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">GOOGL - 谷歌</h6>
+                        <div>
+                            <span class="h5">$155.42</span>
+                            <span class="badge bg-success ms-2">+0.8%</span>
+                        </div>
+                    </div>
+                    <p class="mb-2">广告业务复苏，AI搜索功能提升用户体验，股价温和上涨。</p>
+                    <div class="alert alert-info p-2 mb-0">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>10天内预测:</strong> 未来10天预计在152-158美元区间震荡，AI产品发布可能带来短期上涨机会
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">AAPL - 苹果</h6>
+                        <div>
+                            <span class="h5">$168.45</span>
+                            <span class="badge bg-danger ms-2">-0.72%</span>
+                        </div>
+                    </div>
+                    <p class="mb-2">iPhone销量不及预期，但服务业务增长强劲，股价小幅调整。</p>
+                    <div class="alert alert-info p-2 mb-0">
+                        <i class="bi bi-lightbulb me-1"></i>
+                        <strong>10天内预测:</strong> 未来10天可能在165-172美元区间整理，等待新产品发布催化剂
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-secondary mt-4">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>数据说明:</strong> 今日数据已更新，包含天气、新闻、股票信息。新闻内容30-100字，股票包含10天内预测。
+        </div>
+    </div>
+</body>
+</html>

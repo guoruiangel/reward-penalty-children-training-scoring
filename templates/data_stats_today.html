@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今日Token消耗分析 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #f8f9fa; padding: 20px; }
+        .stat-card { margin-bottom: 20px; border-radius: 10px; }
+        .today-badge { background: #dc3545; color: white; }
+        .improvement-badge { background: #198754; color: white; }
+        .category-card { border-left: 5px solid; }
+        .category-development { border-left-color: #0d6efd; }
+        .category-search { border-left-color: #6f42c1; }
+        .category-communication { border-left-color: #20c997; }
+        .category-other { border-left-color: #fd7e14; }
+        .progress-lg { height: 25px; }
+        .comparison-positive { color: #198754; font-weight: bold; }
+        .comparison-negative { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 标题和导航 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-0">
+                    <i class="bi bi-graph-up me-2"></i>今日Token消耗分析
+                    <span class="badge today-badge ms-2">2026-03-31</span>
+                </h1>
+                <p class="text-muted mb-0">基于DeepSeek平台数据：11,560,000 tokens</p>
+            </div>
+            <div>
+                <a href="/data-stats" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-bar-chart me-1"></i>校准数据
+                </a>
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="bi bi-house-door me-1"></i>返回主页
+                </a>
+            </div>
+        </div>
+
+        <!-- 今日概览 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card stat-card bg-primary text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-calculator me-2"></i>今日消耗</h5>
+                        <h2 class="display-6">11.56M</h2>
+                        <p class="card-text">11,560,000 tokens</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-success text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-arrow-down-right me-2"></i>相比昨日</h5>
+                        <h2 class="display-6">-91%</h2>
+                        <p class="card-text">1.289亿 → 11.56M</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-warning text-dark">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-exclamation-triangle me-2"></i>评分影响</h5>
+                        <h2 class="display-6">-5分</h2>
+                        <p class="card-text">原应-10分，考虑进步调整</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card stat-card bg-info text-white">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-speedometer2 me-2"></i>当前总分</h5>
+                        <h2 class="display-6">-132</h2>
+                        <p class="card-text">目标100分，差距232分</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分类消耗分析 -->
+        <div class="card mb-4">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-pie-chart me-2"></i>分类消耗分析
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <canvas id="categoryChart" height="250"></canvas>
+                    </div>
+                    <div class="col-md-4">
+                        <h5>分类详情</h5>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="bi bi-code me-2"></i>开发类</span>
+                                <span class="fw-bold">6.36M (55%)</span>
+                            </div>
+                            <div class="progress progress-lg">
+                                <div class="progress-bar" role="progressbar" style="width: 55%" aria-valuenow="55" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small class="text-muted">日报页面、股票系统、监控系统开发</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="bi bi-search me-2"></i>搜索类</span>
+                                <span class="fw-bold">1.73M (15%)</span>
+                            </div>
+                            <div class="progress progress-lg">
+                                <div class="progress-bar bg-purple" role="progressbar" style="width: 15%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small class="text-muted">技术研究、问题诊断、股票分析</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="bi bi-chat-dots me-2"></i>沟通类</span>
+                                <span class="fw-bold">2.31M (20%)</span>
+                            </div>
+                            <div class="progress progress-lg">
+                                <div class="progress-bar bg-success" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small class="text-muted">需求确认、进度汇报、问题讨论</small>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <span><i class="bi bi-gear me-2"></i>其他类</span>
+                                <span class="fw-bold">1.16M (10%)</span>
+                            </div>
+                            <div class="progress progress-lg">
+                                <div class="progress-bar bg-warning" role="progressbar" style="width: 10%" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <small class="text-muted">系统维护、数据记录、测试验证</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 对比分析 -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-info text-white">
+                        <i class="bi bi-arrow-left-right me-2"></i>昨日对比
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>指标</th>
+                                    <th>昨日</th>
+                                    <th>今日</th>
+                                    <th>变化</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>总消耗</td>
+                                    <td>128.9M</td>
+                                    <td>11.56M</td>
+                                    <td class="comparison-positive">-117.34M (-91%)</td>
+                                </tr>
+                                <tr>
+                                    <td>开发类占比</td>
+                                    <td>~40%</td>
+                                    <td>55%</td>
+                                    <td class="comparison-negative">+15%</td>
+                                </tr>
+                                <tr>
+                                    <td>沟通类占比</td>
+                                    <td>~35%</td>
+                                    <td>20%</td>
+                                    <td class="comparison-positive">-15%</td>
+                                </tr>
+                                <tr>
+                                    <td>评分扣分</td>
+                                    <td>-10分</td>
+                                    <td>-5分</td>
+                                    <td class="comparison-positive">+5分调整</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div class="alert alert-success mt-3">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>显著进步：</strong>消耗减少91%，沟通效率提升，评分获得调整。
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card h-100">
+                    <div class="card-header bg-warning text-dark">
+                        <i class="bi bi-lightbulb me-2"></i>改进建议
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <h6><i class="bi bi-check-lg me-2"></i>已实施的改进</h6>
+                            <ul class="mb-0">
+                                <li>定时任务监控从每5分钟改为每天一次</li>
+                                <li>建立网关服务监控和自动恢复</li>
+                                <li>沟通更精简，减少重复确认</li>
+                                <li>开发模块化，减少重复工作</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <h6><i class="bi bi-exclamation-triangle me-2"></i>待优化项</h6>
+                            <ul class="mb-0">
+                                <li><strong>开发类消耗过高（55%）</strong>：需提高开发效率</li>
+                                <li>日报页面API问题未完全解决</li>
+                                <li>股票数据仍是模拟数据，需真实API</li>
+                                <li>token统计系统需覆盖所有消耗源</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="alert alert-success">
+                            <h6><i class="bi bi-target me-2"></i>明日目标</h6>
+                            <ul class="mb-0">
+                                <li>总消耗 &lt; 1M tokens（避免扣分）</li>
+                                <li>开发类占比降至45%以下</li>
+                                <li>解决日报页面API问题</li>
+                                <li>探索真实股票数据源</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 详细活动记录 -->
+        <div class="card mb-4">
+            <div class="card-header bg-secondary text-white">
+                <i class="bi bi-list-task me-2"></i>今日主要活动
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-primary"></div>
+                        <div class="timeline-content">
+                            <h6>07:28-10:14 日报页面开发</h6>
+                            <p class="text-muted">标签页式日报页面、左侧日期栏优化、主页按钮位置调整</p>
+                            <span class="badge bg-primary">开发类</span>
+                            <span class="badge bg-info">~3.5M tokens</span>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6>股票系统扩展</h6>
+                            <p class="text-muted">新增7支美股（AXTI, CRWV, BTDR, PONY, SMR, UUUU, MARA），合并12支股票推送</p>
+                            <span class="badge bg-success">开发类</span>
+                            <span class="badge bg-info">~1.5M tokens</span>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-warning"></div>
+                        <div class="timeline-content">
+                            <h6>监控系统建立</h6>
+                            <p class="text-muted">网关服务监控、定时任务优化、执行力规范制定</p>
+                            <span class="badge bg-warning">开发类</span>
+                            <span class="badge bg-info">~1.3M tokens</span>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-danger"></div>
+                        <div class="timeline-content">
+                            <h6>问题修复</h6>
+                            <p class="text-muted">网关服务停止恢复、日报页面API问题诊断、定时任务未执行处理</p>
+                            <span class="badge bg-danger">搜索类</span>
+                            <span class="badge bg-info">~1.7M tokens</span>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-info"></div>
+                        <div class="timeline-content">
+                            <h6>沟通与汇报</h6>
+                            <p class="text-muted">需求确认、进度汇报、评分讨论、问题反馈</p>
+                            <span class="badge bg-info">沟通类</span>
+                            <span class="badge bg-info">~2.3M tokens</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 评分规则提醒 -->
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <i class="bi bi-award me-2"></i>Token消耗评分规则 (2026-04-02最终版)
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>🔴 扣分规则</h6>
+                        <ul class="list-unstyled">
+                            <li>日消耗 &gt; 10M tokens: <span class="text-danger">-10分</span></li>
+                            <li>日消耗 5-10M tokens: <span class="text-danger">-5分</span></li>
+                            <li>日消耗 2-5M tokens: <span class="text-warning">-3分</span></li>
+                            <li>日消耗 1-2M tokens: <span class="text-warning">-2分</span></li>
+                            <li>日消耗 0.8-1M tokens: <span class="text-info">-1分</span></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>⚪ 中性规则</h6>
+                        <ul class="list-unstyled">
+                            <li>日消耗 0.5-0.8M tokens: <span class="text-secondary">0分</span></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>🟢 奖励规则</h6>
+                        <ul class="list-unstyled">
+                            <li>日消耗 0.1-0.5M tokens: <span class="text-success">+1分</span></li>
+                            <li>日消耗 0.05-0.1M tokens: <span class="text-success">+3分</span></li>
+                            <li>日消耗 0.01-0.05M tokens: <span class="text-success">+5分</span></li>
+                            <li>日消耗 &lt; 0.01M tokens: <span class="text-success">+10分</span></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>重要规则：</strong>
+                    <ul class="mb-0">
+                        <li>评分时间：每日22:20后一次评分</li>
+                        <li>区间明确无重叠：每个消耗量只对应一个区间</li>
+                        <li>只有用户可以打分：我不可以给自己加减分</li>
+                        <li>自动加分无效：系统自动行为产生的评分记录已删除</li>
+                        <li>所有评分需用户确认：必须由用户明确给出分数</li>
+                        <li>Web系统监控：Web系统自己挂了不扣分，只有更新后没有正常启动才扣分</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 分类饼图
+        const ctx = document.getElementById('categoryChart').getContext('2d');
+        const categoryChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['开发类 (55%)', '搜索类 (15%)', '沟通类 (20%)', '其他类 (10%)'],
+                datasets: [{
+                    data: [6.36, 1.73, 2.31, 1.16],
+                    backgroundColor: [
+                        '#0d6efd', // 开发 - 蓝色
+                        '#6f42c1', // 搜索 - 紫色
+                        '#20c997', // 沟通 - 绿色
+                        '#fd7e14'  // 其他 - 橙色
+                    ],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.parsed;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value}M tokens (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // 时间线样式
+        const style = document.createElement('style');
+        style.textContent = `
+            .timeline {
+                position: relative;
+                padding-left: 30px;
+            }
+            .timeline-item {
+                position: relative;
+                margin-bottom: 25px;
+            }
+            .timeline-marker {
+                position: absolute;
+                left: -30px;
+                top: 0;
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                border: 3px solid white;
+            }
+            .timeline-content {
+                padding: 10px 15px;
+                background: #f8f9fa;
+                border-radius: 8px;
+                border-left: 4px solid #dee2e6;
+            }
+            .timeline-item:hover .timeline-content {
+                background: #e9ecef;
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // 自动刷新页面数据（每5分钟）
+        setTimeout(() => {
+            window.location.reload();
+        }, 5 * 60 * 1000);
+    </script>
+</body>
+</html>

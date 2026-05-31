@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⭐ 小渔的打分规则</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root { --primary-color: #e91e63; --success-color: #10b981; --danger-color: #ef4444; }
+body { background: linear-gradient(135deg, #fce4ec, #f3e5f5); min-height: 100vh; }
+.glass-card {
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+}
+.header-card {
+    background: linear-gradient(135deg, #e91e63, #9c27b0);
+    color: white;
+    border-radius: 20px;
+    padding: 28px;
+    margin-bottom: 20px;
+}
+.header-card h1 { font-size: 24px; margin: 0; }
+.header-card .sub { font-size: 14px; opacity: 0.85; margin-top: 6px; }
+
+/* 统计卡片 */
+.stat-row { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.stat-card {
+    background: rgba(255,255,255,0.95);
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.05);
+}
+.stat-card .num { font-size: 28px; font-weight: 700; margin: 4px 0; }
+.stat-card .label { font-size: 12px; color: #888; }
+.stat-card.today .num { color: var(--primary-color); }
+.stat-card.week .num { color: #9c27b0; }
+.stat-card.month .num { color: #7b1fa2; }
+.stat-card.total {
+    background: linear-gradient(135deg, #ffecd2, #fcb69f);
+}
+.stat-card.total .num {
+    color: #5d4037;
+    font-size: 1.4em;
+    font-weight: 700;
+}
+.stat-card.total .label {
+    color: #5d4037;
+}
+
+/* 图表容器 */
+.chart-container { position: relative; height: 300px; width: 100%; }
+
+/* 规则列表 */
+@media (max-width: 480px) {
+    .rule-item { flex-wrap: wrap; gap: 6px 12px; padding: 12px 0; }
+    .rule-item .score-badge { min-width: 30px; font-size: 16px; }
+    .rule-item .desc { width: 100%; order: 10; }
+}
+.rule-item {
+    display: flex;
+    align-items: center;
+    padding: 14px 0;
+    border-bottom: 1px solid #f0f0f0;
+    gap: 12px;
+}
+.rule-item:last-child { border-bottom: none; }
+.rule-item .score-badge {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--primary-color);
+    min-width: 40px;
+    text-align: center;
+}
+.rule-item .score-badge.positive { color: var(--success-color); }
+.rule-item .score-badge.negative { color: var(--danger-color); }
+.rule-item .desc { flex: 1; font-size: 14px; color: #444; }
+.rule-item .actions { display: flex; gap: 8px; }
+.rule-item .actions button {
+    border: none;
+    background: none;
+    color: #999;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.15s;
+}
+.rule-item .actions button:hover { background: #f0f0f0; color: #333; }
+
+.add-rule-form { display: flex; gap: 10px; flex-wrap: wrap; }
+.add-rule-form input, .add-rule-form select {
+    padding: 10px 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    background: #fafafa;
+}
+.add-rule-form input:focus, .add-rule-form select:focus { border-color: var(--primary-color); background: white; }
+.add-rule-form .name-input { flex: 1; min-width: 150px; }
+.add-rule-form .score-input { width: 80px; }
+.add-rule-form .btn-add {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.add-rule-form .btn-add:hover { opacity: 0.9; }
+
+.back-link { color: #7b1fa2; text-decoration: none; font-size: 14px; margin-bottom: 16px; display: inline-block; }
+.back-link:hover { text-decoration: underline; }
+
+.empty { text-align: center; padding: 40px; color: #bbb; }
+.empty .icon { font-size: 48px; }
+
+/* 编辑表单 */
+.score-edit-form {
+    padding: 14px;
+    background: #faf0ff;
+    border-radius: 12px;
+    margin: 8px 0;
+}
+.edit-inner {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.edit-inner select, .edit-inner input {
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+    outline: none;
+}
+.edit-inner select { min-width: 140px; }
+.edit-inner input.edit-reason { flex: 1; min-width: 150px; }
+.edit-inner select:focus, .edit-inner input:focus { border-color: #9c27b0; }
+.edit-actions { display: flex; gap: 6px; }
+.btn-sm-save {
+    background: #9c27b0;
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.btn-sm-save:hover { opacity: 0.9; }
+.btn-sm-cancel {
+    background: #e0e0e0;
+    color: #666;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+}
+.btn-sm-cancel:hover { background: #d0d0d0; }
+
+/* 规则编辑表单 */
+.rule-edit-form {
+    padding: 14px;
+    background: #f0faff;
+    border-radius: 12px;
+    margin: 8px 0;
+}
+.rule-edit-form .edit-grid {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.rule-edit-form input {
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 13px;
+    background: white;
+    outline: none;
+}
+.rule-edit-form input:focus { border-color: #e91e63; }
+.rule-edit-form .ed-name { flex: 1; min-width: 140px; }
+.rule-edit-form .ed-score { width: 80px; }
+.rule-edit-form .ed-category { width: 120px; }
+
+/* 分类组 */
+.cat-group {
+    margin-bottom: 20px;
+}
+.cat-group:last-child { margin-bottom: 0; }
+.cat-header {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 8px 4px;
+    border-bottom: 2px solid #f3e5f5;
+    margin-bottom: 4px;
+}
+.cat-name {
+    font-weight: 700;
+    font-size: 15px;
+    color: #7b1fa2;
+}
+.cat-summary { font-size: 13px; }
+.cat-summary .sum-pos { color: var(--success-color); font-weight: 600; }
+.cat-summary .sum-neg { color: var(--danger-color); font-weight: 600; }
+.cat-count { font-size: 11px; color: #aaa; margin-left: auto; }
+
+/* 打分表单 */
+.add-score-form {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.add-score-form select, .add-score-form input {
+    padding: 10px 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 14px;
+    outline: none;
+    background: #fafafa;
+}
+.add-score-form select:focus, .add-score-form input:focus { border-color: var(--primary-color); background: white; }
+.add-score-form .rule-select { flex: 1; min-width: 180px; }
+.add-score-form .reason-input { flex: 1; min-width: 180px; }
+.score-preview {
+    margin-top: 10px;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+}
+.score-preview.positive { background: #ecfdf5; color: #065f46; }
+.score-preview.negative { background: #fef2f2; color: #991b1b; }
+
+@media (max-width: 640px) {
+
+}
+</style>
+</head>
+<body>
+<div class="container py-4">
+    <a href="/xiaoyu" class="back-link">‹ 返回小渔首页</a>
+
+    <div class="header-card">
+        <h1>⭐ 小渔的打分规则</h1>
+        <div class="sub">管理成长积分规则 · 可自由编排打分项</div>
+    </div>
+
+    <!-- 统计卡片 -->
+    <div class="stat-row" id="statsRow">
+        <div class="stat-card total">            <div class="label">当前总分</div>            <div class="num" id="totalScore">-</div>        </div>        <div class="stat-card today">
+            <div class="label">今日得分</div>
+            <div class="num" id="todayScore">-</div>
+        </div>
+        <div class="stat-card week">
+            <div class="label">本周得分</div>
+            <div class="num" id="weekScore">-</div>
+        </div>
+        <div class="stat-card month">
+            <div class="label">本月得分</div>
+            <div class="num" id="monthScore">-</div>
+        </div>
+    </div>
+
+    <!-- 目标奖励 -->
+    <div class="glass-card">
+        <h5 class="mb-3"><i class="bi bi-trophy me-2"></i>目标奖励</h5>
+        <div class="add-rule-form" style="gap:10px;">
+            <input type="number" id="goalScore" value="100" style="width:80px;padding:10px 14px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;text-align:center;" />
+            <span style="font-size:14px;color:#666;line-height:40px;">分 →</span>
+            <input type="text" id="goalReward" value="奖励吃冰淇淋 🍦" style="flex:1;padding:10px 14px;border:1px solid #e0e0e0;border-radius:10px;font-size:14px;outline:none;" />
+            <button class="btn-add" onclick="saveGoal()" style="white-space:nowrap;">✅ 保存目标</button>
+        </div>
+        <div id="goalDisplay" style="margin-top:12px;padding:14px;border-radius:12px;display:none;"></div>
+    </div>
+
+    <!-- 趋势曲线 -->
+    <div class="glass-card">
+        <h5 class="mb-3"><i class="bi bi-graph-up me-2"></i>近期趋势</h5>
+        <div class="chart-container">
+            <canvas id="trendChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 累计曲线 -->
+    <div class="glass-card" style="margin-top:20px;">
+        <h5 class="mb-3"><i class="bi bi-bar-chart-line me-2"></i>累计趋势</h5>
+        <div class="chart-container">
+            <canvas id="cumulativeChart"></canvas>
+        </div>
+    </div>
+
+    <!-- 新建打分 -->
+    <div class="glass-card">
+        <h5 class="mb-3"><i class="bi bi-star me-2"></i>新建打分</h5>
+        <div class="add-score-form">
+            <select class="rule-select" id="scoreRule">
+                <option value="">— 选择规则 —</option>
+            </select>
+            <input type="hidden" id="scorePeriod" />
+            <input type="hidden" id="scoreCategory" />
+            <input type="text" class="reason-input" id="scoreReason" placeholder="评分理由（可选）" />
+            <button class="btn-add" onclick="addScore()">⭐ 打分</button>
+        </div>
+        <div id="scorePreview" class="score-preview" style="display:none"></div>
+    </div>
+
+    <!-- 添加规则 -->
+    <div class="glass-card">
+        <h5 class="mb-3"><i class="bi bi-plus-circle me-2"></i>添加新规则</h5>
+        <div class="add-rule-form">
+            <input type="text" class="name-input" id="ruleName" placeholder="规则名称，如：主动完成作业">
+            <input type="number" class="score-input" id="ruleScore" placeholder="分值" step="0.5">
+            <button class="btn-add" onclick="addRule()">➕ 添加</button>
+        </div>
+    </div>
+
+    <!-- 规则列表 -->
+    <div class="glass-card">
+        <h5 class="mb-3"><i class="bi bi-list me-2"></i>评分规则列表</h5>
+        <div id="ruleList"></div>
+    </div>
+
+    <!-- 规则排行榜 -->
+    <div class="glass-card">
+        <h5 class="mb-3"><i class="bi bi-trophy me-2"></i>规则排行榜</h5>
+        <div id="topRules"></div>
+    </div>
+
+    <!-- 最近评分记录 -->
+    <div class="glass-card">
+        <h5 class="mb-3"><i class="bi bi-clock-history me-2"></i>最近评分记录</h5>
+        <div id="scoreHistory"></div>
+    </div>
+</div>
+
+<script>
+let rules = [];
+let scores = [];
+let trendChart = null;
+let cumulativeChart = null;
+
+async function loadStats() {
+    try {
+        const res = await fetch('/xiaoyu/api/scores/stats');
+        if (!res.ok) return;
+        const data = await res.json();
+        document.getElementById('totalScore').textContent = formatScore(data.all_total) || 0;
+        document.getElementById('todayScore').textContent = formatScore(data.today_total) || '0';
+        document.getElementById('weekScore').textContent = formatScore(data.week_total) || '0';
+        document.getElementById('monthScore').textContent = formatScore(data.month_total) || '0';
+    } catch(e) {}
+}
+
+function formatScore(v) { v = parseFloat(v) || 0; return (v > 0 ? '+' : '') + v; }
+
+async function loadTrend() {
+    try {
+        const res = await fetch('/xiaoyu/api/scores');
+        const data = await res.json();
+        scores = data.scores || [];
+        renderTrend();
+        renderCumulative();
+    } catch(e) {}
+}
+
+function renderTrend() {
+    // 按天聚合近14天
+    const dayMap = {};
+    for (const s of scores) {
+        const day = (s.created_at || '').slice(0, 10);
+        if (!day) continue;
+        if (!dayMap[day]) dayMap[day] = 0;
+        dayMap[day] += parseFloat(s.score) || 0;
+    }
+    const days = Object.keys(dayMap).sort().slice(-14);
+    const values = days.map(d => dayMap[d]);
+    const labels = days.map(d => d.slice(5)); // MM-DD
+
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    if (trendChart) trendChart.destroy();
+
+    if (values.length === 0) {
+        trendChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: ['暂无数据'], datasets: [{ data: [0] }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { display: false } } }
+        });
+        return;
+    }
+
+    trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: '每日得分',
+                data: values,
+                borderColor: '#e91e63',
+                backgroundColor: 'rgba(233,30,99,0.1)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 4,
+                pointBackgroundColor: '#e91e63',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => (ctx.parsed.y > 0 ? '+' : '') + ctx.parsed.y + ' 分'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => (v > 0 ? '+' : '') + v }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+}
+
+function renderCumulative() {
+    // 按天累计近4个月
+    const now = new Date();
+    const cutoff = new Date(now);
+    cutoff.setMonth(cutoff.getMonth() - 4);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+    const dayMap = {};
+    for (const s of scores) {
+        const day = (s.created_at || '').slice(0, 10);
+        if (!day || day < cutoffStr) continue;
+        if (!dayMap[day]) dayMap[day] = 0;
+        dayMap[day] += parseFloat(s.score) || 0;
+    }
+
+    const allDays = Object.keys(dayMap).sort();
+    const ctx = document.getElementById('cumulativeChart').getContext('2d');
+    if (cumulativeChart) cumulativeChart.destroy();
+
+    if (allDays.length === 0) {
+        cumulativeChart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: ['暂无数据'], datasets: [{ data: [0] }] },
+            options: { plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { display: false } } }
+        });
+        return;
+    }
+
+    // Build cumulative series
+    let running = 0;
+    const cumValues = allDays.map(d => { running += dayMap[d]; return running; });
+    const labels = allDays.map(d => d.slice(5));
+
+    cumulativeChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: '累计分数',
+                data: cumValues,
+                borderColor: '#9c27b0',
+                backgroundColor: 'rgba(156,39,176,0.08)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: '#9c27b0',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => '累计 ' + (ctx.parsed.y > 0 ? '+' : '') + ctx.parsed.y + ' 分'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: v => (v > 0 ? '+' : '') + v }
+                },
+                x: {
+                    grid: { display: false },
+                    ticks: { maxTicksLimit: 20, maxRotation: 45 }
+                }
+            }
+        }
+    });
+}
+
+async function loadRules() {
+    try {
+        const res = await fetch('/xiaoyu/api/rules');
+        const data = await res.json();
+        rules = data.rules || [];
+        renderRules();
+    } catch(e) {}
+}
+
+function renderRules() {
+    const el = document.getElementById('ruleList');
+    const editingId = window._editingRuleId;
+    if (rules.length === 0) {
+        el.innerHTML = '<div class="empty"><div class="icon">📋</div><div>还没有评分规则，添加一条吧</div></div>';
+        populateScoreSelect();
+        return;
+    }
+    // 按分类分组
+    const groups = {};
+    for (const r of rules) {
+        const cat = r.category || '未分类';
+        if (!groups[cat]) groups[cat] = [];
+        groups[cat].push(r);
+    }
+    // 自定义排序好的分类顺序
+    const preferred = ['快速完成作业','美梯作业','按以上美梯课','坚持英语打卡','坚持口算','做家务','信条'];
+    const sortedCats = Object.keys(groups).sort((a, b) => {
+        const ai = preferred.indexOf(a);
+        const bi = preferred.indexOf(b);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        if (ai !== -1) return -1;
+        if (bi !== -1) return 1;
+        return a.localeCompare(b, 'zh');
+    });
+
+    el.innerHTML = sortedCats.map(cat => {
+        const items = groups[cat];
+        // 计算分类统计
+        let posTotal = 0, negTotal = 0;
+        for (const r of items) {
+            const sc = parseFloat(r.score) || 0;
+            if (sc > 0) posTotal += sc;
+            else negTotal += sc;
+        }
+        const summary = [];
+        if (posTotal > 0) summary.push(`<span class="sum-pos">+${posTotal}</span>`);
+        if (negTotal < 0) summary.push(`<span class="sum-neg">${negTotal}</span>`);
+        return `<div class="cat-group">
+            <div class="cat-header">
+                <span class="cat-name">${escapeHtml(cat)}</span>
+                <span class="cat-summary">${summary.join(' · ')}</span>
+                <span class="cat-count">${items.length}项</span>
+            </div>
+            ${items.map(r => {
+                const score = parseFloat(r.score) || 0;
+                const cls = score > 0 ? 'positive' : score < 0 ? 'negative' : '';
+                if (editingId === r.id) {
+                    return `<div class="rule-edit-form">
+                        <div class="edit-grid">
+                            <input class="ed-name" value="${escapeHtml(r.name)}" placeholder="规则名称" />
+                            <input class="ed-score" type="number" value="${r.score}" step="0.5" placeholder="分值" />
+                            <input class="ed-category" value="${escapeHtml(r.category || '')}" placeholder="分类" />
+                            <div class="edit-actions">
+                                <button class="btn-sm-save" onclick="saveRuleEdit(${r.id})">✅ 保存</button>
+                                <button class="btn-sm-cancel" onclick="cancelRuleEdit()">✕ 取消</button>
+                            </div>
+                        </div>
+                    </div>`;
+                }
+                return `<div class="rule-item">
+                    <span class="score-badge ${cls}">${score > 0 ? '+' : ''}${score}</span>
+                    <span class="desc">${escapeHtml(r.name)}</span>
+                    <div class="actions">
+                        <button onclick="startRuleEdit(${r.id})" title="编辑"><i class="bi bi-pencil"></i></button>
+                        <button onclick="deleteRule(${r.id})" title="删除"><i class="bi bi-trash"></i></button>
+                    </div>
+                </div>`;
+            }).join('')}
+        </div>`;
+    }).join('');
+    populateScoreSelect();
+    loadGoal();
+}
+
+async function loadGoal() {
+    try {
+        const res = await fetch('/xiaoyu/api/goals');
+        const data = await res.json();
+        if (data.success && data.goal) {
+            const g = data.goal;
+            document.getElementById('goalScore').value = g.target_score;
+            document.getElementById('goalReward').value = g.reward || '';
+            updateGoalDisplay(g);
+        }
+    } catch(e) {}
+}
+
+function updateGoalDisplay(goal) {
+    const display = document.getElementById('goalDisplay');
+    if (!goal) { display.style.display = 'none'; return; }
+    fetch('/xiaoyu/api/scores')
+        .then(r => r.json())
+        .then(data => {
+            let total = 0;
+            (data.scores || []).forEach(s => { total += s.score || 0; });
+            const remain = goal.target_score - total;
+            display.style.display = 'block';
+            display.innerHTML = '<div style="display:flex;align-items:center;gap:12px;">' +
+                '<span style="font-size:14px;color:#666;">当前 <strong>' + total + '</strong> 分</span>' +
+                '<span style="font-size:14px;color:#999;">→</span>' +
+                '<span style="font-size:14px;color:#9c27b0;">目标 <strong>' + goal.target_score + '</strong> 分</span>' +
+                '<span style="font-size:14px;color:#999;">→</span>' +
+                '<span style="font-size:14px;color:#e91e63;">还差 <strong>' + Math.max(0, remain) + '</strong> 分</span>' +
+                '<span style="font-size:14px;color:#999;">→</span>' +
+                '<span style="font-size:15px;font-weight:600;color:#333;">🎁 ' + escapeHtml(goal.reward) + '</span>' +
+                '</div>';
+        }).catch(() => {});
+}
+
+function saveGoal() {
+    const targetScore = parseFloat(document.getElementById('goalScore').value) || 100;
+    const reward = document.getElementById('goalReward').value.trim() || '奖励';
+    fetch('/xiaoyu/api/goals', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({target_score: targetScore, reward})
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            updateGoalDisplay(data.goal);
+            toast('目标已保存！', 'success');
+        }
+    })
+    .catch(() => {});
+}
+
+async function loadScores() {
+    try {
+        const res = await fetch('/xiaoyu/api/scores');
+        const data = await res.json();
+        scores = data.scores || [];
+        renderScores();
+    } catch(e) {}
+}
+
+let editingScoreId = null;
+
+function renderScores() {
+    const el = document.getElementById('scoreHistory');
+    if (scores.length === 0) {
+        el.innerHTML = '<div class="empty"><div class="icon">📝</div><div>暂无评分记录</div></div>';
+        return;
+    }
+    el.innerHTML = scores.slice(0, 30).map((s, idx) => {
+        const sc = parseFloat(s.score) || 0;
+        const isEditing = editingScoreId === s.id;
+        const rowClass = sc > 0 ? 'positive' : 'negative';
+        if (isEditing) {
+            return `<div class="score-edit-form" data-id="${s.id}">
+                <div class="edit-inner">
+                    <select class="edit-rule">${rules.map(r => `<option value="${r.id}" ${r.id === s.rule_id ? 'selected' : ''}>${escapeHtml(r.name)} (${r.score > 0 ? '+' : ''}${r.score})</option>`).join('')}</select>
+                    <input type="text" class="edit-reason" value="${escapeHtml(s.reason || '')}" placeholder="评分理由" />
+                    <div class="edit-actions">
+                        <button class="btn-sm-save" onclick="saveEditScore(${s.id})">✅ 保存</button>
+                        <button class="btn-sm-cancel" onclick="cancelEditScore()">✕ 取消</button>
+                    </div>
+                </div>
+            </div>`;
+        }
+        return `<div class="rule-item">
+            <span style="font-size:13px;color:#aaa;min-width:20px;">${idx + 1}</span>
+            <span class="score-badge ${rowClass}">${sc > 0 ? '+' : ''}${sc}</span>
+            <span style="font-size:13px;color:#333;white-space:nowrap;">${escapeHtml(s.rule_name || '')}</span>　
+            <span style="font-size:13px;color:#666;flex:1;">${escapeHtml(s.reason || '')}</span>
+            <span style="font-size:12px;color:#9c27b0;white-space:nowrap;">${s.period || ''}</span>
+            <span style="font-size:12px;color:#9c27b0;white-space:nowrap;">${s.period_category || ''}</span>
+            <span class="text-muted" style="font-size:12px;white-space:nowrap;">${(s.created_at || '').slice(5, 16)}</span>
+            <div class="actions">
+                <button onclick="startEditScore(${s.id})" title="编辑"><i class="bi bi-pencil"></i></button>
+                <button onclick="deleteScore(${s.id})" title="删除"><i class="bi bi-trash"></i></button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function startEditScore(id) {
+    editingScoreId = id;
+    renderScores();
+}
+
+function cancelEditScore() {
+    editingScoreId = null;
+    renderScores();
+}
+
+async function saveEditScore(id) {
+    const form = document.querySelector('.score-edit-form[data-id="'+id+'"]');
+    if (!form) return;
+    const ruleId = form.querySelector('.edit-rule').value;
+    const reason = form.querySelector('.edit-reason').value.trim();
+    try {
+        const res = await fetch('/xiaoyu/api/scores/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({rule_id: parseInt(ruleId), reason})
+        });
+        const data = await res.json();
+        if (data.success) {
+            editingScoreId = null;
+            await Promise.all([loadScores(), loadTrend(), loadStats(), renderTopRules()]);
+        } else { alert('编辑失败: ' + (data.error || '')); }
+    } catch(e) { alert('编辑失败: ' + e.message); }
+}
+
+async function deleteScore(id) {
+    if (!confirm('确定删除这条评分记录？')) return;
+    try {
+        const res = await fetch('/xiaoyu/api/scores/' + id, {method: 'DELETE'});
+        const data = await res.json();
+        if (data.success) {
+            await Promise.all([loadScores(), loadTrend(), loadStats(), renderTopRules()]);
+        } else { alert('删除失败: ' + (data.error || '')); }
+    } catch(e) { alert('删除失败: ' + e.message); }
+}
+
+// ── 新建打分 ──
+function populateScoreSelect() {
+    const sel = document.getElementById('scoreRule');
+    if (!sel) return;
+    // 按分类排序
+    const catOrder = ['坚持口算','坚持英语打卡','快速完成作业','按时上美梯课','美梯作业','做家务','考试成绩','信条'];
+    const catLabels = {
+        '坚持口算':'📐 坚持口算',
+        '坚持英语打卡':'🇬🇧 坚持英语打卡',
+        '快速完成作业':'⚡ 快速完成作业',
+        '按时上美梯课':'🎒 按时上美梯课',
+        '美梯作业':'📖 美梯作业',
+        '做家务':'🏠 做家务',
+        '考试成绩':'🎯 考试成绩',
+        '信条':'⚖️ 信条'
+    };
+    const byCat = {};
+    rules.forEach(r => {
+        const c = r.category || '其他';
+        if (!byCat[c]) byCat[c] = [];
+        byCat[c].push(r);
+    });
+    // 每个分类内按分降序
+    Object.keys(byCat).forEach(c => byCat[c].sort((a,b) => b.score - a.score));
+    let html = '<option value="">— 选择规则 —</option>';
+    catOrder.forEach(cat => {
+        if (!byCat[cat] || byCat[cat].length === 0) return;
+        html += '<option disabled style="font-weight:bold;background:#f3e5f5;color:#7b1fa2;">' + (catLabels[cat] || cat) + '</option>';
+        byCat[cat].forEach(r => {
+            const sc = parseFloat(r.score) || 0;
+            const sign = sc > 0 ? '+' : '';
+            html += '<option value="' + r.id + '">' + escapeHtml(r.name) + ' (' + sign + sc + ')</option>';
+        });
+    });
+    sel.innerHTML = html;
+    sel.value = '';
+    
+    // 自动设置月份为当前月
+    const now = new Date();
+    const ym = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    document.getElementById('scorePeriod').value = ym;
+}
+
+// 规则选中时自动填充分类
+document.addEventListener('DOMContentLoaded', function() {
+    const ruleSel = document.getElementById('scoreRule');
+    if (ruleSel) {
+        ruleSel.addEventListener('change', function() {
+            const ruleId = parseInt(this.value);
+            const catEl = document.getElementById('scoreCategory');
+            if (!ruleId) { catEl.value = ''; return; }
+            const rule = rules.find(r => r.id === ruleId);
+            catEl.value = rule ? (rule.category || '') : '';
+        });
+    }
+});
+
+function previewScore() {
+    const ruleId = parseInt(document.getElementById('scoreRule').value);
+    const preview = document.getElementById('scorePreview');
+    if (!ruleId) { preview.style.display = 'none'; return; }
+    const rule = rules.find(r => r.id === ruleId);
+    if (!rule) { preview.style.display = 'none'; return; }
+    const sc = parseFloat(rule.score) || 0;
+    preview.style.display = 'block';
+    preview.className = 'score-preview ' + (sc > 0 ? 'positive' : 'negative');
+    preview.innerHTML = '<strong>' + (sc > 0 ? '+' : '') + sc + '</strong> ' + escapeHtml(rule.name);
+}
+
+async function addScore() {
+    const ruleId = parseInt(document.getElementById('scoreRule').value);
+    const reason = document.getElementById('scoreReason').value.trim();
+    const period = document.getElementById('scorePeriod').value;
+    const periodCategory = document.getElementById('scoreCategory').value;
+    if (!ruleId) { alert('请选择一条规则'); return; }
+    try {
+        const body = {rule_id: ruleId, reason};
+        if (period) body.period = period;
+        if (periodCategory) body.period_category = periodCategory;
+        const res = await fetch('/xiaoyu/api/scores', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('scoreReason').value = '';
+            document.getElementById('scorePreview').style.display = 'none';
+            await Promise.all([loadScores(), loadTrend(), loadStats(), renderTopRules()]);
+        } else { alert('打分失败: ' + (data.error || '')); }
+    } catch(e) { alert('打分失败: ' + e.message); }
+}
+
+async function renderTopRules() {
+    try {
+        const res = await fetch('/xiaoyu/api/scores');
+        const data = await res.json();
+        const allScores = data.scores || [];
+
+        // 按规则聚合
+        const ruleScores = {};
+        for (const s of allScores) {
+            const name = s.rule_name || '未命名';
+            if (!ruleScores[name]) ruleScores[name] = { count: 0, total: 0 };
+            ruleScores[name].count++;
+            ruleScores[name].total += parseFloat(s.score) || 0;
+        }
+        const sorted = Object.entries(ruleScores).sort((a, b) => b[1].total - a[1].total).slice(0, 5);
+
+        const el = document.getElementById('topRules');
+        if (sorted.length === 0) {
+            el.innerHTML = '<div class="empty"><div class="icon">🏆</div><div>暂无累计数据</div></div>';
+            return;
+        }
+        el.innerHTML = sorted.map(([name, info], i) => `
+            <div class="rule-item">
+                <span style="font-size:18px;">${['🥇','🥈','🥉','4️⃣','5️⃣'][i] || ''}</span>
+                <span class="desc"><strong>${escapeHtml(name)}</strong></span>
+                <span class="text-muted" style="font-size:12px;">${info.count}次</span>
+                <span class="score-badge positive">${info.total > 0 ? '+' : ''}${info.total}</span>
+            </div>
+        `).join('');
+    } catch(e) {}
+}
+
+async function addRule() {
+    const name = document.getElementById('ruleName').value.trim();
+    const score = parseFloat(document.getElementById('ruleScore').value);
+    if (!name || isNaN(score)) { alert('请填写规则名称和分值'); return; }
+    try {
+        const res = await fetch('/xiaoyu/api/rules', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, score})
+        });
+        const data = await res.json();
+        if (data.success) {
+            document.getElementById('ruleName').value = '';
+            document.getElementById('ruleScore').value = '';
+            await Promise.all([loadRules(), loadScores(), loadTrend(), renderTopRules()]);
+        } else { alert('添加失败: ' + (data.error || '')); }
+    } catch(e) { alert('添加失败: ' + e.message); }
+}
+
+async function deleteRule(id) {
+    if (!confirm('确定删除这条规则？')) return;
+    try {
+        const res = await fetch('/xiaoyu/api/rules/' + id, {method: 'DELETE'});
+        const data = await res.json();
+        if (data.success) { await Promise.all([loadRules(), loadScores(), loadTrend(), renderTopRules()]); }
+        else { alert('删除失败'); }
+    } catch(e) { alert('删除失败: ' + e.message); }
+}
+
+function escapeHtml(t) {
+    const d = document.createElement('div');
+    d.textContent = t;
+    return d.innerHTML;
+}
+
+// ── 规则编辑 ──
+function startRuleEdit(id) {
+    window._editingRuleId = id;
+    renderRules();
+}
+
+function cancelRuleEdit() {
+    window._editingRuleId = null;
+    renderRules();
+}
+
+async function saveRuleEdit(id) {
+    const formEl = document.querySelector('.rule-edit-form');
+    if (!formEl) return;
+    const name = formEl.querySelector('.ed-name').value.trim();
+    const score = parseFloat(formEl.querySelector('.ed-score').value);
+    const category = formEl.querySelector('.ed-category').value.trim();
+    if (!name || isNaN(score)) { alert('请填写规则名称和分值'); return; }
+    try {
+        const res = await fetch('/xiaoyu/api/rules/' + id, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({name, score, category})
+        });
+        const data = await res.json();
+        if (data.success) {
+            window._editingRuleId = null;
+            await Promise.all([loadRules(), loadScores(), loadTrend(), loadStats(), renderTopRules()]);
+        } else { alert('编辑失败: ' + (data.error || '')); }
+    } catch(e) { alert('编辑失败: ' + e.message); }
+}
+
+// 初始化
+loadStats();
+loadGoal();loadTrend();
+loadRules();
+loadScores();
+renderTopRules();
+
+// 选择框事件
+setTimeout(() => {
+    const sel = document.getElementById('scoreRule');
+    if (sel) sel.addEventListener('change', previewScore);
+}, 100);
+</script>
+</body>
+</html>

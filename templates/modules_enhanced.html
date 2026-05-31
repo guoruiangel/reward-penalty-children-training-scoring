@@ -1,0 +1,187 @@
+.module_name;
+                document.getElementById('detailName').textContent = module.module_name;
+                document.getElementById('detailType').textContent = module.module_type.toUpperCase();
+                document.getElementById('detailType').className = `module-badge badge-${module.module_type}`;
+                document.getElementById('detailPath').textContent = module.file_path;
+                document.getElementById('detailLines').textContent = module.lines_of_code || 0;
+                document.getElementById('detailCreated').textContent = new Date(module.created_at).toLocaleString('zh-CN');
+                document.getElementById('detailReuse').textContent = module.reuse_count || 0;
+                document.getElementById('detailTokens').textContent = (module.estimated_tokens_saved || 0).toLocaleString();
+                document.getElementById('detailLastUsed').textContent = module.last_used ? new Date(module.last_used).toLocaleString('zh-CN') : '从未使用';
+                document.getElementById('detailDescription').textContent = module.description || '无描述';
+                
+                // 计算平均节省
+                const avgTokens = module.reuse_count > 0 ? Math.round(module.estimated_tokens_saved / module.reuse_count) : 0;
+                document.getElementById('detailAvgTokens').textContent = `${avgTokens.toLocaleString()} tokens/次`;
+                
+                // 更新使用历史
+                updateUsageTimeline(module.usage_history || []);
+                
+                // 保存当前模块ID
+                currentModuleId = module.id;
+                
+                // 显示模态框
+                const modal = new bootstrap.Modal(document.getElementById('moduleDetailModal'));
+                modal.show();
+                
+            } catch (error) {
+                console.error('加载模块详情失败:', error);
+                alert('加载模块详情失败: ' + error.message);
+            }
+        }
+        
+        function updateUsageTimeline(usageHistory) {
+            const timeline = document.getElementById('usageTimeline');
+            
+            if (usageHistory.length === 0) {
+                timeline.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-clock-history" style="font-size: 2rem;"></i>
+                        <p class="mt-2">暂无使用记录</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            usageHistory.forEach(usage => {
+                const timestamp = new Date(usage.usage_timestamp).toLocaleString('zh-CN');
+                html += `
+                    <div class="usage-item">
+                        <div class="d-flex justify-content-between">
+                            <strong>${usage.usage_context}</strong>
+                            <span class="text-success">+${usage.tokens_estimated_saved || 0} tokens</span>
+                        </div>
+                        <div class="text-muted small">${timestamp}</div>
+                        ${usage.notes ? `<div class="mt-1">${usage.notes}</div>` : ''}
+                    </div>
+                `;
+            });
+            
+            timeline.innerHTML = html;
+        }
+        
+        // 记录使用功能
+        function recordUsage(moduleName) {
+            document.getElementById('recordModuleName').value = moduleName;
+            currentModuleId = null;
+            
+            // 查找模块ID
+            const module = allModules.find(m => m.module_name === moduleName);
+            if (module && module.id) {
+                currentModuleId = module.id;
+            }
+            
+            const modal = new bootstrap.Modal(document.getElementById('recordUsageModal'));
+            modal.show();
+        }
+        
+        async function submitUsageRecord() {
+            const moduleName = document.getElementById('recordModuleName').value;
+            const context = document.getElementById('recordContext').value;
+            const tokens = parseInt(document.getElementById('recordTokens').value) || 100;
+            const notes = document.getElementById('recordNotes').value;
+            
+            try {
+                const response = await fetch('/api/code-modules/record-usage', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        module_name: moduleName,
+                        usage_context: context,
+                        tokens_saved: tokens,
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ 使用记录保存成功！');
+                    
+                    // 关闭模态框
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('recordUsageModal'));
+                    modal.hide();
+                    
+                    // 刷新数据
+                    loadModuleStats();
+                } else {
+                    alert('❌ 保存失败: ' + (result.error || '未知错误'));
+                }
+                
+            } catch (error) {
+                console.error('记录使用失败:', error);
+                alert('❌ 记录使用失败: ' + error.message);
+            }
+        }
+        
+        function recordModuleUsage() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('moduleDetailModal'));
+            modal.hide();
+            
+            setTimeout(() => {
+                const moduleName = document.getElementById('detailName').textContent;
+                recordUsage(moduleName);
+            }, 300);
+        }
+        
+        // 扫描模块
+        async function scanModules() {
+            if (!confirm('确定要扫描项目中的所有模块吗？这可能会更新现有模块信息。')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/code-modules/scan', {
+                    method: 'POST'
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert(`✅ 扫描完成！\n总模块: ${result.stats.total}\n新注册: ${result.stats.registered}\n更新: ${result.stats.updated}`);
+                    loadModuleStats();
+                } else {
+                    alert('❌ 扫描失败: ' + (result.error || '未知错误'));
+                }
+                
+            } catch (error) {
+                console.error('扫描模块失败:', error);
+                alert('❌ 扫描失败: ' + error.message);
+            }
+        }
+        
+        // 工具函数
+        function getTypeColor(type) {
+            const colorMap = {
+                'core': '#7c3aed',
+                'api': '#3b82f6',
+                'script': '#10b981',
+                'utility': '#f59e0b',
+                'integration': '#8b5cf6',
+                'test': '#ef4444',
+                'default': '#94a3b8'
+            };
+            return colorMap[type] || colorMap.default;
+        }
+        
+        function darkenColor(color, percent) {
+            // 简化版颜色变暗函数
+            return color;
+        }
+        
+        function showLoading(show) {
+            document.getElementById('loadingIndicator').style.display = show ? 'block' : 'none';
+            document.getElementById('modulesTable').style.display = show ? 'none' : 'table';
+        }
+        
+        // 页面加载时获取数据
+        document.addEventListener('DOMContentLoaded', loadModuleStats);
+        
+        // 每30秒刷新一次数据
+        setInterval(loadModuleStats, 30000);
+    </script>
+</body>
+</html>

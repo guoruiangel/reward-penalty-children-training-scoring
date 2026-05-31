@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>网络扫描定时设置</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { padding: 20px; background: #f5f5f5; }
+        .header { background: #7c3aed; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+        .task-card { background: white; padding: 15px; border-radius: 8px; margin-bottom: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .task-card.quick { border-left: 4px solid #10b981; }
+        .task-card.full { border-left: 4px solid #3b82f6; }
+        .cron-inputs { display: flex; gap: 5px; margin: 10px 0; }
+        .cron-input { flex: 1; }
+        .preset-btns { display: flex; gap: 5px; margin: 10px 0; }
+        .preset-btn { padding: 5px 10px; border: 1px solid #ddd; border-radius: 4px; background: #f8f9fa; }
+        .test-area { background: #e3f2fd; padding: 15px; border-radius: 8px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h4>网络扫描定时设置</h4>
+            <p>分别配置快速扫描和完整扫描</p>
+            <div>
+                <a href="/network" class="btn btn-sm btn-outline-light">设备列表</a>
+                <a href="/" class="btn btn-sm btn-outline-light">返回主页</a>
+            </div>
+        </div>
+        
+        <!-- 快速扫描 -->
+        <div class="task-card quick">
+            <h5>快速扫描</h5>
+            <p><small>快速检查已知设备状态</small></p>
+            
+            <div class="mb-3">
+                <label>执行时间 (Cron表达式)</label>
+                <div class="cron-inputs">
+                    <div class="cron-input">
+                        <small>分钟</small>
+                        <input type="text" class="form-control form-control-sm" id="qMin" value="30">
+                    </div>
+                    <div class="cron-input">
+                        <small>小时</small>
+                        <input type="text" class="form-control form-control-sm" id="qHour" value="18">
+                    </div>
+                    <div class="cron-input">
+                        <small>日</small>
+                        <input type="text" class="form-control form-control-sm" id="qDay" value="*">
+                    </div>
+                    <div class="cron-input">
+                        <small>月</small>
+                        <input type="text" class="form-control form-control-sm" id="qMonth" value="*">
+                    </div>
+                    <div class="cron-input">
+                        <small>星期</small>
+                        <input type="text" class="form-control form-control-sm" id="qWeek" value="*">
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <input type="text" class="form-control form-control-sm" id="qCron" value="30 18 * * *" readonly>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <small>预设:</small>
+                <div class="preset-btns">
+                    <button class="preset-btn" onclick="setQPreset('0 9 * * *')">9:00</button>
+                    <button class="preset-btn" onclick="setQPreset('30 18 * * *')">18:30</button>
+                    <button class="preset-btn" onclick="setQPreset('0 22 * * *')">22:00</button>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label>时区</label>
+                    <select class="form-select form-select-sm" id="qTz">
+                        <option value="Asia/Shanghai">上海</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label>描述</label>
+                    <input type="text" class="form-control form-control-sm" id="qDesc" value="每日快速检查">
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="qEnabled" checked>
+                        <label class="form-check-label">启用</label>
+                    </div>
+                </div>
+                <div>
+                    <button class="btn btn-success btn-sm" onclick="saveQuick()">保存</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="resetQuick()">重置</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 完整扫描 -->
+        <div class="task-card full">
+            <h5>完整扫描</h5>
+            <p><small>扫描整个网络发现新设备</small></p>
+            
+            <div class="mb-3">
+                <label>执行时间 (Cron表达式)</label>
+                <div class="cron-inputs">
+                    <div class="cron-input">
+                        <small>分钟</small>
+                        <input type="text" class="form-control form-control-sm" id="fMin" value="0">
+                    </div>
+                    <div class="cron-input">
+                        <small>小时</small>
+                        <input type="text" class="form-control form-control-sm" id="fHour" value="6">
+                    </div>
+                    <div class="cron-input">
+                        <small>日</small>
+                        <input type="text" class="form-control form-control-sm" id="fDay" value="*">
+                    </div>
+                    <div class="cron-input">
+                        <small>月</small>
+                        <input type="text" class="form-control form-control-sm" id="fMonth" value="*">
+                    </div>
+                    <div class="cron-input">
+                        <small>星期</small>
+                        <input type="text" class="form-control form-control-sm" id="fWeek" value="0">
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <input type="text" class="form-control form-control-sm" id="fCron" value="0 6 * * 0" readonly>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <small>预设:</small>
+                <div class="preset-btns">
+                    <button class="preset-btn" onclick="setFPreset('0 6 * * 0')">周日6:00</button>
+                    <button class="preset-btn" onclick="setFPreset('0 22 * * 6')">周六22:00</button>
+                    <button class="preset-btn" onclick="setFPreset('0 2 * * *')">每天2:00</button>
+                </div>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label>时区</label>
+                    <select class="form-select form-select-sm" id="fTz">
+                        <option value="Asia/Shanghai">上海</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label>描述</label>
+                    <input type="text" class="form-control form-control-sm" id="fDesc" value="每周完整扫描">
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="fEnabled">
+                        <label class="form-check-label">启用</label>
+                    </div>
+                </div>
+                <div>
+                    <button class="btn btn-primary btn-sm" onclick="saveFull()">保存</button>
+                    <button class="btn btn-outline-secondary btn-sm" onclick="resetFull()">重置</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 测试 -->
+        <div class="test-area">
+            <h6>测试扫描</h6>
+            <p><small>测试当前配置</small></p>
+            <div>
+                <button class="btn btn-success btn-sm" onclick="testQuick()">测试快速扫描</button>
+                <button class="btn btn-primary btn-sm" onclick="testFull()">测试完整扫描</button>
+            </div>
+            <div id="testResult" class="mt-3" style="display:none;">
+                <div class="d-flex gap-3">
+                    <div>
+                        <div class="fs-5" id="testOnline">0</div>
+                        <small>在线设备</small>
+                    </div>
+                    <div>
+                        <div class="fs-5" id="testDevices">0</div>
+                        <small>发现设备</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 更新Cron表达式
+        function updateCron() {
+            const qCron = `${document.getElementById('qMin').value} ${document.getElementById('qHour').value} ${document.getElementById('qDay').value} ${document.getElementById('qMonth').value} ${document.getElementById('qWeek').value}`;
+            document.getElementById('qCron').value = qCron;
+            
+            const fCron = `${document.getElementById('fMin').value} ${document.getElementById('fHour').value} ${document.getElementById('fDay').value} ${document.getElementById('fMonth').value} ${document.getElementById('fWeek').value}`;
+            document.getElementById('fCron').value = fCron;
+        }
+        
+        // 设置预设
+        function setQPreset(cron) {
+            const parts = cron.split(' ');
+            document.getElementById('qMin').value = parts[0];
+            document.getElementById('qHour').value = parts[1];
+            document.getElementById('qDay').value = parts[2];
+            document.getElementById('qMonth').value = parts[3];
+            document.getElementById('qWeek').value = parts[4];
+            updateCron();
+        }
+        
+        function setFPreset(cron) {
+            const parts = cron.split(' ');
+            document.getElementById('fMin').value = parts[0];
+            document.getElementById('fHour').value = parts[1];
+            document.getElementById('fDay').value = parts[2];
+            document.getElementById('fMonth').value = parts[3];
+            document.getElementById('fWeek').value = parts[4];
+            updateCron();
+        }
+        
+        // 保存设置
+        async function saveQuick() {
+            const data = {
+                enabled: document.getElementById('qEnabled').checked,
+                schedule_expr: document.getElementById('qCron').value,
+                schedule_tz: document.getElementById('qTz').value,
+                description: document.getElementById('qDesc').value
+            };
+            
+            try {
+                const response = await fetch('/api/network/schedule/quick', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                alert(result.success ? '保存成功' : '保存失败: ' + result.error);
+            } catch (error) {
+                alert('保存失败: ' + error.message);
+            }
+        }
+        
+        async function saveFull() {
+            const data = {
+                enabled: document.getElementById('fEnabled').checked,
+                schedule_expr: document.getElementById('fCron').value,
+                schedule_tz: document.getElementById('fTz').value,
+                description: document.getElementById('fDesc').value
+            };
+            
+            try {
+                const response = await fetch('/api/network/schedule/full', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                alert(result.success ? '保存成功' : '保存失败: ' + result.error);
+            } catch (error) {
+                alert('保存失败: ' + error.message);
+            }
+        }
+        
+        // 重置
+        async function resetQuick() {
+            if (confirm('重置快速扫描设置?')) {
+                try {
+                    const response = await fetch('/api/network/schedule/quick', {method: 'DELETE'});
+                    const result = await response.json();
+                    alert(result.success ? '重置成功' : '重置失败');
+                    location.reload();
+                } catch (error) {
+                    alert('重置失败: ' + error.message);
+                }
+            }
+        }
+        
+        async function resetFull() {
+            if (confirm('重置完整扫描设置?')) {
+                try {
+                    const response = await fetch('/api/network/schedule/full', {method: 'DELETE'});
+                    const result = await response.json();
+                    alert(result.success ? '重置成功' : '重置失败');
+                    location.reload();
+                } catch (error) {
+                    alert('重置失败: ' + error.message);
+                }
+            }
+        }
+        
+        // 测试
+        async function testQuick() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '扫描中...';
+            
+            try {
+                const response = await fetch('/api/network/schedule/test', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({scan_type: 'quick'})
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('testOnline').textContent = result.data.online_count;
+                    document.getElementById('testDevices').textContent = result.data.device_count;
+                    document.getElementById('testResult').style.display = 'block';
+                    alert('测试完成: ' + result.message);
+                } else {
+                    alert('测试失败: ' + result.error);
+                }
+            } catch (error) {
+                alert('测试失败: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '测试快速扫描';
+            }
+        }
+        
+        async function testFull() {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '扫描中...';
+            
+            try {
+                const response = await fetch('/api/network/schedule/test', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({scan_type: 'full'})
+                });
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('testOnline').textContent = result.data.online_count;
+                    document.getElementById('testDevices').textContent = result.data.device_count;
+                    document.getElementById('testResult').style.display = 'block';
+                    alert('测试完成: ' + result.message);
+                } else {
+                    alert('测试失败: ' + result.error);
+                }
+            } catch (error) {
+                alert('测试失败: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '测试完整扫描';
+            }
+        }
+        
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 监听输入变化
+            ['qMin','qHour','qDay','qMonth','qWeek','fMin','fHour','fDay','fMonth','fWeek'].forEach(id => {
+                document.getElementById(id).addEventListener('input', updateCron);
+            });
+            
+            // 加载设置
+            loadSettings();
+        });
+        
+        async function loadSettings() {
+            try {
+                const response = await fetch('/api/network/schedule');
+                const data = await response.json();
+                
+                if (data.success) {
+                    data.data.forEach(task => {
+                        if (task.task_type === 'quick') {
+                            document.getElementById('qEnabled').checked = task.enabled;
+                            if (task.schedule_expr) {
+                                const parts = task.schedule_expr.split(' ');
+                                if (parts.length === 5) {
+                                    document.getElementById('qMin').value = parts[0];
+                                    document.getElementById('qHour').value = parts[1];
+                                    document.getElementById('qDay').value = parts[2];
+                                    document.getElementById('qMonth').value = parts[3];
+                                    document.getElementById('qWeek').value = parts[4];
+                                }
+                            }
+                            if (task.schedule_tz) document.getElementById('qTz').value = task.schedule_tz;
+                            if (task.description) document.getElementById('qDesc').value = task.description;
+                        }
+                        
+                        if (task.task_type === 'full') {
+                            document.getElementById('fEnabled').checked = task.enabled;
+                            if (task.schedule_expr) {
+                                const parts = task.schedule_expr.split(' ');
+                                if (parts.length === 5) {
+                                    document.getElementById('fMin').value = parts[0];
+                                    document.getElementById('fHour').value = parts[1];
+                                    document.getElementById('fDay').value = parts[2];
+                                    document.getElementById('fMonth').value = parts[3];
+                                    document.getElementById('fWeek').value = parts[4];
+                                }
+                            }
+                            if (task.schedule_tz) document.getElementById('fTz').value = task.schedule_tz;
+                            if (task.description) document.getElementById('fDesc').value = task.description;
+                        }
+                    });
+                    updateCron();
+                }
+            } catch (error) {
+                console.log('加载设置失败:', error);
+            }
+        }
+    </script>
+</body>
+</html>

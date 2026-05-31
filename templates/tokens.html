@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token消耗统计 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --secondary-color: #a855f7;
+            --success-color: #10b981;
+            --info-color: #3b82f6;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .stats-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+        
+        .stats-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stats-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .stats-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .category-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .chart-container {
+            height: 300px;
+            margin: 20px 0;
+        }
+        
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            color: #4b5563;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .table td {
+            vertical-align: middle;
+        }
+        
+        .token-count {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+        
+        .progress-token {
+            height: 10px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        
+        .color-dev { background-color: var(--primary-color); }
+        .color-search { background-color: var(--info-color); }
+        .color-comm { background-color: var(--success-color); }
+        .color-other { background-color: var(--warning-color); }
+        
+        .legend-item {
+            display: inline-flex;
+            align-items: center;
+            margin-right: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- 头部 -->
+        <div class="glass-card header-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1><i class="bi bi-graph-up me-2"></i>Token消耗统计</h1>
+                    <p class="mb-0">追踪和分析每日/每月token使用情况</p>
+                </div>
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="bi bi-house-door me-1"></i>返回主页
+                </a>
+            </div>
+        </div>
+        
+        <!-- 今日概览 -->
+        <div class="glass-card">
+            <h3 class="mb-4">
+                <i class="bi bi-calendar-day me-2"></i>今日概览
+                <span class="badge bg-primary ms-2" id="todayDate">2026-03-28</span>
+            </h3>
+            
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-value text-primary" id="todayTotal">0</div>
+                        <div class="stats-label">今日总消耗</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-value text-info" id="todayDev">0</div>
+                        <div class="stats-label">开发消耗</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-value text-success" id="todaySearch">0</div>
+                        <div class="stats-label">搜索消耗</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-value text-warning" id="todayComm">0</div>
+                        <div class="stats-label">沟通消耗</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 今日分类饼图 -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <canvas id="todayPieChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="chart-container">
+                        <canvas id="todayBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 分类占比 -->
+            <div class="mt-4">
+                <h5>分类占比</h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="legend-item">
+                            <span class="legend-color color-dev"></span>
+                            <span>开发</span>
+                            <span class="ms-2 token-count" id="devPercent">0%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="legend-item">
+                            <span class="legend-color color-search"></span>
+                            <span>搜索</span>
+                            <span class="ms-2 token-count" id="searchPercent">0%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="legend-item">
+                            <span class="legend-color color-comm"></span>
+                            <span>沟通</span>
+                            <span class="ms-2 token-count" id="commPercent">0%</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="legend-item">
+                            <span class="legend-color color-other"></span>
+                            <span>其他</span>
+                            <span class="ms-2 token-count" id="otherPercent">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 月度统计 -->
+        <div class="glass-card">
+            <h3 class="mb-4">
+                <i class="bi bi-calendar-month me-2"></i>月度统计
+                <span class="badge bg-primary ms-2" id="monthYear">2026年3月</span>
+            </h3>
+            
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-value text-primary" id="monthTotal">0</div>
+                        <div class="stats-label">本月总消耗</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-value text-info" id="monthAvg">0</div>
+                        <div class="stats-label">日均消耗</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-value text-success" id="monthDays">0</div>
+                        <div class="stats-label">统计天数</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-value text-warning" id="monthPeak">0</div>
+                        <div class="stats-label">单日峰值</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 月度趋势图 -->
+            <div class="chart-container">
+                <canvas id="monthLineChart"></canvas>
+            </div>
+        </div>
+        
+        <!-- 详细记录表 -->
+        <div class="glass-card">
+            <h3 class="mb-4">
+                <i class="bi bi-table me-2"></i>详细记录
+                <span class="badge bg-secondary ms-2" id="recordCount">0条</span>
+            </h3>
+            
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>开发</th>
+                            <th>搜索</th>
+                            <th>沟通</th>
+                            <th>其他</th>
+                            <th>总计</th>
+                            <th>分类占比</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTable">
+                        <!-- 数据通过JavaScript加载 -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="text-center text-muted py-3" id="loadingMessage">
+                <div class="spinner-border spinner-border-sm" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div>
+                正在加载统计数据...
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // 全局变量
+        let tokenData = {
+            today: { total: 0, dev: 0, search: 0, comm: 0, other: 0 },
+            month: { total: 0, avg: 0, days: 0, peak: 0 },
+            daily: []
+        };
+        
+        // 初始化页面
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM加载完成，开始初始化Token页面');
+            // 设置日期
+            const today = new Date();
+            document.getElementById('todayDate').textContent = today.toISOString().split('T')[0];
+            document.getElementById('monthYear').textContent = `${today.getFullYear()}年${today.getMonth() + 1}月`;
+            
+            console.log('日期设置完成，开始加载数据');
+            // 加载数据
+            loadTokenData();
+        });
+        
+        // 加载token数据
+        async function loadTokenData() {
+            try {
+                // 加载今日数据
+                const todayRes = await fetch('/api/tokens/today');
+                const todayData = await todayRes.json();
+                
+                if (todayData.status === 'success') {
+                    updateTodayStats(todayData.data);
+                }
+                
+                // 加载月度数据
+                const monthRes = await fetch('/api/tokens/lifetime');
+                const monthData = await monthRes.json();
+                
+                if (monthData.status === 'success') {
+                    updateMonthStats(monthData.data);
+                }
+                
+                // 加载详细记录
+                const recordsRes = await fetch('/api/tokens/report/' + new Date().toISOString().split('T')[0]);
+                const recordsData = await recordsRes.json();
+                
+                if (recordsData.status === 'success') {
+                    updateRecordsTable(recordsData.report);
+                }
+                
+                // 隐藏加载提示
+                document.getElementById('loadingMessage').style.display = 'none';
+                
+            } catch (error) {
+                console.error('加载token数据失败:', error);
+                document.getElementById('loadingMessage').innerHTML = 
+                    '<span class="text-danger">加载数据失败，请刷新页面</span>';
+            }
+        }
+        
+        // 更新今日统计
+        function updateTodayStats(data) {
+            tokenData.today = {
+                total: data.total_tokens || 0,
+                dev: data.dev_tokens || 0,
+                search: data.search_tokens || 0,
+                comm: data.comm_tokens || 0,
+                other: data.other_tokens || 0
+            };
+            
+            // 更新显示
+            document.getElementById('todayTotal').textContent = formatNumber(tokenData.today.total);
+            document.getElementById('todayDev').textContent = formatNumber(tokenData.today.dev);
+            document.getElementById('todaySearch').textContent = formatNumber(tokenData.today.search);
+            document.getElementById('todayComm').textContent = formatNumber(tokenData.today.comm);
+            
+            // 计算百分比
+            const total = tokenData.today.total || 1;
+            const devPercent = Math.round((tokenData.today.dev / total) * 100);
+            const searchPercent = Math.round((tokenData.today.search / total) * 100);
+            const commPercent = Math.round((tokenData.today.comm / total) * 100);
+            const otherPercent = 100 - devPercent - searchPercent - commPercent;
+            
+            document.getElementById('devPercent').textContent = devPercent + '%';
+            document.getElementById('searchPercent').textContent = searchPercent + '%';
+            document.getElementById('commPercent').textContent = commPercent + '%';
+            document.getElementById('otherPercent').textContent = otherPercent + '%';
+            
+            // 创建图表
+            createTodayCharts();
+        }
+        
+        // 更新月度统计
+        function updateMonthStats(data) {
+            tokenData.month = {
+                total: data.total_tokens || 0,
+                avg: data.avg_daily || 0,
+                days: data.days_count || 0,
+                peak: data.peak_daily || 0
+            };
+            
+            // 更新显示
+            document.getElementById('monthTotal').textContent = formatNumber(tokenData.month.total);
+            document.getElementById('monthAvg').textContent = formatNumber(tokenData.month.avg);
+            document.getElementById('monthDays').textContent = tokenData.month.days;
+            document.getElementById('monthPeak').textContent = formatNumber(tokenData.month.peak);
+            
+            // 创建月度图表
+            createMonthChart();
+        }
+        
+        // 更新记录表
+        function updateRecordsTable(report) {
+            const tbody = document.getElementById('recordsTable');
+            const countElement = document.getElementById('recordCount');
+            
+            if (!report.daily || report.daily.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox display-6 d-block mb-2"></i>
+                            暂无统计数据
+                        </td>
+                    </tr>
+                `;
+                countElement.textContent = '0条';
+                return;
+            }
+            
+            let html = '';
+            tokenData.daily = report.daily;
+            
+            report.daily.forEach(day => {
+                const total = day.total_tokens || 0;
+                const dev = day.dev_tokens || 0;
+                const search = day.search_tokens || 0;
+                const comm = day.comm_tokens || 0;
+                const other = day.other_tokens || 0;
+                
+                // 计算百分比
+                const devPercent = total > 0 ? Math.round((dev / total) * 100) : 0;
+                const searchPercent = total > 0 ? Math.round((search / total) * 100) : 0;
+                const commPercent = total > 0 ? Math.round((comm / total) * 100) : 0;
+                const otherPercent = total > 0 ? 100 - devPercent - searchPercent - commPercent : 0;
+                
+                html += `
+                    <tr>
+                        <td><strong>${day.date}</strong></td>
+                        <td><span class="token-count">${formatNumber(dev)}</span></td>
+                        <td><span class="token-count">${formatNumber(search)}</span></td>
+                        <td><span class="token-count">${formatNumber(comm)}</span></td>
+                        <td><span class="token-count">${formatNumber(other)}</span></td>
+                        <td><strong class="token-count">${formatNumber(total)}</strong></td>
+                        <td>
+                            <div class="progress progress-token">
+                                <div class="progress-bar color-dev" style="width: ${devPercent}%" title="开发: ${devPercent}%"></div>
+                                <div class="progress-bar color-search" style="width: ${searchPercent}%" title="搜索: ${searchPercent}%"></div>
+                                <div class="progress-bar color-comm" style="width: ${commPercent}%" title="沟通: ${commPercent}%"></div>
+                                <div class="progress-bar color-other" style="width: ${otherPercent}%" title="其他: ${otherPercent}%"></div>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+            countElement.textContent = report.daily.length + '条';
+        }
+        
+        // 创建今日图表
+        function createTodayCharts() {
+            // 饼图
+            const pieCtx = document.getElementById('todayPieChart').getContext('2d');
+            new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['开发', '搜索', '沟通', '其他'],
+                    datasets: [{
+                        data: [
+                            tokenData.today.dev,
+                            tokenData.today.search,
+                            tokenData.today.comm,
+                            tokenData.today.other
+                        ],
+                        backgroundColor: [
+                            'rgba(124, 58, 237, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.raw || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = Math.round((value / total) * 100);
+                                    return `${label}: ${formatNumber(value)} tokens (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // 柱状图
+            const barCtx = document.getElementById('todayBarChart').getContext('2d');
+            new Chart(barCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['开发', '搜索', '沟通', '其他'],
+                    datasets: [{
+                        label: 'Token消耗',
+                        data: [
+                            tokenData.today.dev,
+                            tokenData.today.search,
+                            tokenData.today.comm,
+                            tokenData.today.other
+                        ],
+                        backgroundColor: [
+                            'rgba(124, 58, 237, 0.8)',
+                            'rgba(59, 130, 246, 0.8)',
+                            'rgba(16, 185, 129, 0.8)',
+                            'rgba(245, 158, 11, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(124, 58, 237)',
+                            'rgb(59, 130, 246)',
+                            'rgb(16, 185, 129)',
+                            'rgb(245, 158, 11)'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatNumber(value);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${formatNumber(context.raw)} tokens`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 创建月度图表
+        function createMonthChart() {
+            if (!tokenData.daily || tokenData.daily.length === 0) return;
+            
+            const ctx = document.getElementById('monthLineChart').getContext('2d');
+            
+            // 准备数据
+            const dates = tokenData.daily.map(d => d.date.split('-').slice(1, 3).join('/'));
+            const totals = tokenData.daily.map(d => d.total_tokens || 0);
+            const devs = tokenData.daily.map(d => d.dev_tokens || 0);
+            const searches = tokenData.daily.map(d => d.search_tokens || 0);
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: '总消耗',
+                            data: totals,
+                            borderColor: 'rgb(124, 58, 237)',
+                            backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: '开发消耗',
+                            data: devs,
+                            borderColor: 'rgb(59, 130, 246)',
+                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: '搜索消耗',
+                            data: searches,
+                            borderColor: 'rgb(16, 185, 129)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return formatNumber(value);
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.dataset.label}: ${formatNumber(context.raw)} tokens`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 格式化数字（千位分隔）
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+        
+        // 每5分钟自动刷新数据
+        setInterval(loadTokenData, 5 * 60 * 1000);
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

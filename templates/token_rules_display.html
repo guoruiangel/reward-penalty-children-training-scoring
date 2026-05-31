@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token评分规则 - Pablo Web</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(124, 58, 237, 0.2);
+        }
+        
+        .rule-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border-left: 5px solid;
+            transition: transform 0.3s ease;
+        }
+        
+        .rule-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .penalty-card {
+            border-left-color: #ef4444;
+        }
+        
+        .reward-card {
+            border-left-color: #10b981;
+        }
+        
+        .neutral-card {
+            border-left-color: #6b7280;
+        }
+        
+        .score-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-right: 10px;
+        }
+        
+        .score-negative {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .score-positive {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .score-neutral {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        
+        .threshold-range {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin: 10px 0;
+        }
+        
+        .rule-description {
+            color: #6b7280;
+            margin-top: 10px;
+        }
+        
+        .current-status {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+        
+        .status-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .status-positive {
+            color: #10b981;
+        }
+        
+        .status-negative {
+            color: #ef4444;
+        }
+        
+        .status-neutral {
+            color: #6b7280;
+        }
+        
+        .info-box {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            border-radius: 0 10px 10px 0;
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            color: #1e293b;
+            margin: 30px 0 20px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="mb-3">
+                <i class="bi bi-award me-2"></i>Token消耗评分规则
+            </h1>
+            <p class="mb-0">根据每日token消耗量自动计算分数，激励高效使用</p>
+        </div>
+        
+        <!-- 当前状态 -->
+        <div class="current-status">
+            <h3 class="mb-4">
+                <i class="bi bi-speedometer2 me-2"></i>今日状态
+            </h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <div class="text-muted">今日消耗</div>
+                        <div class="status-value" id="todayConsumption">加载中...</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <div class="text-muted">应得分数</div>
+                        <div class="status-value status-positive" id="todayScore">加载中...</div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-3">
+                <div class="text-muted">规则依据</div>
+                <div id="todayReason">加载中...</div>
+            </div>
+        </div>
+        
+        <!-- 规则说明 -->
+        <div class="info-box">
+            <h5>
+                <i class="bi bi-info-circle me-2"></i>规则说明
+            </h5>
+            <p class="mb-0">
+                <strong>评分时间：每日22:20后进行总结打分（每天一次）</strong><br>
+                系统根据每日token消耗量计算分数。消耗越少，奖励越高；消耗越多，扣分越多。
+                目标：鼓励高效使用token，控制成本。<br>
+                <em>注意：当前消耗进度不算数，等待22:20后汇总评分</em>
+            </p>
+        </div>
+        
+        <!-- 扣分规则 -->
+        <h3 class="section-title">
+            <i class="bi bi-exclamation-triangle me-2"></i>扣分规则
+        </h3>
+        
+        <div class="rule-card penalty-card">
+            <div class="d-flex align-items-center mb-3">
+                <span class="score-badge score-negative">-10分</span>
+                <span class="threshold-range">> 10M tokens</span>
+            </div>
+            <div class="rule-description">
+                日消耗超过1000万tokens，严重超标，扣10分
+            </div>
+        </div>
+        
+        <div class="rule-card penalty-card">
+            <div class="d-flex align-items-center mb-3">
+                <span class="score-badge score-negative">-5分</span>
+                <span class="threshold-range">5M - 10M tokens</span>
+            </div>
+            <div class="rule-description">
+                日消耗500万到1000万tokens，较高消耗，扣5分
+            </div>
+        </div>
+        
+        <div class="rule-card penalty-card">
+            <div class="d-flex align-items-center mb-3">
+                <span class="score-badge score-negative">-3分</span>
+                <span class="threshold-range">5M - 10M tokens</span>
+            </div>
+            <div class="rule-description">
+                日消耗500万到1000万tokens，较高消耗，扣3分
+            </div>
+        </div>
+        
+        <!-- 中性规则 -->
+        <div class="rule-card neutral-card">
+            <div class="d-flex align-items-center mb-3">
+                <span class="score-badge score-neutral">0分</span>
+                <span class="threshold-range">1M - 5M tokens</span>
+            </div>
+            <div class="rule-description">
+                日消耗100万到500万tokens，正常范围，不扣分不奖励
+            </div>
+        </div>
+        
+        <div class="rule-card neutral-card">
+            <div class="d-flex align-items-center mb-3">
+                <span class="score-badge score-neutral">0分</span>
+                <span class="threshold-range">0.8M - 1M tokens</span>
+            </div>
+            <div class="rule-description">
+                日消耗80万到100万tokens，正常范围，不扣分不奖励
+            </div>
+        </div>
+        
+        <div class="rule-card neutral-card">
+            <div class="d-flex align-items-center mb-3">
+                <span class="score-badge score-neutral">0分</span>
+                <span class="threshold-range">0.5M - 0.8M tokens</span>
+            </div>
+            <div class="rule-description">
+                日消耗50万到80万tokens，正常范围，不扣分不奖励
+            </div>
+        </div>
+        
+        <!-- 奖励规则 -->
+        <h3 class="section-title">
+            <i class="bi bi-award me-2"></i>奖励规则
+        </h3>
+        
+        <div class="rule-card reward-card">
+            <div class="d-flex align-items-center mb-3">
+                <span class="score-badge score-positive">+1分</span>
+                <span class="threshold-range">0.1M - 0.5M tokens</span>
+            </div>
+            <div class="rule-description">
+                日消耗10万到50万tokens，良好表现，奖励1分
+            </div>
+        </div>
+        
+        <div class="rule-card reward-card">
+            <div class="d-flex align-items-center mb-3">
+                <span class="score-badge score-positive">+3分</span>
+                <span class="threshold-range">0.05M - 0.1M tokens</span>
+            </div>
+            <div class="rule-description">
+                日消耗5万到10万tokens，优秀表现，奖励3分
+            </div>
+        </div>
+        
+        <div class="rule-card reward-card">
+            <div class="d-flex align-items-center mb-3">
+                <span class="score-badge score-positive">+5分</span>
+                <span class="threshold-range">0.01M - 0.05M tokens</span>
+            </div>
+            <div class="rule-description">
+                日消耗1万到5万tokens，卓越表现，奖励5分
+            </div>
+        </div>
+        
+        <div class="rule-card reward-card">
+            <div class="d-flex align-items-center mb-3">
+                <span class="score-badge score-positive">+10分</span>
+                <span class="threshold-range">< 0.01M tokens</span>
+            </div>
+            <div class="rule-description">
+                日消耗小于1万tokens，极致高效，奖励10分
+            </div>
+        </div>
+        
+        <!-- 使用说明 -->
+        <div class="info-box mt-4">
+            <h5>
+                <i class="bi bi-lightbulb me-2"></i>使用建议
+            </h5>
+            <ul class="mb-0">
+                <li><strong>目标范围</strong>：尽量控制在0.5M tokens以内（奖励区间）</li>
+                <li><strong>优秀目标</strong>：争取<0.1M tokens（+3分奖励）</li>
+                <li><strong>卓越目标</strong>：挑战<0.05M tokens（+5分奖励）</li>
+                <li><strong>正常范围</strong>：1-5M tokens为0分（不扣分）</li>
+                <li><strong>警告区间</strong>：避免超过5M tokens（开始扣分）</li>
+            </ul>
+        </div>
+        
+        <!-- 历史记录 -->
+        <div class="current-status mt-4">
+            <h3 class="mb-4">
+                <i class="bi bi-clock-history me-2"></i>历史记录
+            </h3>
+            <div class="table-responsive">
+                <table class="table" id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>日期</th>
+                            <th>消耗量</th>
+                            <th>分数</th>
+                            <th>说明</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <!-- 动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="text-center mt-4 mb-5">
+            <p class="text-muted">
+                <i class="bi bi-cpu me-1"></i>Pablo Web Token评分系统 | 最后更新: 2026-04-13
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        // 加载今日数据
+        async function loadTodayData() {
+            try {
+                const response = await fetch('/api/tokens/today');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    const totalTokens = data.total_tokens;
+                    const totalM = (totalTokens / 1000000).toFixed(4);
+                    
+                    document.getElementById('todayConsumption').textContent = 
+                        `${totalTokens.toLocaleString()} tokens (${totalM}M)`;
+                    
+                    // 计算分数
+                    let score, reason;
+                    if (totalM > 10) {
+                        score = -10;
+                        reason = '日消耗 > 10M tokens';
+                    } else if (totalM >= 5) {
+                        score = -5;
+                        reason = '日消耗 5-10M tokens';
+                    } else if (totalM >= 2) {
+                        score = -3;
+                        reason = '日消耗 2-5M tokens';
+                    } else if (totalM >= 1) {
+                        score = -2;
+                        reason = '日消耗 1-2M tokens';
+                    } else if (totalM >= 0.8) {
+                        score = -1;
+                        reason = '日消耗 0.8-1M tokens';
+                    } else if (totalM >= 0.5) {
+                        score = 0;
+                        reason = '日消耗 0.5-0.8M tokens';
+                    } else if (totalM >= 0.1) {
+                        score = 1;
+                        reason = '日消耗 小于0.5M tokens';
+                    } else if (totalM >= 0.05) {
+                        score = 3;
+                        reason = '日消耗 < 0.1M tokens';
+                    } else if (totalM >= 0.01) {
+                        score = 5;
+                        reason = '日消耗 < 0.05M tokens';
+                    } else {
+                        score = 10;
+                        reason = '日消耗 < 0.01M tokens';
+                    }
+                    
+                    document.getElementById('todayScore').textContent = `${score}分`;
+                    document.getElementById('todayReason').textContent = reason;
+                    
+                    // 更新分数颜色
+                    const scoreEl = document.getElementById('todayScore');
+                    scoreEl.classList.remove('status-positive', 'status-negative', 'status-neutral');
+                    if (score > 0) {
+                        scoreEl.classList.add('status-positive');
+                    } else if (score < 0) {
+                        scoreEl.classList.add('status-negative');
+                    } else {
+                        scoreEl.classList.add('status-neutral');
+                    }
+                }
+            } catch (error) {
+                console.error('加载今日数据失败:', error);
+            }
+        }
+        
+        // 加载历史记录
+        async function loadHistory() {
+            try {
+                // 这里应该调用API获取历史记录
+                // 暂时使用模拟数据
+                const historyData = [
+                    { date: '2026-04-02', tokens: 43600, score: 5, reason: '日消耗 < 0.05M tokens' },
+                    { date: '2026-04-01', tokens: 1190000, score: -2, reason: '日消耗 1-2M tokens' },
+                    { date: '2026-03-31', tokens: 11560000, score: -10, reason: '日消耗 > 10M tokens' }
+                ];
+                
+                const tbody = document.getElementById('historyBody');
+                tbody.innerHTML = '';
+                
+                historyData.forEach(item => {
+                    const row = document.createElement('tr');
+                    
+                    // 分数颜色
+                    let scoreClass = '';
+                    let scoreText = item.score > 0 ? `+${item.score}` : item.score;
+                    
+                    if (item.score > 0) {
+                        scoreClass = 'text-success fw-bold';
+                    } else if (item.score < 0) {
+                        scoreClass = 'text-danger fw-bold';
+                    } else {
+                        scoreClass = 'text-muted';
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${item.date}</td>
+                        <td>${item.tokens.toLocaleString()} tokens</td>
+                        <td class="${scoreClass}">${scoreText}分</td>
+                        <td>${item.reason}</td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('加载历史记录失败:', error);
+            }
+        }
+        
+        // 页面加载时执行
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTodayData();
+            loadHistory();
+            
+            // 每30秒刷新一次
+            setInterval(loadTodayData, 30000);
+        });
+    </script>
+</body>
+</html>

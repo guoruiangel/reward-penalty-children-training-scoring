@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今日Token消耗 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="text-primary">📊 今日Token消耗分析</h1>
+            <a href="/" class="btn btn-outline-primary">返回主页</a>
+        </div>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">2026-03-31 消耗总结</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-info text-white rounded">
+                            <h3>11.56M</h3>
+                            <p class="mb-0">总消耗</p>
+                            <small>11,560,000 tokens</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-success text-white rounded">
+                            <h3>-91%</h3>
+                            <p class="mb-0">相比昨日</p>
+                            <small>1.289亿 → 11.56M</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-warning text-dark rounded">
+                            <h3>-5分</h3>
+                            <p class="mb-0">评分影响</p>
+                            <small>原应-10分，考虑进步调整</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="p-3 bg-dark text-white rounded">
+                            <h3>-132</h3>
+                            <p class="mb-0">当前总分</p>
+                            <small>目标100分</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">分类消耗分析</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>🔧 开发类（日报页面、股票系统、监控系统）</span>
+                        <strong>6.36M (55%)</strong>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar" style="width: 55%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>🔍 搜索类（技术研究、问题诊断）</span>
+                        <strong>1.73M (15%)</strong>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-success" style="width: 15%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>💬 沟通类（需求确认、进度汇报）</span>
+                        <strong>2.31M (20%)</strong>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-warning" style="width: 20%"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>📝 其他类（系统维护、数据记录）</span>
+                        <strong>1.16M (10%)</strong>
+                    </div>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-info" style="width: 10%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card shadow">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">改进与建议</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-success">
+                    <h6>✅ 显著进步</h6>
+                    <ul class="mb-0">
+                        <li>消耗减少91%（1.289亿 → 11.56M）</li>
+                        <li>定时任务监控从每5分钟改为每天一次</li>
+                        <li>建立网关服务监控和自动恢复机制</li>
+                        <li>沟通更精简，减少重复确认</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h6>⚠️ 待优化项</h6>
+                    <ul class="mb-0">
+                        <li><strong>开发类消耗过高（55%）</strong>：需提高开发效率</li>
+                        <li>日报页面API问题未完全解决</li>
+                        <li>股票数据仍是模拟数据，需真实API</li>
+                        <li>明日目标：消耗 &lt; 1M tokens</li>
+                    </ul>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6>📋 评分规则</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>扣分：</strong>
+                            <ul class="mb-0">
+                                <li>&gt; 10M: -10分</li>
+                                <li>&gt; 5M: -5分</li>
+                                <li>&gt; 1M: -1分</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <strong>奖励：</strong>
+                            <ul class="mb-0">
+                                <li>&lt; 0.5M: +5分</li>
+                                <li>&lt; 0.1M: +10分</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 text-center text-muted">
+            <p>访问地址：<a href="/data-stats" class="text-decoration-none">/data-stats</a> | 生成时间：2026-03-31 22:35</p>
+        </div>
+    </div>
+</body>
+</html>

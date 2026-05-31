@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>股票 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .stock-container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .top-bar {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            padding: 6px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-shrink: 0;
+        }
+        .top-bar a {
+            color: white;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .top-bar a:hover {
+            opacity: 0.8;
+        }
+        .top-bar h5 {
+            margin: 0;
+            font-weight: 600;
+        }
+        .content-split {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .left-panel {
+            width: 240px;
+            min-width: 240px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            overflow-y: auto;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        .left-panel .list-group-item {
+            border: none;
+            border-bottom: 1px solid #f0f0f0;
+            padding: 12px 16px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.15s;
+        }
+        .left-panel .list-group-item:hover {
+            background: #f3e8ff;
+            color: #7c3aed;
+        }
+        .left-panel .list-group-item.active {
+            background: #7c3aed;
+            color: white;
+            border-color: #7c3aed;
+        }
+        .right-panel {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        .right-panel .content-card {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .right-panel .content-card h4 {
+            color: #1e293b;
+            border-bottom: 2px solid #7c3aed;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .right-panel embed {
+            width: 100%;
+            height: calc(100vh - 120px);
+            min-height: 500px;
+            border: none;
+            border-radius: 8px;
+        }
+        .stock-summary {
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+        .stock-summary .label {
+            color: #6c757d;
+            font-weight: 500;
+            display: inline-block;
+            width: 80px;
+        }
+        .hk-section, .us-section {
+            margin-bottom: 24px;
+        }
+        .hk-section h5, .us-section h5 {
+            color: #7c3aed;
+            border-left: 3px solid #7c3aed;
+            padding-left: 10px;
+            margin-bottom: 12px;
+        }
+        .stock-table {
+            font-size: 0.85rem;
+        }
+        .stock-table thead th {
+            background: #f3e8ff;
+            color: #5b21b6;
+            font-weight: 600;
+            border-bottom: 2px solid #d8b4fe;
+        }
+        .value-up { color: #10b981; }
+        .value-down { color: #ef4444; }
+        @media (max-width: 768px) {
+            .left-panel { width: 160px; min-width: 160px; }
+            .right-panel embed { height: calc(100vh - 100px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="stock-container">
+        <div class="top-bar">
+            <a href="/"><i class="bi bi-house-door-fill me-1"></i></a>
+            <h5><i class="bi bi-currency-exchange me-1"></i>股票</h5>
+        </div>
+        <div class="content-split">
+            <!-- 左侧标签 -->
+            <div class="left-panel">
+                <div class="list-group list-group-flush" id="tab-list">
+                </div>
+            </div>
+            <!-- 右侧正文 -->
+            <div class="right-panel">
+                <div class="content-card" id="tab-content">
+                    <h4 id="tab-title"><i class="bi bi-file-earmark-pdf me-2"></i>选择一份结单</h4>
+                    <embed id="tab-embed" src="" type="application/pdf" style="display:none;">
+                    <p id="tab-placeholder" class="text-muted text-center mt-5">请从左侧选择一份月结单查看</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 从API获取PDF列表
+        fetch('/api/stock-pdfs')
+            .then(r => r.json())
+            .then(data => {
+                const list = document.getElementById('tab-list');
+                const files = data.files || [];
+                if (files.length === 0) {
+                    list.innerHTML = '<div class="list-group-item text-muted small" style="padding:16px;"><i class="bi bi-inbox me-1"></i>暂无结单</div>';
+                    return;
+                }
+                files.forEach(function(f, i) {
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.className = 'list-group-item list-group-item-action' + (i === 0 ? ' active' : '');
+                    a.innerHTML = '<i class="bi bi-file-earmark-pdf me-2"></i>' + f.name;
+                    a.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        document.querySelectorAll('#tab-list a').forEach(function(x) { x.classList.remove('active'); });
+                        this.classList.add('active');
+                        document.getElementById('tab-title').innerHTML = '<i class="bi bi-file-earmark-pdf me-2"></i>' + f.name;
+                        const embed = document.getElementById('tab-embed');
+                        embed.src = f.url;
+                        embed.style.display = '';
+                        document.getElementById('tab-placeholder').style.display = 'none';
+                    });
+                    list.appendChild(a);
+                });
+                // 默认选中第一个
+                if (files.length > 0) {
+                    document.getElementById('tab-title').innerHTML = '<i class="bi bi-file-earmark-pdf me-2"></i>' + files[0].name;
+                    document.getElementById('tab-embed').src = files[0].url;
+                    document.getElementById('tab-embed').style.display = '';
+                    document.getElementById('tab-placeholder').style.display = 'none';
+                }
+            });
+    </script>
+</body>
+</html>

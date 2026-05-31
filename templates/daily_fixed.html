@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>每日日报 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --secondary-color: #a855f7;
+        }
+        
+        body {
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 20px;
+        }
+        
+        .container-fluid {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .header-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+        }
+        
+        /* 两列布局 */
+        .two-column-layout {
+            display: flex;
+            gap: 25px;
+            min-height: 600px;
+        }
+        
+        /* 左侧日期标签栏 */
+        .date-sidebar {
+            flex: 0 0 300px;
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow-y: auto;
+            max-height: 700px;
+        }
+        
+        .date-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .date-tab {
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8fafc;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .date-tab:hover {
+            background: #f1f5f9;
+            transform: translateX(5px);
+        }
+        
+        .date-tab.active {
+            background: linear-gradient(135deg, rgba(124, 58, 237, 0.1), rgba(168, 85, 247, 0.1));
+            border-color: var(--primary-color);
+        }
+        
+        /* 右侧内容区域 */
+        .content-area {
+            flex: 1;
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            overflow-y: auto;
+            max-height: 700px;
+        }
+        
+        .content-card {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .weather-card {
+            background: linear-gradient(135deg, #3b82f6, #60a5fa);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .news-item {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #3b82f6;
+        }
+        
+        .stock-table {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 992px) {
+            .two-column-layout {
+                flex-direction: column;
+            }
+            
+            .date-sidebar {
+                max-height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- 头部 -->
+        <div class="header-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1><i class="bi bi-newspaper me-2"></i>每日日报</h1>
+                    <p class="mb-0">两列布局 - 点击左侧日期查看对应日报</p>
+                </div>
+                <a href="/" class="btn btn-outline-light">
+                    <i class="bi bi-house-door me-1"></i>返回主页
+                </a>
+            </div>
+        </div>
+        
+        <!-- 两列布局 -->
+        <div class="two-column-layout">
+            <!-- 左侧日期标签栏 -->
+            <div class="date-sidebar">
+                <h5><i class="bi bi-calendar3 me-2"></i>日期列表</h5>
+                <p class="text-muted small mb-3">点击日期查看日报</p>
+                
+                <div class="date-list" id="dateList">
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                        <p class="mt-2">正在加载日期...</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧内容区域 -->
+            <div class="content-area">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h3 id="selectedDate">请选择日期</h3>
+                        <div class="badge bg-primary" id="selectedDay">--</div>
+                    </div>
+                    <button class="btn btn-outline-primary" onclick="refreshAllData()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>刷新
+                    </button>
+                </div>
+                
+                <div id="contentContainer">
+                    <div class="text-center py-5">
+                        <i class="bi bi-calendar-date display-4 text-muted mb-3"></i>
+                        <h4>请选择日期</h4>
+                        <p class="text-muted">从左侧日期列表中选择一个日期查看日报内容</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let allDates = [];
+        let currentDate = null;
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDateList();
+        });
+        
+        // 加载日期列表
+        function loadDateList() {
+            fetch('/api/daily/dates')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.dates.length > 0) {
+                        allDates = data.dates.sort((a, b) => new Date(b) - new Date(a));
+                        renderDateList(allDates);
+                        
+                        // 默认选择第一个日期（最新的）
+                        if (allDates.length > 0) {
+                            selectDate(allDates[0]);
+                        }
+                    } else {
+                        document.getElementById('dateList').innerHTML = `
+                            <div class="text-center py-4">
+                                <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                                <h4>暂无数据</h4>
+                                <p>没有找到日报数据</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('加载日期列表失败:', error);
+                    document.getElementById('dateList').innerHTML = `
+                        <div class="alert alert-danger">
+                            <h5><i class="bi bi-exclamation-triangle me-2"></i>加载失败</h5>
+                            <p>无法加载日期列表</p>
+                            <button class="btn btn-sm btn-outline-danger mt-2" onclick="loadDateList()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>重试
+                            </button>
+                        </div>
+                    `;
+                });
+        }
+        
+        // 渲染日期列表
+        function renderDateList(dates) {
+            const dateList = document.getElementById('dateList');
+            dateList.innerHTML = '';
+            
+            dates.forEach(date => {
+                const dateLabel = formatDate(date);
+                const dayOfWeek = getDayOfWeek(date);
+                const isToday = isTodayDate(date);
+                
+                const dateTab = document.createElement('div');
+                dateTab.className = `date-tab ${currentDate === date ? 'active' : ''}`;
+                dateTab.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">${dateLabel}</div>
+                            <div class="small text-muted">${dayOfWeek}${isToday ? ' (今日)' : ''}</div>
+                        </div>
+                        ${isToday ? '<span class="badge bg-primary">今日</span>' : ''}
+                    </div>
+                `;
+                
+                dateTab.onclick = () => selectDate(date);
+                dateList.appendChild(dateTab);
+            });
+        }
+        
+        // 选择日期
+        function selectDate(date) {
+            currentDate = date;
+            
+            // 更新日期标签样式
+            document.querySelectorAll('.date-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            const selectedTab = Array.from(document.querySelectorAll('.date-tab')).find(tab => {
+                return tab.querySelector('.fw-bold').textContent === formatDate(date);
+            });
+            
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+            }
+            
+            // 更新右侧标题
+            document.getElementById('selectedDate').textContent = formatDate(date);
+            document.getElementById('selectedDay').textContent = getDayOfWeek(date);
+            
+            // 加载该日期的数据
+            loadDailyContent(date);
+        }
+        
+        // 加载日报内容
+        function loadDailyContent(date) {
+            const container = document.getElementById('contentContainer');
+            
+            container.innerHTML = `
+                <div class="text-center py-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-2">正在加载 ${formatDate(date)} 的日报数据...</p>
+                </div>
+            `;
+            
+            fetch(`/api/daily/${date}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderDailyContent(date, data);
+                    } else {
+                        container.innerHTML = `
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                                <h4>暂无数据</h4>
+                                <p>${formatDate(date)} 没有日报数据</p>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error(`加载 ${date} 数据失败:`, error);
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <h5><i class="bi bi-exclamation-triangle me-2"></i>加载失败</h5>
+                            <p>无法加载 ${formatDate(date)} 的日报数据</p>
+                            <button class="btn btn-sm btn-outline-danger mt-2" onclick="loadDailyContent('${date}')">
+                                <i class="bi bi-arrow-clockwise me-1"></i>重试
+                            </button>
+                        </div>
+                    `;
+                });
+        }
+        
+        // 渲染日报内容
+        function renderDailyContent(date, data) {
+            const container = document.getElementById('contentContainer');
+            const weather = data.weather || {};
+            const news = data.news || [];
+            const stocks = data.stocks || [];
+            
+            let html = '';
+            
+            // 天气信息
+            if (weather && weather.location) {
+                html += `
+                    <div class="content-card">
+                        <h5><i class="bi bi-cloud-sun me-2"></i>天气信息</h5>
+                        <div class="weather-card">
+                            <h6>${weather.location}</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><i class="bi bi-thermometer-half me-2"></i>温度: ${weather.temperature || '--'}°C</p>
+                                    <p><i class="bi bi-wind me-2"></i>体感: ${weather.feels_like || '--'}°C</p>
+                                    <p><i class="bi bi-cloud me-2"></i>天气: ${weather.condition || '--'}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><i class="bi bi-droplet me-2"></i>湿度: ${weather.humidity || '--'}</p>
+                                    <p><i class="bi bi-wind me-2"></i>风速: ${weather.wind_speed || '--'}</p>
+                                    <p><i class="bi bi-calendar3 me-2"></i>阴历: ${weather.lunar_date || '--'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 新闻信息
+            if (news.length > 0) {
+                html += `
+                    <div class="content-card">
+                        <h5><i class="bi bi-newspaper me-2"></i>今日新闻 (${news.length}条)</h5>
+                `;
+                
+                news.forEach(item => {
+                    html += `
+                        <div class="news-item">
+                            <h6>${item.title || '无标题'}</h6>
+                            <p class="text-muted small mb-2">
+                                <i class="bi bi-clock me-1"></i>${item.published_at || '--'} | 
+                                <i class="bi bi-building me-1"></i>${item.source_name || item.source || '未知来源'}
+                            </p>
+                            <p>${item.summary || item.content || '无摘要'}</p>
+                        </div>
+                    `;
+                });
+                
+                html += `</div>`;
+            }
+            
+            // 股票信息
+            if (stocks.length > 0) {
+                html += `
+                    <div class="content-card">
+                        <h5><i class="bi bi-graph-up me-2"></i>关注股票 (${stocks.length}只)</h5>
+                        <div class="table-responsive">
+                            <table class="stock-table">
+                                <thead>
+                                    <tr>
+                                        <th>代码</th>
+                                        <th>名称</th>
+                                        <th>价格</th>
+                                        <th>涨跌幅</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                `;
+                
+                stocks.forEach(stock => {
+                    const changeClass = stock.change_percent >= 0 ? 'text-success' : 'text-danger';
+                    const changeIcon = stock.change_percent >= 0 ? '↑' : '↓';
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${stock.symbol || '--'}</strong></td>
+                            <td>${stock.name || '--'}</td>
+                            <td>${stock.price ? stock.price.toFixed(2) : '--'}</td>
+                            <td class="${changeClass}">
+                                ${changeIcon} ${stock.change_percent ? Math.abs(stock.change_percent).toFixed(2) : '--'}%
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 如果没有数据
+            if (!html) {
+                html = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox display-4 text-muted mb-3"></i>
+                        <h4>暂无数据</h4>
+                        <p>${formatDate(date)} 没有日报内容</p>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // 刷新所有数据
+        function refreshAllData() {
+            loadDateList();
+            
+            if (currentDate) {
+                loadDailyContent(currentDate);
+            }
+        }
+        
+        // 工具函数
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit'
+            });
+        }
+        
+        function getDayOfWeek(dateStr) {
+            const date = new Date(dateStr);
+            const days = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            return days[date.getDay()];
+        }
+        
+        function isTodayDate(dateStr) {
+            const today = new Date().toISOString().split('T')[0];
+            return dateStr === today;
+        }
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

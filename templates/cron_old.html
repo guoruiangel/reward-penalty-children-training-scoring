@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>定时任务管理 - Pablo 智能演进看板</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --secondary-color: #a855f7;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .btn-purple {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-purple:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(124, 58, 237, 0.4);
+            color: white;
+        }
+        
+        .status-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-disabled {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-error {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .task-card {
+            border-left: 5px solid var(--primary-color);
+            transition: all 0.3s;
+        }
+        
+        .task-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .schedule-badge {
+            background-color: #e0e7ff;
+            color: #3730a3;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container py-4">
+        <!-- 返回按钮 -->
+        <div class="mb-4">
+            <a href="/" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> 返回主页
+            </a>
+        </div>
+
+        <!-- 页面标题 -->
+        <div class="glass-card header-card mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2"><i class="bi bi-clock"></i> 定时任务管理</h1>
+                    <p class="mb-0">管理 Pablo 系统的自动化任务和定时执行</p>
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-light" onclick="refreshTasks()">
+                        <i class="bi bi-arrow-clockwise"></i> 刷新
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 任务统计 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="glass-card text-center">
+                    <h3 class="text-primary" id="total-tasks">0</h3>
+                    <p class="text-muted mb-0">总任务数</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card text-center">
+                    <h3 class="text-success" id="active-tasks">0</h3>
+                    <p class="text-muted mb-0">活跃任务</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card text-center">
+                    <h3 class="text-warning" id="disabled-tasks">0</h3>
+                    <p class="text-muted mb-0">禁用任务</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="glass-card text-center">
+                    <h3 class="text-info" id="error-tasks">0</h3>
+                    <p class="text-muted mb-0">错误任务</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 任务列表 -->
+        <div class="glass-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3><i class="bi bi-list-task"></i> 定时任务列表</h3>
+                <button class="btn btn-purple" onclick="showAddTaskModal()">
+                    <i class="bi bi-plus-circle"></i> 添加新任务
+                </button>
+            </div>
+            
+            <div id="tasks-container">
+                <!-- 任务将通过JavaScript动态加载 -->
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">加载中...</span>
+                    </div>
+                    <p class="mt-3 text-muted">正在加载定时任务...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 系统信息 -->
+        <div class="glass-card">
+            <h4><i class="bi bi-info-circle"></i> 系统信息</h4>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>OpenClaw Cron 状态：</strong> <span id="cron-status" class="status-badge status-active">运行中</span></p>
+                    <p><strong>最后检查时间：</strong> <span id="last-check">--:--:--</span></p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>任务执行器：</strong> OpenClaw Gateway Cron</p>
+                    <p><strong>支持的任务类型：</strong> 系统事件、代理执行、Webhook</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加任务模态框 -->
+    <div class="modal fade" id="addTaskModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">添加新定时任务</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="taskForm">
+                        <div class="mb-3">
+                            <label class="form-label">任务名称</label>
+                            <input type="text" class="form-control" name="name" required placeholder="例如：每日网络扫描">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">任务类型</label>
+                            <select class="form-select" name="kind" required onchange="toggleTaskType(this.value)">
+                                <option value="">请选择任务类型</option>
+                                <option value="systemEvent">系统事件（发送消息到主会话）</option>
+                                <option value="agentTurn">代理执行（在独立会话中运行）</option>
+                                <option value="webhook">Webhook（发送HTTP请求）</option>
+                            </select>
+                        </div>
+                        
+                        <div id="systemEventFields" class="task-type-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">事件内容</label>
+                                <textarea class="form-control" name="eventText" rows="3" placeholder="要发送的系统事件内容"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div id="agentTurnFields" class="task-type-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">代理指令</label>
+                                <textarea class="form-control" name="agentMessage" rows="3" placeholder="给代理的指令，例如：检查网络设备状态"></textarea>
+                            </div>
+                        </div>
+                        
+                        <div id="webhookFields" class="task-type-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Webhook URL</label>
+                                <input type="url" class="form-control" name="webhookUrl" placeholder="https://example.com/webhook">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">执行计划</label>
+                            <select class="form-select" name="scheduleType" required onchange="toggleScheduleType(this.value)">
+                                <option value="">选择计划类型</option>
+                                <option value="cron">Cron表达式</option>
+                                <option value="every">固定间隔</option>
+                                <option value="at">指定时间</option>
+                            </select>
+                        </div>
+                        
+                        <div id="cronFields" class="schedule-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">Cron表达式</label>
+                                <input type="text" class="form-control" name="cronExpr" placeholder="例如：0 18 * * * (每天18:00)">
+                                <small class="text-muted">格式：分 时 日 月 周</small>
+                            </div>
+                        </div>
+                        
+                        <div id="everyFields" class="schedule-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">间隔时间（毫秒）</label>
+                                <input type="number" class="form-control" name="everyMs" placeholder="例如：3600000 (1小时)">
+                                <small class="text-muted">1小时 = 3600000 毫秒</small>
+                            </div>
+                        </div>
+                        
+                        <div id="atFields" class="schedule-fields" style="display: none;">
+                            <div class="mb-3">
+                                <label class="form-label">执行时间</label>
+                                <input type="datetime-local" class="form-control" name="atTime">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">任务状态</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="enabled" id="enabledCheck" checked>
+                                <label class="form-check-label" for="enabledCheck">启用任务</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-purple" onclick="submitTask()">创建任务</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // 页面加载时获取任务列表
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTasks();
+            updateLastCheck();
+        });
+
+        // 加载任务列表
+        async function loadTasks() {
+            try {
+                const response = await fetch('/api/cron/tasks');
+                const data = await response.json();
+                renderTasks(data.tasks || []);
+                updateStats(data.tasks || []);
+            } catch (error) {
+                console.error('加载任务失败:', error);
+                document.getElementById('tasks-container').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> 加载定时任务失败：${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染任务列表
+        function renderTasks(tasks) {
+            const container = document.getElementById('tasks-container');
+            
+            if (tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-clock text-muted" style="font-size: 3rem;"></i>
+                        <h4 class="mt-3">暂无定时任务</h4>
+                        <p class="text-muted">点击"添加新任务"按钮创建第一个定时任务</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="row">';
+            
+            tasks.forEach(task => {
+                const statusClass = task.enabled ? 'status-active' : 'status-disabled';
+                const statusText = task.enabled ? '活跃' : '禁用';
+                
+                html += `
+                    <div class="col-md-6 mb-4">
+                        <div class="glass-card task-card">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="mb-0">${task.name || '未命名任务'}</h5>
+                                <span class="status-badge ${statusClass}">${statusText}</span>
+                            </div>
+                            
+                            <p class="text-muted mb-2"><small>ID: ${task.id}</small></p>
+                            
+                            <div class="mb-3">
+                                <span class="schedule-badge">
+                                    <i class="bi bi-calendar-event"></i> ${getScheduleText(task.schedule)}
+                                </span>
+                            </div>
+                            
+                            <p class="mb-3">${getTaskDescription(task)}</p>
+                            
+                            <div class="d-flex justify-content-between">
+                                <button class="btn btn-sm btn-outline-primary" onclick="toggleTask('${task.id}', ${!task.enabled})">
+                                    <i class="bi bi-power"></i> ${task.enabled ? '禁用' : '启用'}
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" onclick="deleteTask('${task.id}')">
+                                    <i class="bi bi-trash"></i> 删除
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        // 获取计划描述
+        function getScheduleText(schedule) {
+            if (!schedule) return '未知计划';
+            
+            switch (schedule.kind) {
+                case 'cron':
+                    return `Cron: ${schedule.expr}`;
+                case 'every':
+                    const hours = schedule.everyMs / 3600000;
+                    return `每 ${hours} 小时`;
+                case 'at':
+                    return `指定时间: ${new Date(schedule.at).toLocaleString()}`;
+                default:
+                    return schedule.kind;
+            }
+        }
+
+        // 获取任务描述
+        function getTaskDescription(task) {
+            if (!task.payload) return '无描述';
+            
+            switch (task.payload.kind) {
+                case 'systemEvent':
+                    return `系统事件: ${task.payload.text?.substring(0, 50)}...`;
+                case 'agentTurn':
+                    return `代理执行: ${task.payload.message?.substring(0, 50)}...`;
+                case 'webhook':
+                    return `Webhook: ${task.payload.url?.substring(0, 50)}...`;
+                default:
+                    return task.payload.kind;
+            }
+        }
+
+        // 更新统计信息
+        function updateStats(tasks) {
+            const total = tasks.length;
+            const active = tasks.filter(t => t.enabled).length;
+            const disabled = tasks.filter(t => !t.enabled).length;
+            const error = tasks.filter(t => t.lastError).length;
+            
+            document.getElementById('total-tasks').textContent = total;
+            document.getElementById('active-tasks').textContent = active;
+            document.getElementById('disabled-tasks').textContent = disabled;
+            document.getElementById('error-tasks').textContent = error;
+        }
+
+        // 切换任务类型显示
+        function toggleTaskType(type) {
+            document.querySelectorAll('.task-type-fields').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            if (type) {
+                document.getElementById(type + 'Fields').style.display = 'block';
+            }
+        }
+
+        // 切换计划类型显示
+        function toggleScheduleType(type) {
+            document.querySelectorAll('.schedule-fields').forEach(el => {
+                el.style.display = 'none';
+            });
+            
+            if (type) {
+                document.getElementById(type + 'Fields').style.display = 'block';
+            }
+        }
+
+        // 显示添加任务模态框
+        function showAddTaskModal() {
+            const modal = new bootstrap.Modal(document.getElementById('addTaskModal'));
+            modal.show();
+        }
+
+        // 提交任务
+        async function submitTask() {
+            const form = document.getElementById('taskForm');
+            const formData = new FormData(form);
+            
+            // 这里需要实现实际的API

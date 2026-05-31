@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pablo Web 自助管理后台</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --secondary-color: #a855f7;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+        }
+        
+        body {
+            background: #f8fafc;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            color: white;
+            min-height: 100vh;
+            position: fixed;
+            width: 280px;
+            padding: 0;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .main-content {
+            margin-left: 280px;
+            padding: 30px;
+            min-height: 100vh;
+        }
+        
+        .logo-area {
+            padding: 30px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+        
+        .nav-item {
+            margin: 5px 15px;
+        }
+        
+        .nav-link {
+            color: #cbd5e1;
+            padding: 12px 20px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+        
+        .nav-link.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .nav-icon {
+            width: 24px;
+            margin-right: 12px;
+            text-align: center;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+            border: none;
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .module-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            margin-bottom: 25px;
+            border: none;
+            transition: transform 0.3s ease;
+        }
+        
+        .module-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .module-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        
+        .btn-admin {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-admin-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .btn-admin-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+        }
+        
+        .form-control-admin {
+            padding: 12px 15px;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+            font-size: 1rem;
+        }
+        
+        .form-control-admin:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+        
+        .table-admin {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .table-admin th {
+            background: #f8fafc;
+            padding: 15px;
+            font-weight: 600;
+            color: #475569;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .table-admin td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .table-admin tr:hover {
+            background: #f8fafc;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-inactive {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-warning {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        
+        .alert-admin {
+            border-radius: 12px;
+            border: none;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
+            color: #1e40af;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            color: #065f46;
+        }
+        
+        .alert-warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+        }
+        
+        .tab-content {
+            padding: 25px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .nav-tabs-admin {
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 0;
+        }
+        
+        .nav-tabs-admin .nav-link {
+            border: none;
+            color: #64748b;
+            padding: 12px 25px;
+            border-radius: 10px 10px 0 0;
+            margin-right: 5px;
+        }
+        
+        .nav-tabs-admin .nav-link.active {
+            background: white;
+            color: var(--primary-color);
+            border-bottom: 3px solid var(--primary-color);
+        }
+        
+        .code-block {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+        
+        .guide-step {
+            padding: 20px;
+            border-left: 4px solid var(--primary-color);
+            background: #f8fafc;
+            margin-bottom: 20px;
+            border-radius: 0 10px 10px 0;
+        }
+        
+        .guide-step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                position: relative;
+                min-height: auto;
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <div class="sidebar">
+        <div class="logo-area">
+            <h3 class="mb-2">
+                <i class="bi bi-gear-wide-connected me-2"></i>Pablo 管理后台
+            </h3>
+            <p class="text-muted mb-0">自助托管 · 自主维护</p>
+        </div>
+        
+        <nav class="nav flex-column mt-4">
+            <div class="nav-item">
+                <a class="nav-link active" href="#dashboard" data-bs-toggle="tab">
+                    <i class="bi bi-speedometer2 nav-icon"></i>仪表盘
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="#content" data-bs-toggle="tab">
+                    <i class="bi bi-file-text nav-icon"></i>内容管理
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="#tokens" data-bs-toggle="tab">
+                    <i class="bi bi-calculator nav-icon"></i>Token管理
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="#system" data-bs-toggle="tab">
+                    <i class="bi bi-gear nav-icon"></i>系统配置
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="#backup" data-bs-toggle="tab">
+                    <i class="bi bi-cloud-arrow-up nav-icon"></i>备份恢复
+                </a>
+            </div>
+            
+            <div class="nav-item">
+                <a class="nav-link" href="#docs" data-bs-toggle="tab">
+                    <i class="bi bi-book nav-icon"></i>使用文档
+                </a>
+            </div>
+            
+            <div class="nav-item mt-auto">
+                <div class="p-3 border-top border-secondary">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <i class="bi bi-person-circle fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold">管理员</div>
+                            <small class="text-muted">自主维护模式</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </div>
+    
+    <!-- 主内容区 -->
+    <div class="main-content">
+        <div class="tab-content">
+            <!-- 仪表盘 -->
+            <div class="tab-pane fade show active" id="dashboard">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-2">
+                            <i class="bi bi-speedometer2 me-2"></i>系统仪表盘
+                        </h2>
+                        <p class="text-muted mb-0">监控系统状态，快速管理各项功能</p>
+                    </div>
+                    <div class="text-end">
+                        <div class="status-badge status-active">
+                            <i class="bi bi-check-circle me-1"></i>系统运行正常
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 统计卡片 -->
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(124, 58, 237, 0.1); color: var(--primary-color);">
+                                <i class="bi bi-globe"></i>
+                            </div>
+                            <div class="stat-value" id="serviceStatus">正常</div>
+                            <div class="stat-label">Web服务状态</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color);">
+                                <i class="bi bi-database"></i>
+                            </div>
+                            <div class="stat-value" id="backupCount">5</div>
+                            <div class="stat-label">可用备份</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info-color);">
+                                <i class="bi bi-file-text"></i>
+                            </div>
+                            <div class="stat-value" id="pageCount">6</div>
+                            <div class="stat-label">管理页面</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="stat-card">
+                            <div class="stat-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);">
+                                <i class="bi bi-clock-history"></i>
+                            </div>
+                            <div class="stat-value" id="uptime">24h</div>
+                            <div class="stat-label">运行时间</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 快速操作 -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-info alert-admin">
+                            <i class="bi bi-lightbulb me-2"></i>
+                            <strong>快速开始：</strong> 选择下方模块开始管理，或查看右侧使用文档了解详细操作。
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 功能模块 -->
+                <h4 class="mb-3">
+                    <i class="bi bi-grid-3x3-gap me-2"></i>功能模块
+                </h4>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="module-card">
+                            <div class="module-icon" style="background: rgba(124, 58, 237, 0.1); color: var(--primary-color);">
+                                <i class="bi bi-file-text"></i>
+                            </div>
+                            <h5>内容管理</h5>
+                            <p class="text-muted">管理日报、新闻、天气等页面内容</p>
+                            <a href="#content" class="btn btn-admin btn-admin-primary" data-bs-toggle="tab">
+                                <i class="bi bi-arrow-right me-1"></i>进入管理
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="module-card">
+                            <div class="module-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color);">
+                                <i class="bi bi-calculator"></i>
+                            </div>
+                            <h5>Token管理</h5>
+                            <p class="text-muted">配置Token消耗规则和自动计算</p>
+                            <a href="#tokens" class="btn btn-admin btn-admin-primary" data-bs-toggle="tab">
+                                <i class="bi bi-arrow-right me-1"></i>进入管理
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="module-card">
+                            <div class="module-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info-color);">
+                                <i class="bi bi-gear"></i>
+                            </div>
+                            <h5>系统配置</h5>
+                            <p class="text-muted">配置Web服务、API、定时任务等</p>
+                            <a href="#system" class="btn btn-admin btn-admin-primary" data-bs-toggle="tab">
+                                <i class="bi bi-arrow-right me-1"></i>进入管理
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="module-card">
+                            <div class="module-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                            </div>
+                            <h5>备份恢复</h5>
+                            <p class="text-muted">创建备份、恢复系统、管理版本</p>
+                            <a href="#backup" class="btn btn-admin btn-admin-primary" data-bs-toggle="tab">
+                                <i class="bi bi-arrow-right me-1"></i>进入管理
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="module-card">
+                            <div class="module-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--danger-color);">
+                                <i class="bi bi-shield-check"></i>
+                            </div>
+                            <h5>安全监控</h5>
+                            <p class="text-muted">监控服务状态、访问日志、异常检测</p>
+                            <a href="#monitor" class="btn btn-admin btn-admin-primary" data-bs-toggle="tab">
+                                <i class="bi bi-arrow-right me-1"></i>进入管理
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="module-card">
+                            <div class="module-icon" style="background: rgba(168, 85, 247, 0.1); color: var(--secondary-color);">
+                                <i class="bi bi-book"></i>
+                            </div>
+                            <h5>使用文档</h5>
+                            <p class="text-muted">完整操作指南、API文档、故障排除</p>
+                            <a href="#docs" class="btn btn-admin btn-admin-primary" data-bs-toggle="tab">
+                                <i class="bi bi-arrow-right me-1"></i>查看文档
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 系统信息 -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="stat-card">
+                            <h5 class="mb-3">
+                                <i class="bi bi-info-circle me-2"></i>系统信息
+                            </h5>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td width="40%"><strong>服务地址</strong></td>
+                                            <td id="serviceUrl">http://localhost:8080</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>网络地址</strong></td>
+                                            <td id="networkUrl">http://192.168.1.11:8080</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>启动时间</strong></td>
+                                            <td id="startTime">2026-04-02 09:53:19</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>运行模式</strong></td>
+                                            <td>自助维护模式</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td width="40%"><strong>Python版本</strong></td>
+                                            <td id="pythonVersion">3.14.3</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>服务器类型</strong></td>
+                                            <td>Python HTTP Server</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>数据库</strong></td>
+                                            <td>SQLite (scores.db)</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>最后备份</strong></td>
+                                            <td id="lastBackup">2026-04-02 09:53:30</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 内容管理 -->
+            <div class="tab-pane fade" id="content">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-2">
+                            <i class="bi bi-file-text me-2"></i>内容管理
+                        </h2>
+                        <p class="text-muted mb-0">管理日报、新闻、天气等页面内容</p>
+                    </div>
+                    <div>
+                        <button class="btn btn-admin btn-admin-primary me-2">
+                            <i class="bi bi-plus-circle me-1"></i>添加内容
+                        </button>
+                        <button class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise me-1"></i>刷新
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 内容类型标签页 -->
+                <ul class="nav nav-tabs-admin mb-4">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-bs-toggle="tab" href="#content-news">
+                            <i class="bi bi-newspaper me-1"></i>新闻内容
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#content-weather">
+                            <i class="bi bi-cloud-sun me-1"></i>天气信息
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#content-stocks">
+                            <i class="bi bi-graph-up me-1"></i>股票数据
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="tab" href="#content-pages">
+                            <i class="bi bi-file-earmark me-1"></i>页面管理
+                        </a>
+                    </li>
+                </ul>
+                
+                <div class="tab-content">
+                    <!-- 新闻内容 -->
+                    <div class="tab-pane fade show active" id="content-news">
+                        <div class="alert alert-info alert-admin mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>新闻内容管理：</strong> 管理日报页面显示的新闻内容，支持手动添加或自动抓取。
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-admin" placeholder="输入新闻标题或URL...">
+                                    <button class="btn btn-admin btn-admin-primary">
+                                        <i class="bi bi-search me-1"></i>搜索
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <select class="form-select form-control-admin">
+                                    <option>全部状态</option>
+                                    <option>已发布</option>
+                                    <option>草稿</option>
+                                    <option>已归档</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table-admin">
+                                <thead>
+                                    <tr>
+                                        <th width="50">ID</th>
+                                        <th>标题</th>
+                                        <th width="120">来源</th>
+                                        <th width="100">状态</th>
+                                        <th width="150">发布时间</th>
+                                        <th width="120">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>1</td>
+                                        <td>
+                                            <div class="fw-bold">微软发布新一代多模态AI系统</div>
+                                            <small class="text-muted">AI技术突破，支持图像、语音、文本多模态理解</small>
+                                        </td>
+                                        <td>TechNews</td>
+                                        <td><span class="status-badge status-active">已发布</span></td>
+                                        <td>2026-04-02 07:00</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary me-1">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>2</td>
+                                        <td>
+                                            <div class="fw-bold">苹果Vision Pro 2代正式发布</div>
+                                            <small class="text-muted">增强现实设备，支持全息投影和空间计算</small>
+                                        </td>
+                                        <td>Apple News</td>
+                                        <td><span class="status-badge status-active">已发布</span></td>
+                                        <td>2026-04-02 07:00</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary me-1">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td>3</td>
+                                        <td>
+                                            <div class="fw-bold">特斯拉中国工厂启动全自动驾驶生产线</div>
+                                            <small class="text-muted">实现L4级自动驾驶车辆量产</small>
+                                        </td>
+                                        <td>AutoNews</td>
+                                        <td><span class="status-badge status-warning">草稿</span></td>
+                                        <td>2026-04-02 08:30</td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-primary me-1">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-success">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center mt-4">
+                            <div>
+                                <button class="btn btn-admin btn-admin-primary">
+                                    <i class="bi bi-plus-circle me-1"></i>添加新闻
+                                </button>
+                                <button class="btn btn-outline-secondary ms-2">
+                                    <i class="bi bi-upload me-1"></i>导入
+                                </button>
+                            </div>
+                            <div>
+                                <nav>
+                                    <ul class="pagination mb-0">
+                                        <li class="page-item disabled"><a class="page-link" href="#">上一页</a></li>
+                                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                                        <li class="page-item"><a class="page-link" href="#">下一页</a></li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 天气信息 -->
+                    <div class="tab-pane fade" id="content-weather">
+                        <div class="alert alert-info alert-admin mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>天气信息管理：</strong> 配置日报页面显示的天气信息，包括位置、预报天数等。
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="stat-card">
+                                    <h5 class="mb-3">
+                                        <i class="bi bi-geo-alt me-2"></i>当前位置配置
+                                    </h5>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">城市名称</label>
+                                        <input type="text" class="form-control form-control-admin" value="河北省廊坊市广阳区">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">天气预报天数</label>
+                                        <select class="form-select form-control-admin">
+                                            <option>1天</option>
+                                            <option selected>3天</option>
+                                            <option>7天</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">数据来源</label>
+                                        <select class="form-select form-control-admin">
+                                            <option selected>自动获取</option>
+                                            <option>手动输入</option>
+                                            <option>API接口</option>
+                                        </select>
+                                    </div>
+                                    <button class="btn btn-admin btn-admin-primary w-100">
+                                        <i class="bi bi-save me-1"></i>保存配置
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="stat-card">
+                                    <h5 class="mb-3">
+                                        <i class="bi bi-calendar3 me-2"></i>今日天气预览
+                                    </h5>
+                                    <div class="text-center py-4">
+                                        <div class="display-1 mb-3">🌤️</div>
+                                        <h3>9°C</h3>
+                                        <p class="text-muted">河北省廊坊市广阳区</p>
+                                        <div class="row mt-4">
+                                            <div class="col-6">
+                                                <div class="text-muted">湿度</div>
+                                                <div class="fw-bold">65%</div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="text-muted">风速</div>
+                                                <div class="fw-bold">3.2 m/s</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <button class="btn btn-outline-primary w-100">
+                                            <i class="bi bi-arrow-clockwise me-1"></i>刷新天气数据
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="stat-card mt-4">
+                            <h5 class="mb-3">
+                                <i class="bi bi-clock-history me-2"></i>历史天气记录
+                            </h5>
+                            <div class="table-responsive">
+                                <table class="table-admin">
+                                    <thead>
+                                        <tr>
+                                            <th>日期</th>
+                                            <th>温度</th>
+                                            <th>天气</th>
+                                            <th>湿度</th>
+                                            <th>风速</th>
+                                            <th>更新时间</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>2026-04-02</td>
+                                            <td>9°C</td>
+                                            <td>晴</td>
+                                            <td>65%</td>
+                                            <td>3.2 m/s</td>
+                                            <td>07:00:00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2026-04-01</td>
+                                            <td>11°C</td>
+                                            <td>多云</td>
+                                            <td>70%</td>
+                                            <td>2.8 m/s</td>
+                                            <td>07:00:00</td>
+                                        </tr>
+                                        <tr>
+                                            <td>2026-03-31</td>
+                                            <td>13°C</td>
+                                            <td>晴</td>
+                                            <td>60%</td>
+                                            <td>3.5 m/s</td>
+                                            <td>07:00:00</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 股票数据 -->
+                    <div class="tab-pane fade" id="content-stocks">
+                        <div class="alert alert-info alert-admin mb-4">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>股票数据管理：</strong> 管理日报页面显示的股票信息，支持添加关注股票和配置分析规则。
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-8">
+                                <div class="input-group">
+                                    <input type="text" class="form-control form-control-admin" placeholder="输入股票代码或名称...">
+                                    <button class="btn btn-admin btn-admin-primary">
+                                        <i class="bi bi-plus-circle me-1"></i>添加关注
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-outline-secondary w-100">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>同步实时数据
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="stat-card">
+                                    <h6 class="mb-3">AAPL</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="h4 mb-1">$182.63</div>
+                                            <div class="text-success">
+                                                <i class="bi bi-arrow-up-right"></i> +2.34%
+                                            </div>
+                                        </div>
+                                        <div class="fs-3">📈</div>
+                                    </div>
+                                    <div class="mt-3">
+                                        <small class="text-muted">苹果公司</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="stat-card">
+                                    <h6 class="mb-3">TSLA</h6>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="h4 mb-1">$175.79</div>
+                                            <div class="text-danger">
+                                                <i class="bi bi-arrow-down-right"></i> -1.25%
+                                            </div>
+                                        </div>
+                                        <div class="fs-3">

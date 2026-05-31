@@ -1,14 +1,6 @@
-# 数据库（用户数据，不提交）
-scores.db
 *.db
-
-# Python 缓存
-__pycache__/
 *.pyc
-*.pyo
-*.egg-info/
-
-# 环境
-.env
+__pycache__/
+.DS_Store
 venv/
-.venv/
+.env

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日报 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>📰 今日日报 (2026-03-31)</h1>
+        <p class="text-muted">API修复中，显示最新数据</p>
+        
+        <div class="alert alert-info">
+            <h4>⚠️ 系统状态</h4>
+            <p>日报API正在修复中，当前显示最新数据。</p>
+            <p>总分: <strong>-112分</strong> (目标: 100分)</p>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-primary text-white">
+                        📊 12只关注股票
+                    </div>
+                    <div class="card-body">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>代码</th>
+                                    <th>名称</th>
+                                    <th>价格</th>
+                                    <th>涨跌</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>TSLA</td><td>特斯拉</td><td>455.55</td><td class="text-danger">-3.88%</td></tr>
+                                <tr><td>NVDA</td><td>英伟达</td><td>464.55</td><td class="text-success">+4.92%</td></tr>
+                                <tr><td>MSFT</td><td>微软</td><td>227.94</td><td class="text-success">+2.29%</td></tr>
+                                <tr><td>GOOGL</td><td>谷歌</td><td>297.51</td><td class="text-success">+2.56%</td></tr>
+                                <tr><td>AAPL</td><td>苹果</td><td>355.18</td><td class="text-danger">-0.99%</td></tr>
+                                <tr><td>AXTI</td><td>AXT Inc</td><td>95.08</td><td class="text-danger">-3.13%</td></tr>
+                                <tr><td>CRWV</td><td>Crown Crafts</td><td>59.03</td><td class="text-success">+1.28%</td></tr>
+                                <tr><td>BTDR</td><td>Bitdeer</td><td>71.10</td><td class="text-danger">-4.99%</td></tr>
+                                <tr><td>PONY</td><td>Pony AI</td><td>88.55</td><td class="text-danger">-3.31%</td></tr>
+                                <tr><td>SMR</td><td>NuScale Power</td><td>49.37</td><td class="text-danger">-1.18%</td></tr>
+                                <tr><td>UUUU</td><td>Energy Fuels</td><td>86.90</td><td class="text-success">+4.66%</td></tr>
+                                <tr><td>MARA</td><td>Marathon Digital</td><td>21.68</td><td class="text-danger">-3.49%</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card mb-3">
+                    <div class="card-header bg-info text-white">
+                        🌤️ 廊坊天气
+                    </div>
+                    <div class="card-body">
+                        <h5>河北省廊坊市广阳区</h5>
+                        <p>温度: 15°C (体感: 14°C)</p>
+                        <p>天气: 多云</p>
+                        <p>湿度: 65% | 风速: 12 km/h 东北风</p>
+                        <p>阴历: 二月十三 | 工作日</p>
+                    </div>
+                </div>
+                
+                <div class="card mb-3">
+                    <div class="card-header bg-warning">
+                        📝 今日状态
+                    </div>
+                    <div class="card-body">
+                        <p><strong>扣分记录:</strong> -2分 (昨晚未修复日报页面)</p>
+                        <p><strong>当前总分:</strong> -112分</p>
+                        <p><strong>目标:</strong> 100分 (差距: 212分)</p>
+                        <p><strong>明日重点:</strong> 修复API，控制token消耗</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                🔧 系统功能
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>📊 数据统计</h6>
+                        <p><a href="/data-stats">data-stats页面</a></p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>⏰ 定时任务</h6>
+                        <p><a href="/cron">cron页面</a></p>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>🏠 返回主页</h6>
+                        <p><a href="/">主页</a></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4 text-center">
+            <a href="/" class="btn btn-primary">返回主页</a>
+            <button class="btn btn-outline-secondary" onclick="location.reload()">刷新页面</button>
+        </div>
+    </div>
+</body>
+</html>

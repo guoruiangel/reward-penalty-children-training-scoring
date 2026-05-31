@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐟 小渔的学习成长记录</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #fce4ec 0%, #f8bbd0 50%, #e1bee7 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        header {
+            text-align: center;
+            color: #6a1b9a;
+            margin-bottom: 30px;
+            padding: 30px 20px;
+            background: rgba(255,255,255,0.7);
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        header h1 { font-size: 28px; }
+        header .subtitle { font-size: 14px; opacity: 0.7; margin-top: 6px; }
+
+        .nav-bar {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 14px;
+            flex-wrap: wrap;
+        }
+        .nav-bar a {
+            color: #7b1fa2;
+            text-decoration: none;
+            padding: 6px 14px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.5);
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+        .nav-bar a:hover { background: rgba(255,255,255,0.9); transform: translateY(-1px); }
+
+        .cards {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .card {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+        }
+        .card .icon {
+            font-size: 40px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 14px;
+            flex-shrink: 0;
+        }
+        .card .icon.scoring { background: #fce4ec; }
+        .card .icon.math { background: #e3f2fd; }
+        .card .info { flex: 1; }
+        .card .info h3 { font-size: 18px; color: #333; margin-bottom: 4px; }
+        .card .info p { font-size: 13px; color: #888; }
+        .card .arrow { font-size: 20px; color: #bbb; }
+
+        /* 总分卡片 */
+        .score-card {
+            background: linear-gradient(135deg, #6a1b9a, #9c27b0);
+            border-radius: 20px;
+            padding: 28px;
+            color: #fff;
+            text-align: center;
+            margin-bottom: 16px;
+            box-shadow: 0 6px 24px rgba(106,27,154,0.3);
+        }
+        .score-card .label { font-size: 14px; opacity: 0.8; margin-bottom: 4px; }
+        .score-card .value { font-size: 56px; font-weight: 800; letter-spacing: -2px; }
+        .score-card .sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+
+        /* 图表卡片 */
+        .chart-card {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            margin-bottom: 16px;
+        }
+        .chart-card h3 { font-size: 16px; color: #6a1b9a; margin-bottom: 12px; text-align: center; }
+        .chart-card canvas { max-height: 260px; }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #7b1fa2;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .back-link:hover { text-decoration: underline; }
+
+        @media (max-width: 480px) {
+            header h1 { font-size: 22px; }
+            .card { padding: 16px; }
+            .card .icon { font-size: 30px; width: 48px; height: 48px; }
+            .score-card .value { font-size: 40px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="/" class="back-link">‹ 返回首页</a>
+    <header>
+        <h1>🐟 小渔的学习成长记录</h1>
+        <div class="subtitle">记录每一次进步，见证每一天成长 🌟</div>
+        <div class="nav-bar">
+            <a href="/xiaoyu">📋 首页</a>
+            <a href="/">🏠 返回主页</a>
+        </div>
+    </header>
+
+    <!-- 当前总分 -->
+    <div class="score-card">
+        <div class="label">当前总分</div>
+        <div class="value" id="totalScore">--</div>
+    </div>
+
+    <!-- 月度曲线图 -->
+    <div class="chart-card">
+        <h3>📈 每月得分趋势</h3>
+        <canvas id="monthlyChart"></canvas>
+    </div>
+
+    <div class="cards">
+        <div class="card" onclick="location.href='/xiaoyu/scoring'">
+            <div class="icon scoring">⭐</div>
+            <div class="info">
+                <h3>小渔的打分规则</h3>
+                <p>成长积分系统 · 可编排的打分规则</p>
+            </div>
+            <div class="arrow">→</div>
+        </div>
+        <div class="card" onclick="location.href='/xiaoyu/math'">
+            <div class="icon math">📐</div>
+            <div class="info">
+                <h3>小渔的数学学习</h3>
+                <p>数学错题本 · 在线题库</p>
+            </div>
+            <div class="arrow">→</div>
+        </div>
+    </div>
+</div>
+
+<script>
+function loadScoreData() {
+    fetch('/xiaoyu/api/scores')
+        .then(r => r.json())
+        .then(data => {
+            const scores = data.scores || [];
+            // 计算总分
+            let total = 0;
+            const monthly = {}; // { '2026-05': { sum: 0 } }
+            scores.forEach(s => {
+                total += s.score || 0;
+                const m = (s.created_at || '').substring(0, 7);
+                if (m) {
+                    if (!monthly[m]) monthly[m] = { sum: 0 };
+                    monthly[m].sum += s.score || 0;
+                }
+            });
+
+            document.getElementById('totalScore').textContent = total;
+
+            // 绘制月度图表
+            const ctx = document.getElementById('monthlyChart').getContext('2d');
+            const months = Object.keys(monthly).sort();
+            const values = months.map(m => monthly[m].sum);
+            // 至少展示最近6个月（含空月）
+            const now = new Date();
+            const fullMonths = [];
+            const fullValues = [];
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                fullMonths.push(key);
+                fullValues.push(monthly[key] ? monthly[key].sum : 0);
+            }
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: fullMonths,
+                    datasets: [{
+                        label: '月得分',
+                        data: fullValues,
+                        borderColor: '#9c27b0',
+                        backgroundColor: 'rgba(156,39,176,0.08)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#6a1b9a',
+                        pointRadius: 4,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: v => (v > 0 ? '+' : '') + v,
+                                font: { size: 11 }
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { font: { size: 11 } }
+                        }
+                    }
+                }
+            });
+        })
+        .catch(e => {
+            document.getElementById('totalScore').textContent = '0';
+            console.error('loadScoreData:', e);
+        });
+}
+
+document.addEventListener('DOMContentLoaded', loadScoreData);
+</script>
+</body>
+</html>

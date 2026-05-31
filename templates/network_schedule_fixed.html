@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网络扫描定时设置 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --secondary-color: #a855f7;
+            --success-color: #10b981;
+            --info-color: #3b82f6;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .dashboard-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header-card {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+        }
+        
+        .task-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+            border-left: 5px solid;
+        }
+        
+        .task-card.quick {
+            border-left-color: var(--success-color);
+        }
+        
+        .task-card.full {
+            border-left-color: var(--info-color);
+        }
+        
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .task-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .task-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .task-icon.quick {
+            background: #d1fae5;
+            color: var(--success-color);
+        }
+        
+        .task-icon.full {
+            background: #dbeafe;
+            color: var(--info-color);
+        }
+        
+        .cron-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .cron-field {
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .cron-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .cron-value {
+            font-family: 'Courier New', monospace;
+            background: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            font-size: 0.95rem;
+        }
+        
+        .preset-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+        
+        .preset-btn {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            padding: 8px 15px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .preset-btn:hover {
+            background: #e5e7eb;
+            border-color: #9ca3af;
+        }
+        
+        .preset-btn.active {
+            background: var(--info-color);
+            color: white;
+            border-color: var(--info-color);
+        }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        .status-enabled {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-disabled {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .test-section {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .test-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .test-btn {
+            background: linear-gradient(135deg, var(--info-color), #60a5fa);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .test-btn.quick {
+            background: linear-gradient(135deg, var(--success-color), #34d399);
+        }
+        
+        .test-btn.full {
+            background: linear-gradient(135deg, var(--info-color), #60a5fa);
+        }
+        
+        .test-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+        
+        .test-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .device-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-box {
+            background: white;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--info-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        
+        .toast {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-left: 4px solid var(--success-color);
+            margin-bottom: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .toast.error {
+            border-left-color: var(--danger-color);
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .task-description {
+            color: #6b7280;
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+        
+        .next-execution {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 10px 15px;
+            margin-top: 15px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        .next-execution-label {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 5px;
+        }
+        
+        .next-execution-time {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <div class="glass-card header-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h1><i class="bi bi-wifi me-2"></i>网络扫描定时设置</h1>
+                    <p class="mb-0">分别配置快速扫描和完整扫描的自动执行计划</p>
+                </div>
+                <div>
+                    <a href="/network" class="btn btn-outline-light me-2">
+                        <i class="bi bi-devices me-1"></i>设备列表
+                    </a>
+                    <a href="/" class="btn btn-outline-light">
+                        <i class="bi bi-house-door me-1"></i>返回主页
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 快速扫描任务 -->
+        <div class="task-card quick" id="quickTaskCard">
+            <div class="task-header">
+                <div class="task-title">
+                    <div class="task-icon quick">
+                        <i class="bi bi-lightning"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">快速扫描任务</h3>
+                        <div class="task-description">快速检查已知设备状态，速度快，资源消耗少</div>
+                    </div>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="quickEnabled" style="width: 3em; height: 1.5em;">
+                    <label class="form-check-label" for="quickEnabled">
+                        <span id="quickStatusText">启用定时扫描</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">Cron表达式</label>
+                <div class="cron-input-group">
+                    <div class="cron-field">
+                        <div class="cron-label">分钟 (0-59)</div>
+                        <input type="text" class="form-control cron-value" id="quickCronMinute" value="30" placeholder="30">
+                    </div>
+                    <div class="cron-field">
+                        <div class="cron-label">小时 (0-23)</div>
+                        <input type="text" class="form-control cron-value" id="quickCronHour" value="18" placeholder="18">
+                    </div>
+                    <div class="cron-field">
+                        <div class="cron-label">日 (1-31)</div>
+                        <input type="text" class="form-control cron-value" id="quickCronDay" value="*" placeholder="*">
+                    </div>
+                    <div class="cron-field">
+                        <div class="cron-label">月 (1-12)</div>
+                        <input type="text" class="form-control cron-value" id="quickCronMonth" value="*" placeholder="*">
+                    </div>
+                    <div class="cron-field">
+                        <div class="cron-label">星期 (0-7)</div>
+                        <input type="text" class="form-control cron-value" id="quickCronWeekday" value="*" placeholder="*">
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="cron-label">完整表达式</div>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="quickCronExpression" value="30 18 * * *" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyCronExpression('quick')">
+                            <i class="bi bi-clipboard"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">预设时间</label>
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="setPreset('quick', 'morning', '0 9 * * *')">每天 9:00</button>
+                    <button class="preset-btn" onclick="setPreset('quick', 'noon', '0 12 * * *')">每天 12:00</button>
+                    <button class="preset-btn" onclick="setPreset('quick', 'evening', '30 18 * * *')">每天 18:30</button>
+                    <button class="preset-btn" onclick="setPreset('quick', 'night', '0 22 * * *')">每天 22:00</button>
+                    <button class="preset-btn" onclick="setPreset('quick', 'hourly', '0 * * * *')">每小时</button>
+                    <button class="preset-btn" onclick="setPreset('quick', 'every30min', '*/30 * * * *')">每30分钟</button>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">时区</label>
+                <select class="form-select" id="quickTimezone">
+                    <option value="Asia/Shanghai" selected>亚洲/上海 (UTC+8)</option>
+                    <option value="Asia/Tokyo">亚洲/东京 (UTC+9)</option>
+                    <option value="America/New_York">美国/纽约 (UTC-5)</option>
+                    <option value="Europe/London">欧洲/伦敦 (UTC+0)</option>
+                </select>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">描述</label>
+                <input type="text" class="form-control" id="quickDescription" value="每日快速检查网络设备状态" placeholder="任务描述">
+            </div>
+            
+            <div class="next-execution">
+                <div class="next-execution-label">下次执行时间</div>
+                <div class="next-execution-time" id="quickNextExecution">计算中...</div>
+            </div>
+            
+            <div class="d-flex gap-3 mt-4">
+                <button class="btn btn-success" onclick="saveSchedule('quick')">
+                    <i class="bi bi-save me-1"></i>保存快速扫描设置
+                </button>
+                <button class="btn btn-outline-secondary" onclick="resetSchedule('quick')">
+                    <i class="bi bi-arrow-clockwise me-1"></i>重置
+                </button>
+            </div>
+        </div>
+        
+        <!-- 完整扫描任务 -->
+        <div class="task-card full" id="fullTaskCard">
+            <div class="task-header">
+                <div class="task-title">
+                    <div class="task-icon full">
+                        <i class="bi bi-radar"></i>
+                    </div>
+                    <div>
+                        <h3 class="mb-0">完整扫描任务</h3>
+                        <div class="task-description">扫描整个网络段发现新设备，速度慢，资源消耗多</div>
+                    </div>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="fullEnabled" style="width: 3em; height: 1.5em;">
+                    <label class="form-check-label" for="fullEnabled">
+                        <span id="fullStatusText">启用定时扫描</span>
+                    </label>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">Cron表达式</label>
+                <div class="cron-input-group">
+                    <div class="cron-field">
+                        <div class="cron-label">分钟 (0-59)</div>
+                        <input type="text" class="form-control cron-value" id="fullCronMinute" value="0" placeholder="0">
+                    </div>
+                    <div class="cron-field">
+                        <div class="cron-label">小时 (0-23)</div>
+                        <input type="text" class="form-control cron-value" id="fullCronHour" value="6" placeholder="6">
+                    </div>
+                    <div class="cron-field">
+                        <div class="cron-label">日

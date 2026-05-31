@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日报历史 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { background: #f8f9fa; padding: 20px; }
+        .date-tab { cursor: pointer; }
+        .date-tab.active { background: #0d6efd !important; color: white !important; }
+        .empty-state { text-align: center; padding: 40px; color: #6c757d; }
+        .daily-date { color: #6c757d; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 标题和导航 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="mb-0">
+                <i class="bi bi-newspaper me-2"></i>日报历史
+                <span class="badge bg-primary ms-2" id="totalDays">0天</span>
+            </h1>
+            <div>
+                <a href="/daily-old" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-clock me-1"></i>旧版
+                </a>
+                <a href="/" class="btn btn-outline-primary">
+                    <i class="bi bi-house-door me-1"></i>主页
+                </a>
+            </div>
+        </div>
+        
+        <!-- 日期选择 -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-calendar-range me-2"></i>选择日期
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center mb-3">
+                    <div class="col-md-4">
+                        <div class="input-group">
+                            <input type="date" id="datePicker" class="form-control">
+                            <button class="btn btn-primary" onclick="loadSelectedDate()">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-outline-secondary btn-sm me-2" onclick="prevDay()">
+                                <i class="bi bi-chevron-left"></i> 前一天
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="nextDay()">
+                                后一天 <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 日期标签 -->
+                <div id="dateTabs" class="d-flex flex-wrap gap-2">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">加载日期...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 日报内容 -->
+        <div id="dailyContent">
+            <div class="empty-state">
+                <i class="bi bi-calendar" style="font-size: 3rem;"></i>
+                <h4 class="mt-3">选择日期查看日报</h4>
+                <p class="text-muted">从上方选择日期查看对应日期的完整日报内容</p>
+            </div>
+        </div>
+        
+        <!-- 历史记录 -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <i class="bi bi-archive me-2"></i>历史记录
+            </div>
+            <div class="card-body">
+                <div id="historyList" class="row">
+                    <div class="col-12 text-center py-4">
+                        <div class="spinner-border" role="status">
+                            <span class="visually-hidden">加载历史...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentDate = '';
+        let availableDates = [];
+        
+        // 页面加载
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('datePicker').value = today;
+            
+            loadAvailableDates();
+            loadHistory();
+        });
+        
+        // 加载可用日期
+        function loadAvailableDates() {
+            fetch('/api/daily/dates')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        availableDates = data.dates;
+                        document.getElementById('totalDays').textContent = data.count + '天';
+                        renderDateTabs();
+                        
+                        // 加载最新一天
+                        if (availableDates.length > 0) {
+                            loadDate(availableDates[0]);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('加载日期失败:', error);
+                });
+        }
+        
+        // 渲染日期标签
+        function renderDateTabs() {
+            const tabsContainer = document.getElementById('dateTabs');
+            tabsContainer.innerHTML = '';
+            
+            // 显示最近7天
+            const recentDates = availableDates.slice(0, 7);
+            
+            recentDates.forEach(date => {
+                const tab = document.createElement('button');
+                tab.className = 'date-tab btn btn-outline-primary btn-sm';
+                tab.textContent = formatDate(date);
+                tab.dataset.date = date;
+                
+                if (date === currentDate) {
+                    tab.classList.add('active');
+                }
+                
+                tab.onclick = () => loadDate(date);
+                tabsContainer.appendChild(tab);
+            });
+        }
+        
+        // 格式化日期
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            return `${month}月${day}日`;
+        }
+        
+        // 加载指定日期
+        function loadDate(date) {
+            if (!date) return;
+            
+            currentDate = date;
+            document.getElementById('datePicker').value = date;
+            
+            // 更新标签状态
+            document.querySelectorAll('.date-tab').forEach(tab => {
+                tab.classList.toggle('active', tab.dataset.date === date);
+            });
+            
+            // 加载日报数据 - 使用现有API
+            fetch(`/api/daily/${date}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderDailyContent(data);
+                    } else {
+                        showEmptyState('该日期无日报数据');
+                    }
+                })
+                .catch(error => {
+                    console.error('加载日报失败:', error);
+                    showEmptyState('加载失败，请重试');
+                });
+        }
+        
+        // 加载选择的日期
+        function loadSelectedDate() {
+            const date = document.getElementById('datePicker').value;
+            loadDate(date);
+        }
+        
+        // 前一天
+        function prevDay() {
+            if (!currentDate) return;
+            
+            const date = new Date(currentDate);
+            date.setDate(date.getDate() - 1);
+            const prevDate = date.toISOString().split('T')[0];
+            
+            // 检查是否有数据
+            if (availableDates.includes(prevDate)) {
+                loadDate(prevDate);
+            } else {
+                alert('前一天无日报数据');
+            }
+        }
+        
+        // 后一天
+        function nextDay() {
+            if (!currentDate) return;
+            
+            const date = new Date(currentDate);
+            date.setDate(date.getDate() + 1);
+            const nextDate = date.toISOString().split('T')[0];
+            
+            // 检查是否有数据
+            if (availableDates.includes(nextDate)) {
+                loadDate(nextDate);
+            } else {
+                alert('后一天无日报数据');
+            }
+        }
+        
+        // 渲染日报内容
+        function renderDailyContent(data) {
+            const container = document.getElementById('dailyContent');
+            const dailyData = data.data || {};
+            
+            let html = `
+                <div class="mb-4">
+                    <h3 class="border-bottom pb-2">
+                        <i class="bi bi-calendar-day me-2"></i>${data.date || '未知日期'} 日报
+                    </h3>
+                </div>
+            `;
+            
+            // 天气
+            if (dailyData.weather && dailyData.weather.length > 0) {
+                const weather = dailyData.weather[0];
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header bg-info text-white">
+                            <i class="bi bi-cloud-sun me-2"></i>天气信息
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>${weather.location || '廊坊'}</h5>
+                                    <p class="mb-1"><strong>温度:</strong> ${weather.temperature || '-'}°C</p>
+                                    <p class="mb-1"><strong>天气:</strong> ${weather.condition || '-'}</p>
+                                    <p class="mb-1"><strong>湿度:</strong> ${weather.humidity || '-'}%</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-1"><strong>阴历:</strong> ${weather.lunar_date || '未知'}</p>
+                                    <p class="mb-1"><strong>节假日:</strong> ${weather.holiday || '工作日'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 新闻
+            if (dailyData.news && dailyData.news.length > 0) {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header bg-primary text-white">
+                            <i class="bi bi-newspaper me-2"></i>新闻摘要
+                            <span class="badge bg-light text-dark ms-2">${dailyData.news.length} 条</span>
+                        </div>
+                        <div class="card-body">
+                `;
+                
+                dailyData.news.forEach((item, index) => {
+                    html += `
+                        <div class="mb-3 ${index > 0 ? 'border-top pt-3' : ''}">
+                            <h6>${item.title || '无标题'}</h6>
+                            <p class="mb-1">${item.content || '无详细内容'}</p>
+                            <small class="text-muted">来源: ${item.source || '未知'}</small>
+                        </div>
+                    `;
+                });
+                
+                html += `</div></div>`;
+            }
+            
+            // 股票
+            if (dailyData.stocks && dailyData.stocks.length > 0) {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header bg-success text-white">
+                            <i class="bi bi-graph-up me-2"></i>股票分析
+                            <span class="badge bg-light text-dark ms-2">${dailyData.stocks.length} 只</span>
+                        </div>
+                        <div class="card-body">
+                `;
+                
+                dailyData.stocks.forEach((item, index) => {
+                    html += `
+                        <div class="mb-3 ${index > 0 ? 'border-top pt-3' : ''}">
+                            <h6>${item.symbol || ''} - ${item.name || ''}</h6>
+                            <p class="mb-1">分析: ${item.analysis || '无分析'}</p>
+                            <p class="mb-0">预测: ${item.prediction || '无预测'}</p>
+                        </div>
+                    `;
+                });
+                
+                html += `</div></div>`;
+            }
+            
+            // 改进报告
+            if (dailyData.improvements && dailyData.improvements.length > 0) {
+                html += `
+                    <div class="card mb-3">
+                        <div class="card-header bg-warning text-dark">
+                            <i class="bi bi-lightbulb me-2"></i>改进报告
+                            <span class="badge bg-light text-dark ms-2">${dailyData.improvements.length} 条</span>
+                        </div>
+                        <div class="card-body">
+                `;
+                
+                dailyData.improvements.forEach((item, index) => {
+                    html += `
+                        <div class="mb-3 ${index > 0 ? 'border-top pt-3' : ''}">
+                            <h6>${item.title || '改进报告'}</h6>
+                            <p class="mb-1">${item.content || '无内容'}</p>
+                        </div>
+                    `;
+                });
+                
+                html += `</div></div>`;
+            }
+            
+            // 如果没有数据
+            if (!dailyData.weather && !dailyData.news && !dailyData.stocks && !dailyData.improvements) {
+                html += `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        该日期暂无日报数据
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // 显示空状态
+        function showEmptyState(message = '无日报数据') {
+            const container = document.getElementById('dailyContent');
+            container.innerHTML = `
+                <div class="empty-state">
+                    <i class="bi bi-calendar-x" style="font-size: 3rem;"></i>
+                    <h4 class="mt-3">${message}</h4>
+                    <p class="text-muted">请选择其他日期</p>
+                </div>
+            `;
+        }
+        
+        // 加载历史记录
+        function loadHistory() {
+            fetch('/api/daily/history')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        renderHistory(data.history);
+                    }
+                })
+                .catch(error => {
+                    console.error('加载历史失败:', error);
+                });
+        }
+        
+        // 渲染历史记录
+        function renderHistory(history) {
+            const container = document.getElementById('historyList');
+            container.innerHTML = '';
+            
+            if (history.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center py-4 text-muted">暂无历史记录</div>';
+                return;
+            }
+            
+            history.forEach(item => {
+                const col = document.createElement('div');
+                col.className = 'col-md-4 mb-3';
+                
+                col.innerHTML = `
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <i class="bi bi-calendar-day me-2"></i>${item.date}
+                            </h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span><i class="bi bi-newspaper me-1"></i>新闻</span>
+                                <span class="badge bg-primary">${item.news_count}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span><i class="bi bi-graph-up me-1"></i>股票</span>
+                                <span class="badge bg-success">${item.stocks_count}</span>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span><i class="bi bi-lightbulb me-1"></i>改进</span>
+                                <span class="badge bg-warning text-dark">${item.improvements_count}</span>
+                            </div>
+                            <button class="btn btn-outline-primary btn-sm w-100" onclick="loadDate('${item.date}')">
+                                <i class="bi bi-eye me-1"></i>查看日报
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(col);
+            });
+        }
+    </script>
+</body>
+</html>

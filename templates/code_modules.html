@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码模块复用统计 - Pablo 系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary-color: #7c3aed;
+            --success-color: #10b981;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+            --warning-color: #f59e0b;
+        }
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .navbar {
+            background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .stat-card {
+            text-align: center;
+            padding: 1.5rem;
+            border-radius: 15px;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin-top: 0.5rem;
+        }
+        .module-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .badge-core { background: #7c3aed; color: white; }
+        .badge-api { background: #3b82f6; color: white; }
+        .badge-script { background: #10b981; color: white; }
+        .badge-utility { background: #f59e0b; color: white; }
+        .badge-integration { background: #8b5cf6; color: white; }
+        .badge-default { background: #94a3b8; color: white; }
+        .search-box {
+            position: relative;
+        }
+        .search-box i {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+        .search-box input {
+            padding-left: 40px;
+        }
+        .type-filter-btn {
+            padding: 6px 14px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            border-radius: 20px;
+            margin: 2px;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+        .type-filter-btn:hover, .type-filter-btn.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        .table th {
+            font-weight: 600;
+            color: #475569;
+            border-top: none;
+            background: #f8fafc;
+            padding: 12px;
+        }
+        .table td {
+            padding: 12px;
+            vertical-align: middle;
+        }
+        .description-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .date-cell {
+            white-space: nowrap;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/"><i class="bi bi-code-slash me-2"></i>Pablo 代码模块复用统计</a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/"><i class="bi bi-house-door me-1"></i>返回主页</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container py-4">
+        <!-- 头部 -->
+        <div class="glass-card" style="background: linear-gradient(135deg, #7c3aed, #a855f7); color: white;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="mb-2"><i class="bi bi-box-seam me-2"></i>代码模块管理</h1>
+                    <p class="mb-0 opacity-90">管理可复用代码模块，追踪创建时间和功能描述</p>
+                </div>
+                <button class="btn btn-light" onclick="scanModules()">
+                    <i class="bi bi-search me-2"></i>扫描模块
+                </button>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalModules">0</div>
+                    <div class="stat-label">总模块数</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalReuse">0</div>
+                    <div class="stat-label">总复用次数</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalTokens">0</div>
+                    <div class="stat-label">节省Token数</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card">
+                    <div class="stat-number" id="avgReuse">0.0</div>
+                    <div class="stat-label">平均复用次数</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 筛选栏 -->
+        <div class="glass-card py-3">
+            <div class="row align-items-center">
+                <div class="col-md-4 mb-2">
+                    <div class="search-box">
+                        <i class="bi bi-search"></i>
+                        <input type="text" class="form-control" id="searchInput" placeholder="搜索模块名称..." onkeyup="filterModules()">
+                    </div>
+                </div>
+                <div class="col-md-8 text-md-end">
+                    <button class="type-filter-btn active" onclick="filterByType('all')">全部</button>
+                    <button class="type-filter-btn" onclick="filterByType('core')">核心</button>
+                    <button class="type-filter-btn" onclick="filterByType('api')">API</button>
+                    <button class="type-filter-btn" onclick="filterByType('script')">脚本</button>
+                    <button class="type-filter-btn" onclick="filterByType('utility')">工具</button>
+                    <button class="type-filter-btn" onclick="filterByType('integration')">集成</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模块列表 -->
+        <div class="glass-card p-0">
+            <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>模块列表</h5>
+                <small class="text-muted" id="moduleCount">加载中...</small>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="modulesTable">
+                    <thead>
+                        <tr>
+                            <th>模块名称</th>
+                            <th>类型</th>
+                            <th>功能描述</th>
+                            <th>创建时间</th>
+                            <th>复用次数</th>
+                            <th>节省Token</th>
+                            <th>最后使用</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modulesTableBody">
+                        <tr><td colspan="8" class="text-center py-4"><div class="spinner-border text-primary"></div><p class="mt-2 text-muted">加载中...</p></td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 图表区域 -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <div class="glass-card">
+                    <h5 class="mb-3"><i class="bi bi-pie-chart me-2"></i>模块类型分布</h5>
+                    <div style="height: 300px;"><canvas id="typeChart"></canvas></div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="glass-card">
+                    <h5 class="mb-3"><i class="bi bi-bar-chart me-2"></i>TOP10 复用效率</h5>
+                    <div style="height: 300px;"><canvas id="efficiencyChart"></canvas></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 模块详情模态框 -->
+    <div class="modal fade" id="moduleDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">模块详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr><th>模块名称:</th><td id="detailName">-</td></tr>
+                                <tr><th>模块类型:</th><td><span class="module-badge" id="detailType">-</span></td></tr>
+                                <tr><th>文件路径:</th><td id="detailPath" style="word-break: break-all;">-</td></tr>
+                                <tr><th>代码行数:</th><td id="detailLines">-</td></tr>
+                                <tr><th>创建时间:</th><td id="detailCreated">-</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr><th>复用次数:</th><td id="detailReuse">-</td></tr>
+                                <tr><th>节省Token:</th><td id="detailTokens">-</td></tr>
+                                <tr><th>平均节省:</th><td id="detailAvgTokens">-</td></tr>
+                                <tr><th>最后使用:</th><td id="detailLastUsed">-</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <h6>功能描述</h6>
+                        <p id="detailDescription" class="text-muted">-</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-primary" onclick="recordModuleUsage()">
+                        <i class="bi bi-plus-circle me-1"></i>记录使用
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 记录使用模态框 -->
+    <div class="modal fade" id="recordUsageModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">记录模块使用</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="recordModuleId">
+                    <div class="mb-3">
+                        <label class="form-label">模块名称</label>
+                        <input type="text" class="form-control" id="recordModuleNameDisplay" readonly>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">使用场景 <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="recordContext" placeholder="例如：日报生成、数据分析等" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">节省Token数 <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="recordTokens" value="100" min="1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">备注说明</label>
+                        <textarea class="form-control" id="recordNotes" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="submitUsageRecord()">保存记录</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let allModules = [];
+        let currentFilter = 'all';
+        let currentModuleId = null;
+        let typeChart = null;
+        let efficiencyChart = null;
+
+        // 加载模块数据
+        async function loadModuleStats() {
+            try {
+                const response = await fetch('/api/code-modules/stats');
+                const result = await response.json();
+                
+                if (result.success) {
+                    allModules = result.modules || [];
+                    updateSummary(result.summary);
+                    renderModulesTable(allModules);
+                    renderCharts(allModules);
+                } else {
+                    showError('加载失败: ' + (result.error || '未知错误'));
+                }
+            } catch (error) {
+                showError('加载失败: ' + error.message);
+            }
+        }
+
+        // 更新统计摘要
+        function updateSummary(summary) {
+            document.getElementById('totalModules').textContent = summary.total_modules || 0;
+            document.getElementById('totalReuse').textContent = summary.total_reuse_count || 0;
+            document.getElementById('totalTokens').textContent = (summary.total_tokens_saved || 0).toLocaleString();
+            document.getElementById('avgReuse').textContent = (summary.avg_reuse_per_module || 0).toFixed(1);
+        }
+
+        // 渲染模块表格
+        function renderModulesTable(modules) {
+            const tbody = document.getElementById('modulesTableBody');
+            const countEl = document.getElementById('moduleCount');
+            
+            countEl.textContent = `共 ${modules.length} 个模块`;
+            
+            if (modules.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center py-4 text-muted">暂无模块数据</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = modules.map(m => `
+                <tr>
+                    <td><strong>${escapeHtml(m.name)}</strong></td>
+                    <td><span class="module-badge badge-${m.type}">${getTypeLabel(m.type)}</span></td>
+                    <td class="description-cell" title="${escapeHtml(m.description || '')}">${escapeHtml(m.description || '-')}</td>
+                    <td class="date-cell">${formatDate(m.created_at)}</td>
+                    <td>${m.reuse_count || 0}</td>
+                    <td>${(m.tokens_saved || 0).toLocaleString()}</td>
+                    <td class="date-cell">${formatDate(m.last_used)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary me-1" onclick="showModuleDetail(${m.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="recordModuleUsage(${m.id}, '${escapeHtml(m.name)}')">
+                            <i class="bi bi-plus-circle"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 筛选模块
+        function filterModules() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            let filtered = allModules;
+            
+            if (currentFilter !== 'all') {
+                filtered = filtered.filter(m => m.type === currentFilter);
+            }
+            
+            if (search) {
+                filtered = filtered.filter(m => 
+                    (m.name && m.name.toLowerCase().includes(search)) ||
+                    (m.description && m.description.toLowerCase().includes(search))
+                );
+            }
+            
+            renderModulesTable(filtered);
+        }
+
+        // 按类型筛选
+        function filterByType(type) {
+            currentFilter = type;
+            document.querySelectorAll('.type-filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            filterModules();
+        }
+
+        // 渲染图表
+        function renderCharts(modules) {
+            renderTypeChart(modules);
+            renderEfficiencyChart(modules);
+        }
+
+        // 类型分布图
+        function renderTypeChart(modules) {
+            const typeCount = {};
+            modules.forEach(m => {
+                typeCount[m.type] = (typeCount[m.type] || 0) + 1;
+            });
+            
+            const ctx = document.getElementById('typeChart').getContext('2d');
+            if (typeChart) typeChart.destroy();
+            
+            typeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(typeCount).map(getTypeLabel),
+                    datasets: [{
+                        data: Object.values(typeCount),
+                        backgroundColor: ['#7c3aed', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#94a3b8']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        }
+
+        // 效率排名图
+        function renderEfficiencyChart(modules) {
+            const sorted = [...modules].sort((a, b) => (b.tokens_saved || 0) - (a.tokens_saved || 0)).slice(0, 10);
+            
+            const ctx = document.getElementById('efficiencyChart').getContext('2d');
+            if (efficiencyChart) efficiencyChart.destroy();
+            
+            efficiencyChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: sorted.map(m => m.name.substring(0, 15)),
+                    datasets: [{
+                        label: '节省Token数',
+                        data: sorted.map(m => m.tokens_saved || 0),
+                        backgroundColor: '#7c3aed'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // 显示模块详情
+        async function showModuleDetail(moduleId) {
+            const module = allModules.find(m => m.id === moduleId);
+            if (!module) return;
+            
+            currentModuleId = moduleId;
+            
+            document.getElementById('detailName').textContent = module.name;
+            document.getElementById('detailType').textContent = getTypeLabel(module.type);
+            document.getElementById('detailType').className = `module-badge badge-${module.type}`;
+            document.getElementById('detailPath').textContent = module.file_path || '-';
+            document.getElementById('detailLines').textContent = module.lines_of_code || '-';
+            document.getElementById('detailCreated').textContent = formatDateTime(module.created_at);
+            document.getElementById('detailReuse').textContent = module.reuse_count || 0;
+            document.getElementById('detailTokens').textContent = (module.tokens_saved || 0).toLocaleString();
+            document.getElementById('detailAvgTokens').textContent = module.reuse_count > 0 
+                ? Math.round((module.tokens_saved || 0) / module.reuse_count).toLocaleString() 
+                : '-';
+            document.getElementById('detailLastUsed').textContent = formatDateTime(module.last_used);
+            document.getElementById('detailDescription').textContent = module.description || '暂无描述';
+            
+            new bootstrap.Modal(document.getElementById('moduleDetailModal')).show();
+        }
+
+        // 记录模块使用
+        function recordModuleUsage(moduleId, moduleName) {
+            if (moduleId) {
+                currentModuleId = moduleId;
+                document.getElementById('recordModuleNameDisplay').value = moduleName;
+            } else {
+                const module = allModules.find(m => m.id === currentModuleId);
+                document.getElementById('recordModuleNameDisplay').value = module ? module.name : '';
+            }
+            document.getElementById('recordModuleId').value = currentModuleId;
+            bootstrap.Modal.getInstance(document.getElementById('moduleDetailModal'))?.hide();
+            new bootstrap.Modal(document.getElementById('recordUsageModal')).show();
+        }
+
+        // 提交使用记录
+        async function submitUsageRecord() {
+            const moduleId = document.getElementById('recordModuleId').value;
+            const context = document.getElementById('recordContext').value;
+            const tokens = parseInt(document.getElementById('recordTokens').value);
+            const notes = document.getElementById('recordNotes').value;
+            
+            if (!context || !tokens) {
+                alert('请填写使用场景和节省的Token数');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/code-modules/usage', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        module_id: parseInt(moduleId),
+                        usage_context: context,
+                        tokens_estimated_saved: tokens,
+                        notes: notes
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('recordUsageModal')).hide();
+                    loadModuleStats();
+                } else {
+                    alert('记录失败: ' + (result.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('记录失败: ' + error.message);
+            }
+        }
+
+        // 扫描模块
+        async function scanModules() {
+            if (!confirm('扫描模块将自动发现项目中的可复用代码模块，是否继续？')) return;
+            
+            try {
+                const btn = document.querySelector('button[onclick="scanModules()"]');
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></i>扫描中...';
+                
+                const response = await fetch('/api/code-modules/scan', {method: 'POST'});
+                const result = await response.json();
+                
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-search me-2"></i>扫描模块';
+                
+                if (result.success) {
+                    alert(`扫描完成！发现 ${result.modules_found || 0} 个新模块`);
+                    loadModuleStats();
+                } else {
+                    alert('扫描失败: ' + (result.error || '未知错误'));
+                }
+            } catch (error) {
+                alert('扫描失败: ' + error.message);
+            }
+        }
+
+        // 辅助函数
+        function getTypeLabel(type) {
+            const labels = {
+                'core': '核心', 'api': 'API', 'script': '脚本',
+                'utility': '工具', 'integration': '集成', 'test': '测试'
+            };
+            return labels[type] || type;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('zh-CN', {month: 'short', day: 'numeric'});
+        }
+
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN', {year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'});
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function showError(msg) {
+            document.getElementById('modulesTableBody').innerHTML = `<tr><td colspan="8" class="text-center py-4 text-danger">${msg}</td></tr>`;
+        }
+
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', loadModuleStats);
+    </script>
+</body>
+</html>

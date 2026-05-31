@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>评分规则编辑器 - Pablo Web</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(124, 58, 237, 0.2);
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border: none;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .rules-section {
+            border-left: 5px solid #3b82f6;
+        }
+        
+        .test-section {
+            border-left: 5px solid #10b981;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #7c3aed, #a855f7);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, #10b981, #34d399);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+        
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-warning:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.3);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #f87171);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.3);
+        }
+        
+        .rule-item {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .rule-item:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        
+        .rule-item.dragging {
+            opacity: 0.5;
+            background: #e2e8f0;
+        }
+        
+        .rule-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .rule-item-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #1e293b;
+        }
+        
+        .rule-item-score {
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        
+        .rule-item-score.positive {
+            color: #10b981;
+        }
+        
+        .rule-item-score.negative {
+            color: #ef4444;
+        }
+        
+        .rule-item-score.neutral {
+            color: #64748b;
+        }
+        
+        .rule-item-range {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+        
+        .rule-item-description {
+            color: #475569;
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+        
+        .drag-handle {
+            cursor: grab;
+            color: #94a3b8;
+            padding: 5px;
+            margin-right: 10px;
+        }
+        
+        .drag-handle:hover {
+            color: #64748b;
+        }
+        
+        .drag-handle:active {
+            cursor: grabbing;
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+            border: 2px solid #7dd3fc;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-success {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            border: 2px solid #34d399;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .alert-warning {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border: 2px solid #fbbf24;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-result {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        
+        .test-result-score {
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+            margin: 10px 0;
+        }
+        
+        .test-result-score.positive {
+            color: #10b981;
+        }
+        
+        .test-result-score.negative {
+            color: #ef4444;
+        }
+        
+        .test-result-score.neutral {
+            color: #64748b;
+        }
+        
+        .test-result-reason {
+            color: #475569;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+        
+        .section-title {
+            color: #1e293b;
+            font-weight: 700;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #e2e8f0;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+        
+        .stat-label {
+            color: #64748b;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .stat-value {
+            color: #1e293b;
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+        
+        .stat-change {
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        
+        .stat-change.positive {
+            color: #10b981;
+        }
+        
+        .stat-change.negative {
+            color: #ef4444;
+        }
+        
+        .nav-tabs {
+            border-bottom: 3px solid #e2e8f0;
+            margin-bottom: 25px;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #64748b;
+            font-weight: 600;
+            padding: 12px 25px;
+            border-radius: 10px 10px 0 0;
+            margin-right: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: #475569;
+            background: #f1f5f9;
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: #7c3aed;
+            background: white;
+            border-bottom: 3px solid #7c3aed;
+        }
+        
+        .form-check-input:checked {
+            background-color: #7c3aed;
+            border-color: #7c3aed;
+        }
+        
+        .form-check-input:focus {
+            border-color: #7c3aed;
+            box-shadow: 0 0 0 0.25rem rgba(124, 58, 237, 0.25);
+        }
+        
+        .btn-group .btn {
+            border-radius: 8px !important;
+            margin: 0 2px;
+        }
+        
+        .btn-group {
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        .badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        
+        .badge.bg-danger {
+            background: linear-gradient(135deg, #ef4444, #f87171) !important;
+        }
+        
+        .badge.bg-success {
+            background: linear-gradient(135deg, #10b981, #34d399) !important;
+        }
+        
+        .badge.bg-secondary {
+            background: linear-gradient(135deg, #64748b, #94a3b8) !important;
+        }
+        
+        .badge.bg-warning {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24) !important;
+        }
+        
+        .badge.bg-info {
+            background: linear-gradient(135deg, #0ea5e9, #38bdf8) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 页头 -->
+        <div class="header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-2">
+                        <i class="bi bi-award me-2"></i>评分规则编辑器
+                    </h1>
+                    <p class="mb-0">
+                        编辑Token消耗评分规则，修改后全局生效
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="/data-stats" class="btn btn-light me-2">
+                        <i class="bi bi-arrow-left me-1"></i>返回数据统计
+                    </a>
+                    <a href="/" class="btn btn-outline-light">
+                        <i class="bi bi-house me-1"></i>返回主页
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 统计信息 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-label">当前规则数量</div>
+                    <div class="stat-value" id="rulesCount">0</div>
+                    <div class="stat-change">活跃规则: <span id="activeRulesCount">0</span></div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-label">扣分规则</div>
+                    <div class="stat-value" id="penaltyRulesCount">0</div>
+                    <div class="stat-change">最高扣分: <span id="maxPenalty">0</span>分</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-label">奖励规则</div>
+                    <div class="stat-value" id="rewardRulesCount">0</div>
+                    <div class="stat-change">最高奖励: <span id="maxReward">0</span>分</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card">
+                    <div class="stat-label">中性规则</div>
+                    <div class="stat-value" id="neutralRulesCount">0</div>
+                    <div class="stat-change">不扣分不奖励</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 标签页 -->
+        <ul class="nav nav-tabs" id="rulesTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="edit-tab" data-bs-toggle="tab" data-bs-target="#edit" type="button" role="tab">
+                    <i class="bi bi-pencil me-1"></i>编辑规则
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="test-tab" data-bs-toggle="tab" data-bs-target="#test" type="button" role="tab">
+                    <i class="bi bi-speedometer2 me-1"></i>测试规则
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="history-tab" data-bs-toggle="tab" data-bs-target="#history" type="button" role="tab">
+                    <i class="bi bi-clock-history me-1"></i>应用历史
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="rulesTabsContent">
+            <!-- 编辑规则标签页 -->
+            <div class="tab-pane fade show active" id="edit" role="tabpanel">
+                <div class="alert-info">
+                    <h5>
+                        <i class="bi bi-info-circle me-2"></i>使用说明
+                    </h5>
+                    <ul class="mb-0">
+                        <li><strong>规则顺序</strong>：从上到下匹配，第一个匹配的规则生效</li>
+                        <li><strong>范围定义</strong>：min_value ≤ 消耗 < max_value（单位：M tokens）</li>
+                        <li><strong>边界值</strong>：min_value为空表示"小于"，max_value为空表示"大于等于"</li>
+                        <li><strong>分数</strong>：正数为奖励，负数为扣分，0为中性</li>
+                        <li><strong>拖拽排序</strong>：拖动规则项可以调整匹配顺序</li>
+                        <li><strong>保存后</strong>：新规则立即生效，影响所有Token消耗评分</li>
+                    </ul>
+                </div>
+                
+                <div class="card rules-section">
+                    <h3 class="section-title">
+                        <i class="bi bi-list-check me-2"></i>评分规则列表
+                    </h3>
+                    
+                    <div class="alert-warning mb-4">
+                        <h5>
+                            <i class="bi bi-exclamation-triangle me-2"></i>重要提示
+                        </h5>
+                        <p class="mb-0">
+                            <strong>规则顺序很重要！</strong> 系统会从上到下检查规则，第一个匹配的规则生效。<br>
+                            请确保规则顺序正确，避免出现重叠或遗漏的区间。
+                        </p>
+                    </div>
+                    
+                    <!-- 规则列表容器 -->
+                    <div id="rulesList" class="mb-4">
+                        <!-- 规则项将通过JavaScript动态生成 -->
+                    </div>
+                    
+                    <!-- 添加新规则按钮 -->
+                    <div class="text-center mb-4">
+                        <button class="btn btn-primary" id="addRuleBtn">
+                            <i class="bi bi-plus-circle me-1"></i>添加新规则
+                        </button>
+                    </div>
+                    
+                    <!-- 操作按钮 -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <button class="btn btn-success w-100" id="saveRulesBtn">
+                                <i class="bi bi-save me-1"></i>保存规则
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button class="btn btn-warning w-100" id="applyToHistoryBtn">
+                                <i class="bi bi-arrow-repeat me-1"></i>应用到历史数据
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <button class="btn btn-outline-secondary w-100" id="resetRulesBtn">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i>重置为默认规则
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button class="btn btn-outline-danger w-100" id="clearRulesBtn">
+                                <i class="bi bi-trash me-1"></i>清空所有规则
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 测试规则标签页 -->
+            <div class="tab-pane fade" id="test" role="tabpanel">
+                <div class="card test-section">
+                    <h3 class="section-title">
+                        <i class="bi bi-speedometer2 me-2"></i>规则测试
+                    </h3>
+                    
+                    <div class="alert-info mb-4">
+                        <h5>
+                            <i class="bi bi-lightbulb me-2"></i>测试说明
+                        </h5>
+                        <p class="mb-0">
+                            输入Token消耗量（单位：M tokens），测试当前规则会给出多少分。<br>
+                            例如：1.27M tokens 输入 1.27
+                        </p>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="testTokens" class="form-label">
+                                    <i class="bi bi-calculator me-1"></i>Token消耗量（M tokens）
+                                </label>
+                                <input type="number" class="form-control" id="testTokens" 
+                                       step="0.01" min="0" placeholder="例如：1.27">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label class="form-label">&nbsp;</label>
+                                <button class="btn btn-primary w-100" id="testRulesBtn">
+                                    <i class="bi bi-play-circle me-1"></i>测试规则
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 测试结果 -->
+                    <div id="testResult" style="display: none;">
+                        <div class="test-result">
+                            <h5 class="text-center mb-3">
+                                <i class="bi bi-clipboard-check me-1"></i>测试结果
+                            </h5>
+                            <div class="test-result-score" id="testScore">0</div>
+                            <div class="test-result-reason" id="testReason"></div>
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    对应Token数量: <span id="testTokenCount">0</span> tokens
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 示例测试 -->
+                    <div class="mt-4">
+                        <h6 class="mb-3">
+                            <i class="bi bi-list-ul me-1"></i>快速测试示例
+                        </h6>
+                        <div class="btn-group w-100" role="group">
+                            <button type="button" class="btn btn-outline-secondary test-example" data-value="0.005">
+                                0.005M
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary test-example" data-value="0.05">
+                                0.05M
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary test-example" data-value="0.5">
+                                0.5M
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary test-example" data-value="1.27">
+                                1.27M
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary test-example" data-value="3.5">
+                                3.5M
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary test-example" data-value="7.5">
+                                7.5M
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary test-example" data-value="12">
+                                12M
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 应用历史标签页 -->
+            <div class="tab-pane fade" id="history" role="tabpanel">
+                <div class="card">
+                    <h3 class="section-title">
+                        <i class="bi bi-clock-history me-2"></i>规则应用历史
+                    </h3>
+                    
+                    <div class="alert-info mb-4">
+                        <h5>
+                            <i class="bi bi-info-circle me-2"></i>历史记录
+                        </h5>
+                        <p class="mb-0">
+                            显示最近30天内受规则影响的Token消耗记录。<br>
+                            每次规则变更后，历史数据的分数会根据新规则重新计算。
+                        </p>
+                    </div>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>日期</th>
+                                    <th>Token消耗</th>
+                                    <th>原分数</th>
+                                    <th>新分数</th>
+                                    <th>变化</th>
+                                    <th>原因</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                                <!-- 历史记录将通过JavaScript动态生成 -->
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="text-center mt-3">
+                        <button class="btn btn-secondary" id="refreshHistoryBtn">
+                            <i class="bi bi-arrow-clockwise me-1"></i>刷新历史记录
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 页脚 -->
+        <div class="text-center mt-5 mb-4">
+            <p class="text-muted">
+                <i class="bi bi-cpu me-1"></i>Pablo Web 评分规则编辑器 | 最后更新: 2026-04-10
+            </p>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Sortable.js for drag and drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    
+    <script>
+        // 全局变量
+        let rules = [];
+        let sortableInstance = null;
+        
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 加载规则
+            loadRules();
+            
+            // 按钮事件绑定
+            document.getElementById('addRuleBtn').addEventListener('click', addNewRule);
+            document.getElementById('saveRulesBtn').addEventListener('click', saveRules);
+            document.getElementById('applyToHistoryBtn').addEventListener('click', applyToHistory);
+            document.getElementById('resetRulesBtn').addEventListener('click', resetToDefaultRules);
+            document.getElementById('clearRulesBtn').addEventListener('click', clearAllRules);
+            document.getElementById('testRulesBtn').addEventListener('click', testRules);
+            document.getElementById('refreshHistoryBtn').addEventListener('click', loadHistory);
+            
+            // 示例测试按钮
+            document.querySelectorAll('.test-example').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    document.getElementById('testTokens').value = value;
+                    testRules();
+                });
+            });
+            
+            // 初始化拖拽排序
+            initSortable();
+        });
+        
+        // 加载规则
+        async function loadRules() {
+            try {
+                const response = await fetch('/api/scoring-rules');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    rules = data.data;
+                    renderRules();
+                    updateStats();
+                } else {
+                    showError('加载规则失败: ' + (data.message || '未知错误'));
+                }
+            } catch (error) {
+                showError('加载规则失败: ' + error.message);
+            }
+        }
+        
+        // 渲染规则列表
+        function renderRules() {
+            const rulesList = document.getElementById('rulesList');
+            rulesList.innerHTML = '';
+            
+            if (rules.length === 0) {
+                rulesList.innerHTML = `
+                    <div class="alert alert-warning text-center">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        暂无评分规则，请添加规则或重置为默认规则
+                    </div>
+                `;
+                return;
+            }
+            
+            rules.forEach((rule, index) => {
+                const ruleElement = createRuleElement(rule, index);
+                rulesList.appendChild(ruleElement);
+            });
+            
+            // 重新初始化拖拽排序
+            if (sortableInstance) {
+                sortableInstance.destroy();
+            }
+            initSortable();
+        }
+        
+        // 创建规则元素
+        function createRuleElement(rule, index) {
+            const div = document.createElement('div');
+            div.className = 'rule-item';
+            div.dataset.index = index;
+            
+            // 确定分数样式
+            let scoreClass = 'neutral';
+            if (rule.score > 0) scoreClass = 'positive';
+            else if (rule.score < 0) scoreClass = 'negative';
+            
+            // 确定范围显示
+            let rangeText = '';
+            if (rule.min_value === null && rule.max_value !== null) {
+                rangeText = `小于 ${rule.max_value}M tokens`;
+            } else if (rule.min_value !== null && rule.max_value === null) {
+                rangeText = `大于等于 ${rule.min_value}M tokens`;
+            } else if (rule.min_value !== null && rule.max_value !== null) {
+                rangeText = `${rule.min_value}M ≤ 消耗 < ${rule.max_value}M tokens`;
+            }
+            
+            div.innerHTML = `
+                <div class="rule-item-header">
+                    <div class="d-flex align-items-center">
+                        <span class="drag-handle">
+                            <i class="bi bi-grip-vertical"></i>
+                        </span>
+                        <span class="rule-item-title">${rule.rule_name}</span>
+                    </div>
+                    <div>
+                        <span class="rule-item-score ${scoreClass}">
+                            ${rule.score > 0 ? '+' : ''}${rule.score}分
+                        </span>
+                    </div>
+                </div>
+                <div class="rule-item-range">
+                    <i class="bi bi-arrow-right-circle me-1"></i>${rangeText}
+                </div>
+                <div class="rule-item-description">
+                    ${rule.description || '无描述'}
+                </div>
+                <div class="mt-3">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <input type="text" class="form-control form-control-sm rule-min" 
+                                   placeholder="最小值" value="${rule.min_value || ''}">
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <input type="text" class="form-control form-control-sm rule-max" 
+                                   placeholder="最大值" value="${rule.max_value || ''}">
+                        </div>
+                        <div class="col-md-2 mb-2">
+                            <input type="number" class="form-control form-control-sm rule-score" 
+                                   placeholder="分数" value="${rule.score}">
+                        </div>
+                        <div class="col-md-4 mb-2">
+                            <input type="text" class="form-control form-control-sm rule-desc" 
+                                   placeholder="描述" value="${rule.description || ''}">
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between mt-2">
+                        <div class="form-check">
+                            <input class="form-check-input rule-active" type="checkbox" 
+                                   id="active${index}" ${rule.is_active ? 'checked' : ''}>
+                            <label class="form-check-label" for="active${index}">
+                                启用规则
+                            </label>
+                        </div>
+                        <div>
+                            <button class="btn btn-sm btn-outline-danger delete-rule" data-index="${index}">
+                                <i class="bi bi-trash"></i> 删除
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // 绑定删除按钮事件
+            const deleteBtn = div.querySelector('.delete-rule');
+            deleteBtn.addEventListener('click', function() {
+                const idx = parseInt(this.dataset.index);
+                deleteRule(idx);
+            });
+            
+            return div;
+        }
+        
+        // 初始化拖拽排序
+        function initSortable() {
+            const rulesList = document.getElementById('rulesList');
+            if (!rulesList) return;
+            
+            sortableInstance = Sortable.create(rulesList, {
+                animation: 150,
+                handle: '.drag-handle',
+                ghostClass: 'dragging',
+                onEnd: function(evt) {
+                    // 更新规则顺序
+                    const newRules = [];
+                    const ruleElements = rulesList.querySelectorAll('.rule-item');
+                    
+                    ruleElements.forEach((element, index) => {
+                        const oldIndex = parseInt(element.dataset.index);
+                        newRules.push(rules[oldIndex]);
+                    });
+                    
+                    rules = newRules;
+                    renderRules(); // 重新渲染以更新索引
+                }
+            });
+        }
+        
+        // 添加新规则
+        function addNewRule() {
+            const newRule = {
+                rule_name: '新规则',
+                min_value: null,
+                max_value: null,
+                score: 0,
+                description: '',
+                is_active: true
+            };
+            
+            rules.push(newRule);
+            renderRules();
+            
+            // 滚动到最后一条规则
+            const rulesList = document.getElementById('rulesList');
+            const lastRule = rulesList.lastElementChild;
+            if (lastRule) {
+                lastRule.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // 删除规则
+        function deleteRule(index) {
+            if (confirm('确定要删除这条规则吗？')) {
+                rules.splice(index, 1);
+                renderRules();
+                updateStats();
+            }
+        }
+        
+        // 更新统计信息
+        function updateStats() {
+            const total = rules.length;
+            const active = rules.filter(r => r.is_active).length;
+            const penalty = rules.filter(r => r.score < 0).length;
+            const reward = rules.filter(r => r.score > 0).length;
+            const neutral = rules.filter(r => r.score === 0).length;
+            
+            const maxPenalty = rules.reduce((max, r) => r.score < 0 ? Math.min(max, r.score) : max, 0);
+            const maxReward = rules.reduce((max, r) => r.score > 0 ? Math.max(max, r.score) : max, 0);
+            
+            document.getElementById('rulesCount').textContent = total;
+            document.getElementById('activeRulesCount').textContent = active;
+            document.getElementById('penaltyRulesCount').textContent = penalty;
+            document.getElementById('rewardRulesCount').textContent = reward;
+            document.getElementById('neutralRulesCount').textContent = neutral;
+            document.getElementById('maxPenalty').textContent = maxPenalty;
+            document.getElementById('maxReward').textContent = maxReward;
+        }
+        
+        // 收集规则数据
+        function collectRulesData() {
+            const ruleElements = document.querySelectorAll('.rule-item');
+            const updatedRules = [];
+            
+            ruleElements.forEach((element, index) => {
+                const minInput = element.querySelector('.rule-min');
+                const maxInput = element.querySelector('.rule-max');
+                const scoreInput = element.querySelector('.rule-score');
+                const descInput = element.querySelector('.rule-desc');
+                const activeInput = element.querySelector('.rule-active');
+                
+                // 获取规则名称（从标题中提取）
+                const titleElement = element.querySelector('.rule-item-title');
+                const ruleName = titleElement ? titleElement.textContent : '未命名规则';
+                
+                updatedRules.push({
+                    rule_name: ruleName,
+                    min_value: minInput.value ? parseFloat(minInput.value) : null,
+                    max_value: maxInput.value ? parseFloat(maxInput.value) : null,
+                    score: parseInt(scoreInput.value) || 0,
+                    description: descInput.value || '',
+                    is_active: activeInput.checked
+                });
+            });
+            
+            return updatedRules;
+        }
+        
+        // 保存规则
+        async function saveRules() {
+            try {
+                const updatedRules = collectRulesData();
+                
+                // 验证规则
+                const validation = validateRules(updatedRules);
+                if (!validation.valid) {
+                    showError(validation.message);
+                    return;
+                }
+                
+                const response = await fetch('/api/scoring-rules', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ rules: updatedRules })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showSuccess('规则保存成功！新规则已生效。');
+                    loadRules(); // 重新加载规则以获取更新后的数据
+                } else {
+                    showError('保存规则失败: ' + (data.message || '未知错误'));
+                }
+            } catch (error) {
+                showError('保存规则失败: ' + error.message);
+            }
+        }
+        
+        // 验证规则
+        function validateRules(rules) {
+            if (rules.length === 0) {
+                return { valid: false, message: '至少需要一条规则' };
+            }
+            
+            // 检查是否有重叠的区间
+            const activeRules = rules.filter(r => r.is_active);
+            
+            for (let i = 0; i < activeRules.length; i++) {
+                const rule1 = activeRules[i];
+                
+                for (let j = i + 1; j < activeRules.length; j++) {
+                    const rule2 = activeRules[j];
+                    
+                    if (rulesOverlap(rule1, rule2)) {
+                        return { 
+                            valid: false, 
+                            message: `规则 "${rule1.rule_name}" 和 "${rule2.rule_name}" 的区间有重叠` 
+                        };
+                    }
+                }
+            }
+            
+            // 检查是否有覆盖所有可能值的规则
+            const hasFullCoverage = checkFullCoverage(activeRules);
+            if (!hasFullCoverage) {
+                return { 
+                    valid: false, 
+                    message: '规则集合没有覆盖所有可能的Token消耗值（0到无穷大）' 
+                };
+            }
+            
+            return { valid: true, message: '规则验证通过' };
+        }
+        
+        // 检查规则区间是否重叠
+        function rulesOverlap(rule1, rule2) {
+            const r1Min = rule1.min_value === null ? -Infinity : rule1.min_value;
+            const r1Max = rule1.max_value === null ? Infinity : rule1.max_value;
+            const r2Min = rule2.min_value === null ? -Infinity : rule2.min_value;
+            const r2Max = rule2.max_value === null ? Infinity : rule2.max_value;
+            
+            // 检查区间是否重叠
+            return !(r1Max <= r2Min || r2Max <= r1Min);
+        }
+        
+        // 检查规则是否覆盖所有可能值
+        function checkFullCoverage(rules) {
+            // 按min_value排序
+            const sortedRules = [...rules].sort((a, b) => {
+                const aMin = a.min_value === null ? -Infinity : a.min_value;
+                const bMin = b.min_value === null ? -Infinity : b.min_value;
+                return aMin - bMin;
+            });
+            
+            let currentMax = 0;
+            
+            for (const rule of sortedRules) {
+                const ruleMin = rule.min_value === null ? -Infinity : rule.min_value;
+                const ruleMax = rule.max_value === null ? Infinity : rule.max_value;
+                
+                // 检查是否有间隙
+                if (ruleMin > currentMax) {
+                    return false; // 有间隙
+                }
+                
+                // 更新当前覆盖的最大值
+                if (ruleMax > currentMax) {
+                    currentMax = ruleMax;
+                }
+                
+                // 如果已经覆盖到无穷大，则完成
+                if (ruleMax === Infinity) {
+                    return true;
+                }
+            }
+            
+            // 检查是否覆盖到无穷大
+            return currentMax === Infinity;
+        }
+        
+        // 应用到历史数据
+        async function applyToHistory() {
+            if (!confirm('确定要将新规则应用到所有历史数据吗？\n这将会重新计算所有历史记录的分数。')) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/scoring-rules/apply-to-history', {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    showSuccess(`已成功更新${data.updated_count}条历史记录的分数`);
+                } else {
+                    showError('应用到历史数据失败: ' + (data.message || '未知错误'));
+                }
+            } catch (error) {
+                showError('应用到历史数据失败: ' + error.message);
+            }
+        }
+        
+        // 重置为默认规则
+        async function resetToDefaultRules() {
+            if (!confirm('确定要重置为默认规则吗？当前所有规则将被替换。')) {
+                return;
+            }
+            
+            try {
+                // 默认规则
+                const defaultRules = [
+                    {
+                        rule_name: '扣分规则',
+                        min_value: 10.0,
+                        max_value: null,
+                        score: -10,
+                        description: '日消耗 > 10M tokens',
+                        is_active: true
+                    },
+                    {
+                        rule_name: '扣分规则',
+                        min_value: 8.0,
+                        max_value: 10.0,
+                        score: -5,
+                        description: '日消耗 8-10M tokens',
+                        is_active: true
+                    },
+                    {
+                        rule_name: '扣分规则',
+                        min_value: 5.0,
+                        max_value: 8.0,
+                        score: -3,
+                        description: '日消耗 5-8M tokens',
+                        is_active: true
+                    },
+                    {
+                        rule_name: '扣分规则',
+                        min_value: 3.0,
+                        max_value: 5.0,
+                        score: -1,
+                        description: '日消耗 3-5M tokens',
+                        is_active: true
+                    },
+                    {
+                        rule_name: '中性规则',
+                        min_value: 1.0,
+                        max_value: 3.0,
+                        score: 0,
+                        description: '日消耗 1-3M tokens',
+                        is_active: true
+                    },
+                    {
+                        rule_name: '奖励规则',
+                        min_value: 0.8,
+                        max_value: 1.0,
+                        score: 1,
+                        description: '日消耗 0.8-1M tokens',
+                        is_active: true
+                    },
+                    {
+                        rule_name: '奖励规则',
+                        min_value: 0.1,
+                        max_value: 0.8,
+                        score: 3,
+                        description: '日消耗 0.1-0.8M tokens',
+                        is_active: true
+                    },
+                    {
+                        rule_name: '奖励规则',
+                        min_value: 0.01,
+                        max_value: 0.1,
+                        score: 5,
+                        description: '日消耗 0.01-0.1M tokens',
+                        is_active: true
+                    },
+                    {
+                        rule_name: '奖励规则',
+                        min_value: 0.0,
+                        max_value: 0.01,
+                        score: 10,
+                        description: '日消耗 < 0.01M tokens',
+                        is_active: true
+                    }
+                ];
+                
+                rules = defaultRules;
+                renderRules();
+                updateStats();
+                
+                showSuccess('已重置为默认规则，请点击"保存规则"使其生效');
+            } catch (error) {
+                showError('重置规则失败: ' + error.message);
+            }
+        }
+        
+        // 清空所有规则
+        function clearAllRules() {
+            if (!confirm('确定要清空所有规则吗？这将删除所有评分规则。')) {
+                return;
+            }
+            
+            rules = [];
+            renderRules();
+            updateStats();
+            
+            showWarning('所有规则已清空，请添加新规则或重置为默认规则');
+        }
+        
+        // 测试规则
+        async function testRules() {
+            const tokensInput = document.getElementById('testTokens');
+            const tokensValue = parseFloat(tokensInput.value);
+            
+            if (isNaN(tokensValue) || tokensValue < 0) {
+                showError('请输入有效的Token消耗量（大于等于0）');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/scoring-rules/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ total_m: tokensValue })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    displayTestResult(data.data);
+                } else {
+                    showError('测试规则失败: ' + (data.message || '未知错误'));
+                }
+            } catch (error) {
+                showError('测试规则失败: ' + error.message);
+            }
+        }
+        
+        // 显示测试结果
+        function displayTestResult(result) {
+            const testResultDiv = document.getElementById('testResult');
+            const testScore = document.getElementById('testScore');
+            const testReason = document.getElementById('testReason');
+            const testTokenCount = document.getElementById('testTokenCount');
+            
+            // 设置分数样式
+            let scoreClass = 'neutral';
+            if (result.score > 0) scoreClass = 'positive';
+            else if (result.score < 0) scoreClass = 'negative';
+            
+            testScore.textContent = result.score > 0 ? `+${result.score}分` : `${result.score}分`;
+            testScore.className = `test-result-score ${scoreClass}`;
+            
+            testReason.textContent = result.reason;
+            testTokenCount.textContent = result.total_tokens.toLocaleString();
+            
+            testResultDiv.style.display = 'block';
+            
+            // 滚动到测试结果
+            testResultDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        // 加载历史记录
+        async function loadHistory() {
+            try {
+                const response = await fetch('/api/tokens/history?days=30');
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    renderHistoryTable(data.history);
+                } else {
+                    showError('加载历史记录失败: ' + (data.message || '未知错误'));
+                }
+            } catch (error) {
+                showError('加载历史记录失败: ' + error.message);
+            }
+        }
+        
+        // 渲染历史表格
+        function renderHistoryTable(history) {
+            const tbody = document.getElementById('historyTableBody');
+            tbody.innerHTML = '';
+            
+            if (!history || history.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-4">
+                            <i class="bi bi-inbox me-2"></i>暂无历史记录
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            history.forEach(record => {
+                const totalM = record.total_tokens / 1000000;
+                
+                // 测试当前规则下的分数
+                const testScore = calculateScoreWithCurrentRules(totalM);
+                
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.date}</td>
+                    <td>${totalM.toFixed(2)}M</td>
+                    <td>${record.score || 0}分</td>
+                    <td>${testScore.score > 0 ? '+' : ''}${testScore.score}分</td>
+                    <td>
+                        <span class="badge ${testScore.score > (record.score || 0) ? 'bg-success' : testScore.score < (record.score || 0) ? 'bg-danger' : 'bg-secondary'}">
+                            ${testScore.score - (record.score || 0) > 0 ? '+' : ''}${testScore.score - (record.score || 0)}
+                        </span>
+                    </td>
+                    <td>${testScore.reason}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+        
+        // 使用当前规则计算分数
+        function calculateScoreWithCurrentRules(totalM) {
+            const activeRules = rules.filter(r => r.is_active);
+            
+            for (const rule of activeRules) {
+                const min = rule.min_value === null ? -Infinity : rule.min_value;
+                const max = rule.max_value === null ? Infinity : rule.max_value;
+                
+                if (totalM >= min && totalM < max) {
+                    return {
+                        score: rule.score,
+                        reason: rule.description || '匹配规则'
+                    };
+                }
+            }
+            
+            return {
+                score: 0,
+                reason: '未匹配任何规则'
+            };
+        }
+        
+        // 显示成功消息
+        function showSuccess(message) {
+            showAlert(message, 'success');
+        }
+        
+        // 显示错误消息
+        function showError(message) {
+            showAlert(message, 'danger');
+        }
+        
+        // 显示警告消息
+        function showWarning(message) {
+            showAlert(message, 'warning');
+        }
+        
+        // 显示消息
+        function showAlert(message, type) {
+            // 移除现有的消息
+            const existingAlert = document.querySelector('.alert-toast');
+            if (existingAlert) {
+                existingAlert.remove();
+            }
+            
+            // 创建新的消息
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show alert-toast position-fixed`;
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 9999;
+                min-width: 300px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            `;
+            
+            alertDiv.innerHTML = `
+                <i class="bi ${type === 'success' ? 'bi-check-circle' : type === 'danger' ? 'bi-exclamation-triangle' : 'bi-exclamation-circle'} me-2"></i>
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            // 5秒后自动消失
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

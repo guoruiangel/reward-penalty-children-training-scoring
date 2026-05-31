@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pablo · Pbee · KK 对话记录</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root { --primary: #7c3aed; --secondary: #a855f7; }
+        body { background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%); min-height: 100vh; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #e0e0e0; }
+        .header { background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.08); padding: 14px 0; }
+        .header a { color: var(--secondary); text-decoration: none; }
+        .header a:hover { color: var(--primary); }
+        .conv-card { border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px 16px; margin-bottom: 10px; transition: all 0.2s; }
+        .conv-card:hover { border-color: rgba(255,255,255,0.15); transform: translateX(3px); }
+        .conv-pablo { background: rgba(124,58,237,0.08); border-left: 3px solid rgba(124,58,237,0.3); }
+        .conv-pablo { background: rgba(124,58,237,0.08); border-left: 3px solid rgba(124,58,237,0.3); }
+        .conv-pbee { background: rgba(16,185,129,0.08); border-left: 3px solid rgba(16,185,129,0.3); }
+        .conv-kk { background: rgba(249,115,22,0.08); border-left: 3px solid rgba(249,115,22,0.3); }
+        .sender-badge { display: inline-flex; align-items: center; padding: 2px 10px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; }
+        .sender-pablo { background: rgba(124,58,237,0.25); color: #c084fc; }
+        .sender-pbee { background: rgba(16,185,129,0.25); color: #6ee7b7; }
+        .sender-kk { background: rgba(249,115,22,0.25); color: #fb923c; }
+        .msg-type-badge { display: inline-block; padding: 1px 7px; border-radius: 10px; font-size: 0.68rem; margin-left: 6px; }
+        .type-task { background: rgba(34,197,94,0.15); color: #4ade80; }
+        .type-question { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .type-notification { background: rgba(245,158,11,0.15); color: #fbbf24; }
+        .type-message { background: rgba(168,85,247,0.15); color: #c084fc; }
+        .msg-content { margin-top: 8px; padding: 10px 12px; background: rgba(0,0,0,0.25); border-radius: 8px; white-space: pre-wrap; font-size: 0.88rem; line-height: 1.35; color: #d1d5db; word-break: break-word; }
+        .msg-meta { display: flex; align-items: center; gap: 12px; font-size: 0.75rem; color: #6b7280; flex-wrap: wrap; }
+        .msg-time { color: #6b7280; }
+        .msg-signature { padding: 1px 7px; background: rgba(255,255,255,0.05); border-radius: 10px; }
+        .stats-bar { background: rgba(255,255,255,0.03); border-radius: 10px; padding: 12px 20px; margin-bottom: 16px; display: flex; gap: 30px; flex-wrap: wrap; }
+        .stat-item { text-align: center; }
+        .stat-num { font-size: 1.4rem; font-weight: 700; color: var(--secondary); }
+        .stat-label { font-size: 0.75rem; color: #9ca3af; }
+        .filter-tabs { margin-bottom: 14px; }
+        .filter-tabs a { display: inline-block; padding: 5px 14px; border-radius: 20px; margin-right: 8px; color: #9ca3af; text-decoration: none; font-size: 0.85rem; transition: all 0.2s; }
+        .filter-tabs a:hover, .filter-tabs a.active { background: rgba(124,58,237,0.2); color: #c084fc; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #6b7280; }
+        .empty-state i { font-size: 4rem; display: block; margin-bottom: 16px; opacity: 0.3; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <a href="/"><i class="bi bi-arrow-left"></i> 返回</a>
+            <span class="ms-3 me-2"><i class="bi bi-chat-heart-fill"></i></span>
+            <span style="font-size:1.1rem;font-weight:700;color:#fff;">Pablo · Pbee · KK</span>
+            <span style="font-size:0.85rem;color:#9ca3af;margin-left:8px;">👋 对话记录</span>
+        </div>
+    </div>
+    <div class="container py-3">
+        <div class="stats-bar">
+            <div class="stat-item"><div class="stat-num">{{ conversations|length }}</div><div class="stat-label">总对话数</div></div>
+            <div class="stat-item"><div class="stat-num">{{ pablo_count }}</div><div class="stat-label">Pablo 发</div></div>
+            <div class="stat-item"><div class="stat-num">{{ pbee_count }}</div><div class="stat-label">Pbee 发</div></div>
+            <div class="stat-item"><div class="stat-num">{{ kk_count }}</div><div class="stat-label">KK 发</div></div>
+            <div class="stat-item"><div class="stat-num">{{ task_count }}</div><div class="stat-label">任务</div></div>
+        </div>
+        <div class="filter-tabs">
+            <a href="/conversations" class="active">全部</a>
+            <a href="/conversations?direction=pablo_to_pbee">Pablo→Pbee</a>
+            <a href="/conversations?direction=pbee_to_pablo">Pbee→Pablo</a>
+            <a href="/conversations?direction=kk_to_pablo">KK→Pablo</a>
+            <a href="/conversations?direction=pablo_to_kk">Pablo→KK</a>
+        </div>
+        {% if conversations %}
+            {% for conv in conversations %}
+            <div class="conv-card {% if conv.sender|lower == 'pablo' %}conv-pablo{% elif conv.sender|lower == 'kk' %}conv-kk{% else %}conv-pbee{% endif %}">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div class="d-flex align-items-center flex-wrap gap-1">
+                        <span class="sender-badge {% if conv.sender|lower == 'pablo' %}sender-pablo{% elif conv.sender|lower == 'kk' %}sender-kk{% else %}sender-pbee{% endif %}">{{ conv.sender }}</span>
+                        {% if conv.subject %}<strong style="color:#fff;font-size:0.9rem;">{{ conv.subject }}</strong>{% endif %}
+                        <span class="msg-type-badge type-{{ conv.msg_type }}">{{ conv.msg_type }}</span>
+                    </div>
+                    <div class="msg-meta">
+                        <span class="msg-time"><i class="bi bi-clock"></i> {{ conv.created_at }}</span>
+                        <span class="msg-signature"><i class="bi bi-pen"></i> {{ conv.updated_by if conv.updated_by else conv.sender }}</span>
+                    </div>
+                </div>
+                <div class="msg-content">{{ conv.content }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-chat-dots"></i>
+            <h4>暂无对话记录</h4>
+            <p>开始对话后，记录会显示在这里</p>
+            <p style="font-size:0.85rem;margin-top:16px;">使用 <code>~/.workbuddy/send_to_local.sh</code> 发起对话</p>
+        </div>
+        {% endif %}
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
