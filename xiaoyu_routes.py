@@ -519,10 +519,12 @@ def get_checkin_streaks():
 
 
 @xiaoyu.route('/api/checkin/auto-score', methods=['POST'])
+@xiaoyu.route('/api/checkin/auto-score', methods=['POST'])
 def auto_checkin_score():
     """
     按完整一周（周一到周日）的打卡记录生成打分。
-    只对口算和学校英语生成。
+    英语打卡：统计美梯英语+学校英语的并集（任一打卡即算）
+    口算打卡：单独统计
     """
     from datetime import date, timedelta
     ensure_tables()
@@ -533,49 +535,94 @@ def auto_checkin_score():
     monday = today - timedelta(days=today.weekday())
     sunday = monday + timedelta(days=6)
 
-    for check_type in ('学校英语', '口算'):
+    # miss_to_score 对齐数据库规则
+    miss_to_score = {0: 10, 1: 6, 2: 3, 3: 1, 4: -1, 5: -5, 6: -7, 7: -10}
+
+    # 1. 英语打卡（合并美梯英语 + 学校英语）
+    types = ('美梯英语', '学校英语')
+    all_dates = set()
+    for ct in types:
         rows = conn.execute(
-            'SELECT check_date FROM xiaoyu_checkin WHERE check_type = ? AND check_date >= ? AND check_date <= ? ORDER BY check_date',
-            (check_type, monday.isoformat(), sunday.isoformat())
+            'SELECT check_date FROM xiaoyu_checkin WHERE check_type = ? AND check_date >= ? AND check_date <= ?',
+            (ct, monday.isoformat(), sunday.isoformat())
         ).fetchall()
-        check_dates = set(r['check_date'] for r in rows)
-        week_checkin = len(check_dates)
-        week_miss = 7 - week_checkin
-
-        miss_to_score = {0: 10, 1: 5, 2: 3, 3: 1, 4: -1, 5: -5, 6: -7, 7: -10}
-        category_map = {'学校英语': '坚持英语打卡', '口算': '坚持口算'}
-        cat = category_map[check_type]
-
-        matched_score = miss_to_score.get(week_miss, None)
-        if matched_score is not None:
-            rule = conn.execute(
-                'SELECT id, name FROM xiaoyu_rules WHERE category = ? AND score = ? LIMIT 1',
-                (cat, matched_score)
+        for r in rows:
+            all_dates.add(r['check_date'])
+    week_checkin = len(all_dates)
+    week_miss = 7 - week_checkin
+    matched_score = miss_to_score.get(week_miss, None)
+    if matched_score is not None:
+        rule = conn.execute(
+            'SELECT id, name FROM xiaoyu_rules WHERE category = ? AND score = ? LIMIT 1',
+            ('坚持英语打卡', matched_score)
+        ).fetchone()
+        if rule:
+            rule_id = rule['id']
+            rname = rule['name']
+            existing = conn.execute(
+                'SELECT id FROM xiaoyu_scores WHERE rule_id = ? AND created_at >= ?',
+                (rule_id, today.isoformat())
             ).fetchone()
-            if rule:
-                rule_id = rule['id']
-                rname = rule['name']
-                existing = conn.execute(
-                    'SELECT id FROM xiaoyu_scores WHERE rule_id = ? AND created_at >= ?',
-                    (rule_id, today.isoformat())
-                ).fetchone()
-                if not existing:
-                    reason = f"本周{check_type}打卡{week_checkin}天，缺{week_miss}天"
-                    conn.execute(
-                        'INSERT INTO xiaoyu_scores (rule_id, score, reason) VALUES (?, ?, ?)',
-                        (rule_id, matched_score, reason)
-                    )
-                    scores_created.append({
-                        'rule': rname,
-                        'score': matched_score,
-                        'week_checkin': week_checkin,
-                        'week_miss': week_miss
-                    })
+            if not existing:
+                mt = set(r['check_date'] for r in conn.execute(
+                    'SELECT check_date FROM xiaoyu_checkin WHERE check_type = ? AND check_date >= ? AND check_date <= ?',
+                    ('美梯英语', monday.isoformat(), sunday.isoformat())
+                ).fetchall())
+                xx = set(r['check_date'] for r in conn.execute(
+                    'SELECT check_date FROM xiaoyu_checkin WHERE check_type = ? AND check_date >= ? AND check_date <= ?',
+                    ('学校英语', monday.isoformat(), sunday.isoformat())
+                ).fetchall())
+                reason = f"本周英语打卡（美梯{len(mt)}天+学校{len(xx)}天，合并{week_checkin}天，缺{week_miss}天）"
+                conn.execute(
+                    'INSERT INTO xiaoyu_scores (rule_id, score, reason) VALUES (?, ?, ?)',
+                    (rule_id, matched_score, reason)
+                )
+                scores_created.append({
+                    'rule': rname,
+                    'score': matched_score,
+                    'week_checkin': week_checkin,
+                    'week_miss': week_miss
+                })
+
+    # 2. 口算打卡（单独统计）
+    rows = conn.execute(
+        'SELECT check_date FROM xiaoyu_checkin WHERE check_type = ? AND check_date >= ? AND check_date <= ? ORDER BY check_date',
+        ('口算', monday.isoformat(), sunday.isoformat())
+    ).fetchall()
+    check_dates = set(r['check_date'] for r in rows)
+    week_checkin = len(check_dates)
+    week_miss = 7 - week_checkin
+
+    matched_score = miss_to_score.get(week_miss, None)
+    if matched_score is not None:
+        rule = conn.execute(
+            'SELECT id, name FROM xiaoyu_rules WHERE category = ? AND score = ? LIMIT 1',
+            ('坚持口算', matched_score)
+        ).fetchone()
+        if rule:
+            rule_id = rule['id']
+            rname = rule['name']
+            existing = conn.execute(
+                'SELECT id FROM xiaoyu_scores WHERE rule_id = ? AND created_at >= ?',
+                (rule_id, today.isoformat())
+            ).fetchone()
+            if not existing:
+                reason = f"本周口算打卡{week_checkin}天，缺{week_miss}天"
+                conn.execute(
+                    'INSERT INTO xiaoyu_scores (rule_id, score, reason) VALUES (?, ?, ?)',
+                    (rule_id, matched_score, reason)
+                )
+                scores_created.append({
+                    'rule': rname,
+                    'score': matched_score,
+                    'week_checkin': week_checkin,
+                    'week_miss': week_miss
+                })
 
     conn.commit()
     conn.close()
     return jsonify({'success': True, 'scores_created': scores_created})
-@xiaoyu.route('/api/checkin/sync-from-scores', methods=['POST'])
+
 def sync_checkin_from_scores():
     """从打分记录反推打卡状态，更新日历"""
     from datetime import date, timedelta
