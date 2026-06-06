@@ -5691,6 +5691,42 @@ def kk_send():
     return redirect('/kk')
 
 
+# ===== KK 新积分看板（从5001数据库读取） =====
+
+# 5001 数据库路径
+KK_DB_PATH = os.path.expanduser('~/WorkBuddy/20260412120605/score-tracker/database/scores.db')
+
+@app.route('/kk-score')
+def kk_scoreboard():
+    return render_template('kk_scoreboard.html')
+
+@app.route('/kk-score/api/records')
+def kk_score_api_records():
+    import sqlite3
+    conn = sqlite3.connect(KK_DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute('SELECT id, score, description, created_at FROM kk_score_records ORDER BY id').fetchall()
+    conn.close()
+    return jsonify({'success': True, 'data': [dict(r) for r in rows]})
+
+@app.route('/kk-score/api/goals')
+def kk_score_api_goals():
+    import sqlite3
+    conn = sqlite3.connect(KK_DB_PATH)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute('SELECT id, target_score, reward, achieved, created_at FROM kk_goals ORDER BY id').fetchall()
+    conn.close()
+    return jsonify({'success': True, 'goals': [dict(r) for r in rows]})
+
+@app.route('/kk-score/api/stats')
+def kk_score_api_stats():
+    import sqlite3
+    conn = sqlite3.connect(KK_DB_PATH)
+    row = conn.execute('SELECT COUNT(*) as count, COALESCE(SUM(score), 0) as total_score FROM kk_score_records').fetchone()
+    conn.close()
+    return jsonify({'success': True, 'count': row[0], 'total_score': row[1]})
+
+
 if __name__ == '__main__':
     # 应用初始化
     initialize_app()
@@ -5750,4 +5786,4 @@ def linkclaw():
 
 
 app.register_blueprint(xiaoyu)
-app.run(host='0.0.0.0', port=5000, debug=False)
+app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)), debug=False)

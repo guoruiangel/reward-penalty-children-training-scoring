@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧬 KK · 积分看板</title>
+<script src="/static/chart.min.js"></script>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    min-height: 100vh;
+    color: #e2e8f0;
+}
+.container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    margin-bottom: 24px;
+}
+.avatar {
+    width: 56px; height: 56px; border-radius: 50%;
+    border: 2px solid rgba(56,189,248,0.4);
+    flex-shrink: 0;
+    object-fit: cover;
+}
+.header h1 {
+    font-size: 1.5rem;
+    color: #f1f5f9;
+    font-weight: 600;
+}
+.header .subtitle {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-top: 2px;
+}
+
+/* Stats */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 24px;
+}
+.stat-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 18px;
+    text-align: center;
+    transition: border-color 0.2s;
+}
+.stat-card:hover { border-color: rgba(56,189,248,0.2); }
+.stat-card .value {
+    font-size: 2rem;
+    font-weight: 700;
+}
+.stat-card .value.positive { color: #34d399; }
+.stat-card .value.negative { color: #f87171; }
+.stat-card .value.neutral { color: #60a5fa; }
+.stat-card .label {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 4px;
+}
+.stat-card .small-line {
+    font-size: 0.7rem;
+    color: #475569;
+    margin-top: 2px;
+}
+
+/* Chart */
+.chart-panel {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+.chart-panel h2 {
+    font-size: 1.1rem;
+    color: #e2e8f0;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.chart-container { position: relative; height: 260px; width: 100%; }
+
+/* Goals */
+.goals-panel {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+.goals-panel h2 {
+    font-size: 1.1rem;
+    color: #e2e8f0;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.goal-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    margin: 6px 0;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.04);
+}
+.goal-item.achieved { opacity: 0.5; }
+.goal-item .icon { font-size: 1.3rem; flex-shrink: 0; }
+.goal-item .info { flex: 1; min-width: 0; }
+.goal-item .info .name { font-size: 0.9rem; color: #e2e8f0; }
+.goal-item .info .name.done { text-decoration: line-through; color: #475569; }
+.goal-item .info .desc { font-size: 0.75rem; color: #64748b; margin-top: 2px; }
+.goal-item .target {
+    font-size: 1rem;
+    font-weight: 600;
+    color: #38bdf8;
+    flex-shrink: 0;
+}
+.goal-item .target.done { color: #34d399; }
+
+/* Records table */
+.records-panel {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+.records-panel h2 {
+    font-size: 1.1rem;
+    color: #e2e8f0;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.records-table { width: 100%; border-collapse: collapse; }
+.records-table th {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.records-table td {
+    padding: 10px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    vertical-align: top;
+}
+.records-table tr:last-child td { border-bottom: none; }
+.records-table .score-cell {
+    font-weight: 600;
+    white-space: nowrap;
+    text-align: right;
+}
+.score-positive { color: #34d399; }
+.score-negative { color: #f87171; }
+.score-zero { color: #64748b; }
+.records-table .desc-cell { color: #94a3b8; max-width: 400px; }
+.records-table .date-cell { color: #64748b; white-space: nowrap; }
+
+/* Status bar */
+.status-bar {
+    text-align: center;
+    padding: 16px;
+    color: #475569;
+    font-size: 0.8rem;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin-top: 20px;
+}
+
+@media (max-width: 640px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .records-table .desc-cell { max-width: 180px; }
+    .chart-container { height: 200px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <!-- Header -->
+    <div class="header">
+        <img src="/static/kk_avatar.png" alt="KK" class="avatar">
+        <div>
+            <h1>🧬 KK · 积分看板</h1>
+            <div class="subtitle">目标 100 分 · 进化中</div>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row" id="statsRow">
+        <div class="stat-card"><div class="value neutral" id="currentScore">--</div><div class="label">当前积分</div></div>
+        <div class="stat-card"><div class="value neutral" id="recordCount">--</div><div class="label">记录次数</div></div>
+        <div class="stat-card"><div class="value neutral" id="remainingScore">--</div><div class="label">距 100 分</div></div>
+        <div class="stat-card"><div class="value positive" id="totalPositive">--</div><div class="label">总加分</div><div class="small-line" id="totalNegative"></div></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-panel">
+        <h2>📈 积分趋势</h2>
+        <div class="chart-container">
+            <canvas id="scoreChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Goals -->
+    <div class="goals-panel">
+        <h2>🎯 目标与许愿</h2>
+        <div id="goalList"></div>
+    </div>
+
+    <!-- Records -->
+    <div class="records-panel">
+        <h2>📋 积分记录</h2>
+        <table class="records-table">
+            <thead><tr>
+                <th>#</th>
+                <th>日期</th>
+                <th>分数</th>
+                <th>事由</th>
+            </tr></thead>
+            <tbody id="recordsBody"></tbody>
+        </table>
+    </div>
+
+    <div class="status-bar">
+        数据源: KK 评分数据库 · 最后更新: <span id="updateTime">--</span>
+    </div>
+</div>
+
+<script>
+// 数据
+var recordsData = [];
+var goalsData = [];
+
+// 从5001数据库获取数据（同源代理）
+function loadData() {
+    // 用 fetch 代理走本地 5001
+    Promise.all([
+        fetch('/kk-score/api/records').then(function(r){return r.json();}),
+        fetch('/kk-score/api/goals').then(function(r){return r.json();}),
+        fetch('/kk-score/api/stats').then(function(r){return r.json();})
+    ]).then(function(results) {
+        var recordsRes = results[0];
+        var goalsRes = results[1];
+        var statsRes = results[2];
+        
+        if (recordsRes.success) {
+            recordsData = recordsRes.data || [];
+            renderRecords();
+        }
+        if (goalsRes.success) {
+            goalsData = goalsRes.goals || [];
+            renderGoals();
+        }
+        if (statsRes.success) {
+            renderStats(statsRes);
+        }
+        
+        initChart();
+        document.getElementById('updateTime').textContent = new Date().toLocaleString('zh-CN');
+    }).catch(function(e) {
+        document.getElementById('statsRow').innerHTML = '<div class="stat-card"><div class="value negative">❌</div><div class="label">数据加载失败: ' + e.message + '</div></div>';
+    });
+}
+
+function renderStats(stats) {
+    var total = stats.total_score || 0;
+    var count = stats.count || 0;
+    var remaining = Math.max(0, 100 - total);
+    
+    // 计算正负分
+    var pos = 0, neg = 0;
+    if (recordsData.length) {
+        recordsData.forEach(function(r) {
+            if (r.score > 0) pos += r.score;
+            else if (r.score < 0) neg += r.score;
+        });
+    }
+    
+    document.getElementById('currentScore').textContent = total;
+    document.getElementById('currentScore').className = 'value ' + (total >= 0 ? 'positive' : 'negative');
+    document.getElementById('recordCount').textContent = count;
+    document.getElementById('remainingScore').textContent = remaining + '分';
+    document.getElementById('totalPositive').textContent = '+' + pos;
+    document.getElementById('totalNegative').textContent = '扣分 ' + neg;
+}
+
+function renderRecords() {
+    var tbody = document.getElementById('recordsBody');
+    var html = '';
+    // 从新到旧显示
+    var sorted = recordsData.slice().sort(function(a,b){return b.id - a.id;});
+    sorted.forEach(function(r) {
+        var cls = r.score > 0 ? 'score-positive' : (r.score < 0 ? 'score-negative' : 'score-zero');
+        var sign = r.score > 0 ? '+' : '';
+        html += '<tr><td class="date-cell">' + r.id + '</td>' +
+            '<td class="date-cell">' + (r.created_at||'').substring(0,10) + '</td>' +
+            '<td class="score-cell ' + cls + '">' + sign + r.score + '</td>' +
+            '<td class="desc-cell">' + escapeHtml(r.description||'') + '</td></tr>';
+    });
+    tbody.innerHTML = html;
+}
+
+function renderGoals() {
+    var list = document.getElementById('goalList');
+    if (!goalsData.length) {
+        list.innerHTML = '<div style="color:#475569;text-align:center;padding:20px;">暂无许愿</div>';
+        return;
+    }
+    var html = '';
+    // 未完成在前，已完成在后
+    var undone = goalsData.filter(function(g){return !g.achieved;});
+    var done = goalsData.filter(function(g){return g.achieved;});
+    var sorted = undone.concat(done);
+    
+    sorted.forEach(function(g) {
+        var doneCls = g.achieved ? 'achieved' : '';
+        var nameCls = g.achieved ? 'done' : '';
+        var targetCls = g.achieved ? 'done' : '';
+        var icon = g.achieved ? '✅' : '🌟';
+        var desc = g.reward || '';
+        html += '<div class="goal-item ' + doneCls + '">' +
+            '<span class="icon">' + icon + '</span>' +
+            '<div class="info"><div class="name ' + nameCls + '">' + g.target_score + '分 → ' + escapeHtml(desc) + '</div>' +
+            '<div class="desc">' + (g.achieved ? '已达成' : '未达成') + '</div></div>' +
+            '<span class="target ' + targetCls + '">' + g.target_score + '分</span></div>';
+    });
+    list.innerHTML = html;
+}
+
+function initChart() {
+    var canvas = document.getElementById('scoreChart');
+    var existing = Chart.getChart ? Chart.getChart(canvas) : null;
+    if (existing) existing.destroy();
+    
+    if (!recordsData.length) {
+        canvas.parentElement.innerHTML = '<div style="text-align:center;padding:60px 20px;color:#64748b;">📊<p style="margin-top:8px;">暂无数据</p></div>';
+        return;
+    }
+    
+    // 按 id 排序（从旧到新），计算累计
+    var sorted = recordsData.slice().sort(function(a,b){return a.id - b.id;});
+    var labels = [];
+    var data = [];
+    var cumulative = 0;
+    
+    sorted.forEach(function(r) {
+        cumulative += r.score;
+        var dateStr = (r.created_at || '').substring(0, 10);
+        labels.push(dateStr);
+        data.push(cumulative);
+    });
+    
+    new Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: '累计积分',
+                data: data,
+                borderColor: '#38bdf8',
+                backgroundColor: 'rgba(56, 189, 248, 0.08)',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 3,
+                pointBackgroundColor: '#38bdf8',
+                pointBorderColor: '#1e293b',
+                pointBorderWidth: 1.5
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    ticks: {
+                        color: '#64748b',
+                        font: { size: 10 },
+                        maxTicksLimit: 15
+                    },
+                    grid: { color: 'rgba(255,255,255,0.04)' }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { color: '#64748b', font: { size: 10 } },
+                    grid: { color: 'rgba(255,255,255,0.04)' }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    var m = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'};
+    return text.toString().replace(/[&<>"']/g, function(x){return m[x];});
+}
+
+// 启动
+document.addEventListener('DOMContentLoaded', function() {
+    loadData();
+});
+</script>
+</body>
+</html>
