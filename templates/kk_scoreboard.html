@@ -173,6 +173,129 @@ body {
 .score-zero { color: #64748b; }
 .records-table .desc-cell { color: #94a3b8; max-width: 400px; }
 .records-table .date-cell { color: #64748b; white-space: nowrap; }
+.records-table .action-cell { white-space: nowrap; text-align: right; }
+
+.btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: background 0.15s;
+}
+.btn-icon:hover { background: rgba(255,255,255,0.08); }
+.btn-icon.edit { color: #60a5fa; }
+.btn-icon.delete { color: #f87171; }
+.btn-icon:hover { opacity: 0.8; }
+
+.add-btn {
+    background: rgba(56,189,248,0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56,189,248,0.2);
+    padding: 6px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.15s;
+}
+.add-btn:hover { background: rgba(56,189,248,0.2); }
+
+/* Modal overlay */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 24px;
+    width: 90%;
+    max-width: 460px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal-box h3 {
+    color: #e2e8f0;
+    font-size: 1.1rem;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.modal-field {
+    margin-bottom: 12px;
+}
+.modal-field label {
+    display: block;
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+.modal-field input, .modal-field textarea, .modal-field select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    outline: none;
+}
+.modal-field input:focus, .modal-field textarea:focus { border-color: #38bdf8; }
+.modal-field textarea { resize: vertical; min-height: 60px; }
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.modal-actions .btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.modal-actions .btn-cancel {
+    background: rgba(255,255,255,0.06);
+    color: #94a3b8;
+}
+.modal-actions .btn-primary {
+    background: #38bdf8;
+    color: #0f172a;
+}
+.modal-actions .btn-primary:hover { opacity: 0.9; }
+
+.quick-select {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+.quick-select .qs-btn {
+    padding: 3px 8px;
+    font-size: 0.72rem;
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: #94a3b8;
+    cursor: pointer;
+}
+.quick-select .qs-btn:hover { background: rgba(56,189,248,0.1); color: #38bdf8; border-color: rgba(56,189,248,0.2); }
 
 /* Status bar */
 .status-bar {
@@ -226,17 +349,54 @@ body {
 
     <!-- Records -->
     <div class="records-panel">
-        <h2>📋 积分记录</h2>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid rgba(255,255,255,0.06);">
+            <h2 style="margin:0;border:none;padding:0;font-size:1.1rem;">📋 积分记录</h2>
+            <button class="add-btn" onclick="openModal()">✚ 新增</button>
+        </div>
         <table class="records-table">
             <thead><tr>
                 <th>#</th>
                 <th>日期</th>
                 <th>分数</th>
                 <th>事由</th>
+                <th style="text-align:right;">操作</th>
             </tr></thead>
             <tbody id="recordsBody"></tbody>
         </table>
     </div>
+
+    <!-- Modal -->
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="modal-box">
+            <h3 id="modalTitle">✚ 新增记录</h3>
+            <div class="modal-field">
+                <label>分数</label>
+                <input type="number" id="editScore" placeholder="如 +2, -1">
+                <div class="quick-select">
+                    <span class="qs-btn" data-v="1">+1</span>
+                    <span class="qs-btn" data-v="2">+2</span>
+                    <span class="qs-btn" data-v="3">+3</span>
+                    <span class="qs-btn" data-v="5">+5</span>
+                    <span class="qs-btn" data-v="-1">-1</span>
+                    <span class="qs-btn" data-v="-2">-2</span>
+                    <span class="qs-btn" data-v="-3">-3</span>
+                    <span class="qs-btn" data-v="-5">-5</span>
+                    <span class="qs-btn" data-v="-10">-10</span>
+                </div>
+            </div>
+            <div class="modal-field">
+                <label>事由</label>
+                <textarea id="editDesc" rows="3" placeholder="描述打分原因"></textarea>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeModal()">取消</button>
+                <button class="btn btn-primary" id="saveBtn" onclick="saveRecord()">✓ 保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toastContainer" style="position:fixed;top:16px;right:16px;z-index:9999;"></div>
 
     <div class="status-bar">
         数据源: KK 评分数据库 · 最后更新: <span id="updateTime">--</span>
@@ -309,12 +469,128 @@ function renderRecords() {
     sorted.forEach(function(r) {
         var cls = r.score > 0 ? 'score-positive' : (r.score < 0 ? 'score-negative' : 'score-zero');
         var sign = r.score > 0 ? '+' : '';
-        html += '<tr><td class="date-cell">' + r.id + '</td>' +
+        html += '<tr>' +
+            '<td class="date-cell">' + r.id + '</td>' +
             '<td class="date-cell">' + (r.created_at||'').substring(0,10) + '</td>' +
             '<td class="score-cell ' + cls + '">' + sign + r.score + '</td>' +
-            '<td class="desc-cell">' + escapeHtml(r.description||'') + '</td></tr>';
+            '<td class="desc-cell">' + escapeHtml(r.description||'') + '</td>' +
+            '<td class="action-cell">' +
+                '<button class="btn-icon edit" onclick="editRecord(' + r.id + ',' + r.score + ',\'' + escapeJs(r.description||'') + '\')" title="编辑">✏️</button>' +
+                '<button class="btn-icon delete" onclick="deleteRecord(' + r.id + ')" title="删除">🗑️</button>' +
+            '</td></tr>';
     });
     tbody.innerHTML = html;
+}
+
+function escapeJs(s) {
+    if (!s) return '';
+    return s.replace(/\\/g,'\\\\').replace(/'/g,"\\'" ).replace(/"/g,'&quot;').replace(/\n/g,'\\n').replace(/\r/g,'');
+}
+
+// ── Modal ──
+var editId = null;
+
+function openModal(id, score, desc) {
+    editId = id || null;
+    document.getElementById('modalOverlay').classList.add('show');
+    if (id) {
+        document.getElementById('modalTitle').textContent = '✏️ 编辑记录 #' + id;
+        document.getElementById('editScore').value = score;
+        document.getElementById('editDesc').value = desc;
+        document.getElementById('saveBtn').textContent = '✓ 保存修改';
+    } else {
+        document.getElementById('modalTitle').textContent = '✚ 新增记录';
+        document.getElementById('editScore').value = '';
+        document.getElementById('editDesc').value = '';
+        document.getElementById('saveBtn').textContent = '✓ 新增';
+    }
+}
+
+function closeModal() {
+    document.getElementById('modalOverlay').classList.remove('show');
+    editId = null;
+}
+
+// 快捷选分
+document.addEventListener('DOMContentLoaded', function() {
+    var btns = document.querySelectorAll('.qs-btn');
+    btns.forEach(function(b) {
+        b.addEventListener('click', function() {
+            document.getElementById('editScore').value = this.getAttribute('data-v');
+        });
+    });
+});
+
+// 点遮罩关闭
+document.addEventListener('click', function(e) {
+    var overlay = document.getElementById('modalOverlay');
+    if (e.target === overlay) closeModal();
+});
+
+function saveRecord() {
+    var score = parseInt(document.getElementById('editScore').value);
+    var desc = document.getElementById('editDesc').value.trim();
+    if (isNaN(score)) { showToast('请输入分数', 'error'); return; }
+    if (!desc) { showToast('请输入事由', 'error'); return; }
+    
+    var url = '/kk-score/api/records';
+    var method = 'POST';
+    var body = JSON.stringify({score: score, description: desc});
+    
+    if (editId) {
+        url = '/kk-score/api/records/' + editId;
+        method = 'PUT';
+    }
+    
+    fetch(url, {
+        method: method,
+        headers: {'Content-Type': 'application/json'},
+        body: body
+    })
+    .then(function(r){return r.json();})
+    .then(function(d) {
+        if (d.success) {
+            showToast(editId ? '✅ 更新成功' : '✅ 新增成功', 'success');
+            closeModal();
+            loadData();
+        } else {
+            showToast('❌ ' + (d.error || '失败'), 'error');
+        }
+    })
+    .catch(function(e){showToast('❌ 请求失败', 'error');});
+}
+
+function editRecord(id, score, desc) {
+    openModal(id, score, desc);
+}
+
+function deleteRecord(id) {
+    if (!confirm('确定删除记录 #' + id + ' 吗？')) return;
+    fetch('/kk-score/api/records/' + id, {method: 'DELETE'})
+        .then(function(r){return r.json();})
+        .then(function(d) {
+            if (d.success) {
+                showToast('🗑️ 已删除', 'success');
+                loadData();
+            } else {
+                showToast('❌ 删除失败', 'error');
+            }
+        })
+        .catch(function(e){showToast('❌ 请求失败', 'error');});
+}
+
+function showToast(msg, type) {
+    var container = document.getElementById('toastContainer');
+    var bg = type === 'error' ? '#ef4444' : '#10b981';
+    var el = document.createElement('div');
+    el.style.cssText = 'background:' + bg + ';color:#fff;padding:10px 20px;border-radius:8px;margin-bottom:6px;font-size:0.85rem;box-shadow:0 4px 12px rgba(0,0,0,0.3);opacity:0;transition:opacity 0.2s;';
+    el.textContent = msg;
+    container.appendChild(el);
+    setTimeout(function(){el.style.opacity='1';}, 10);
+    setTimeout(function(){
+        el.style.opacity='0';
+        setTimeout(function(){el.remove();}, 200);
+    }, 2000);
 }
 
 function renderGoals() {

@@ -5700,7 +5700,7 @@ KK_DB_PATH = os.path.expanduser('~/WorkBuddy/20260412120605/score-tracker/databa
 def kk_scoreboard():
     return render_template('kk_scoreboard.html')
 
-@app.route('/kk-score/api/records')
+@app.route('/kk-score/api/records', methods=['GET'])
 def kk_score_api_records():
     import sqlite3
     conn = sqlite3.connect(KK_DB_PATH)
@@ -5708,6 +5708,74 @@ def kk_score_api_records():
     rows = conn.execute('SELECT id, score, description, created_at FROM kk_score_records ORDER BY id').fetchall()
     conn.close()
     return jsonify({'success': True, 'data': [dict(r) for r in rows]})
+
+@app.route('/kk-score/api/records', methods=['POST'])
+def kk_score_api_add_record():
+    import sqlite3
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': '请求数据为空'}), 400
+    score = data.get('score')
+    description = data.get('description', '')
+    period = data.get('period', '')
+    if score is None:
+        return jsonify({'success': False, 'error': '缺少 score'}), 400
+    if not description:
+        return jsonify({'success': False, 'error': 'description 不能为空'}), 400
+    try:
+        score = int(score)
+    except ValueError:
+        return jsonify({'success': False, 'error': 'score 必须是整数'}), 400
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    conn = sqlite3.connect(KK_DB_PATH)
+    cursor = conn.execute(
+        'INSERT INTO kk_score_records (score, description, period, created_at) VALUES (?, ?, ?, ?)',
+        (score, description, period, now)
+    )
+    conn.commit()
+    record_id = cursor.lastrowid
+    conn.close()
+    return jsonify({'success': True, 'data': {'id': record_id, 'score': score, 'description': description, 'period': period, 'created_at': now}})
+
+@app.route('/kk-score/api/records/<int:record_id>', methods=['PUT'])
+def kk_score_api_update_record(record_id):
+    import sqlite3
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': '请求数据为空'}), 400
+    score = data.get('score')
+    description = data.get('description')
+    period = data.get('period')
+    updates = []
+    params = []
+    if score is not None:
+        try: score = int(score)
+        except: return jsonify({'success': False, 'error': 'score 必须是整数'}), 400
+        updates.append('score = ?')
+        params.append(score)
+    if description is not None:
+        updates.append('description = ?')
+        params.append(description)
+    if period is not None:
+        updates.append('period = ?')
+        params.append(period)
+    if not updates:
+        return jsonify({'success': False, 'error': '没有要更新的字段'}), 400
+    params.append(record_id)
+    conn = sqlite3.connect(KK_DB_PATH)
+    conn.execute('UPDATE kk_score_records SET ' + ', '.join(updates) + ' WHERE id = ?', params)
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': '更新成功'})
+
+@app.route('/kk-score/api/records/<int:record_id>', methods=['DELETE'])
+def kk_score_api_delete_record(record_id):
+    import sqlite3
+    conn = sqlite3.connect(KK_DB_PATH)
+    conn.execute('DELETE FROM kk_score_records WHERE id = ?', (record_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True, 'message': '删除成功'})
 
 @app.route('/kk-score/api/goals')
 def kk_score_api_goals():
