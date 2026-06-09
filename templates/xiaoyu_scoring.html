@@ -300,17 +300,27 @@ body { background: linear-gradient(135deg, #fce4ec, #f3e5f5); min-height: 100vh;
 
     <!-- 趋势曲线 -->
     <div class="glass-card">
-        <h5 class="mb-3"><i class="bi bi-graph-up me-2"></i>近期趋势</h5>
-        <div class="chart-container">
-            <canvas id="trendChart"></canvas>
+        <div class="d-flex justify-content-between align-items-center" style="cursor:pointer;" onclick="toggleSection('trendSection')">
+            <h5 class="mb-0"><i class="bi bi-graph-up me-2"></i>近期趋势</h5>
+            <i id="trendSectionIcon" class="bi bi-chevron-down"></i>
+        </div>
+        <div id="trendSection" style="display:none;">
+            <div class="chart-container" style="margin-top:16px;">
+                <canvas id="trendChart"></canvas>
+            </div>
         </div>
     </div>
 
     <!-- 累计曲线 -->
     <div class="glass-card" style="margin-top:20px;">
-        <h5 class="mb-3"><i class="bi bi-bar-chart-line me-2"></i>累计趋势</h5>
-        <div class="chart-container">
-            <canvas id="cumulativeChart"></canvas>
+        <div class="d-flex justify-content-between align-items-center" style="cursor:pointer;" onclick="toggleSection('cumulativeSection')">
+            <h5 class="mb-0"><i class="bi bi-bar-chart-line me-2"></i>累计趋势</h5>
+            <i id="cumulativeSectionIcon" class="bi bi-chevron-down"></i>
+        </div>
+        <div id="cumulativeSection" style="display:none;">
+            <div class="chart-container" style="margin-top:16px;">
+                <canvas id="cumulativeChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -674,10 +684,29 @@ document.addEventListener("DOMContentLoaded", function() {
 
     <!-- 规则列表 -->
     <div class="glass-card">
-        <h5 class="mb-3"><i class="bi bi-list me-2"></i>评分规则列表</h5>
-        <div id="ruleList"></div>
+        <div class="d-flex justify-content-between align-items-center" style="cursor:pointer;" onclick="toggleSection('rulesSection')">
+            <h5 class="mb-0"><i class="bi bi-list me-2"></i>评分规则列表</h5>
+            <i id="rulesSectionIcon" class="bi bi-chevron-down"></i>
+        </div>
+        <div id="rulesSection" style="display:none;">
+            <div style="margin-top:16px;">
+                <div id="ruleList"></div>
+            </div>
+        </div>
     </div>
 
+    <!-- 规则排行榜 -->
+    <div class="glass-card">
+        <div class="d-flex justify-content-between align-items-center" style="cursor:pointer;" onclick="toggleSection('topRulesSection')">
+            <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>规则排行榜</h5>
+            <i class="bi bi-chevron-down" id="topRulesSectionIcon"></i>
+        </div>
+        <div id="topRulesSection" style="display:none;">
+            <div style="margin-top:16px;">
+                <div id="topRules"></div>
+            </div>
+        </div>
+    </div>
 
     <!-- 最近评分记录 -->
     <div class="glass-card">
@@ -964,25 +993,55 @@ function updateGoalDisplay(goals) {
             (data.scores || []).forEach(s => { total += s.score || 0; });
             // 排序：未达成的在前面
             var sorted = goals.slice().sort(function(a,b){ return a.achieved - b.achieved || a.target_score - b.target_score; });
-            // 默认全展开：展示所有目标
+            // 显示最近2个已达成的（可展开全部）+ 所有未达成的
             var done = sorted.filter(function(g){ return g.achieved; });
             var undone = sorted.filter(function(g){ return !g.achieved; });
-            var showList = done.concat(undone);
+            var showDone = done.slice(-2);
+            var hiddenDone = done.slice(0, -2);
+            var showList = showDone.concat(undone);
             var html = showList.map(function(g) {
-                var finished = g.achieved;
+                var done = g.achieved;
                 var remain = g.target_score - total;
-                return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;' + (finished ? 'opacity:0.5;' : '') + 'border-bottom:1px solid #f0f0f0;">' +
+                return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;' + (done ? 'opacity:0.5;' : '') + 'border-bottom:1px solid #f0f0f0;">' +
                     '<span style="font-size:14px;color:#666;">🎯 <strong>' + g.target_score + '</strong> 分</span>' +
                     '<span style="font-size:14px;color:#999;">→</span>' +
                     '<span style="font-size:15px;font-weight:600;color:#333;">🎁 ' + escapeHtml(g.reward || '请输入愿望') + '</span>' +
-                    (finished ? '<span style="font-size:12px;color:#22c55e;font-weight:700;">✅ 已达成</span>' : '') +
-                    (!finished ? '<span style="font-size:14px;color:#e91e63;">还差 <strong>' + Math.max(0, remain) + '</strong> 分</span>' : '') +
+                    (done ? '<span style="font-size:12px;color:#22c55e;font-weight:700;">✅ 已达成</span>' : '') +
+                    (!done ? '<span style="font-size:14px;color:#e91e63;">还差 <strong>' + Math.max(0, remain) + '</strong> 分</span>' : '') +
                     '<button onclick="deleteGoal(' + g.id + ')" style="margin-left:auto;background:none;border:none;color:#999;cursor:pointer;font-size:14px;padding:4px 8px;border-radius:6px;" title="删除目标">🗑️</button>' +
                     '</div>';
             }).join('');
+
+            // 隐藏的历史目标（额外折叠）
+            if (hiddenDone.length > 0) {
+                var hideId = 'goalHistoryHidden';
+                var hiddenHtml = hiddenDone.map(function(g) {
+                    return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;opacity:0.5;border-bottom:1px solid #f0f0f0;">' +
+                        '<span style="font-size:14px;color:#666;">🎯 <strong>' + g.target_score + '</strong> 分</span>' +
+                        '<span style="font-size:14px;color:#999;">→</span>' +
+                        '<span style="font-size:15px;font-weight:600;color:#333;">🎁 ' + escapeHtml(g.reward || '请输入愿望') + '</span>' +
+                        '<span style="font-size:12px;color:#22c55e;font-weight:700;">✅ 已达成</span>' +
+                        '<button onclick="deleteGoal(' + g.id + ')" style="margin-left:auto;background:none;border:none;color:#999;cursor:pointer;font-size:14px;padding:4px 8px;border-radius:6px;" title="删除目标">🗑️</button>' +
+                        '</div>';
+                }).join('');
+                html += '<div id="' + hideId + '" style="display:none;">' + hiddenHtml + '</div>';
+                html += '<div style="text-align:center;padding:4px 0;">' +
+                    '<a href="javascript:toggleHistory()" id="goalToggleBtn" style="font-size:12px;color:#38bdf8;cursor:pointer;text-decoration:none;">📜 展开全部历史 (' + hiddenDone.length + ' 条) ▾</a>' +
+                    '</div>';
+            }
             display.style.display = 'block';
             display.innerHTML = html;
         }).catch(function(){});
+}
+
+var goalHistoryExpanded = false;
+function toggleHistory() {
+    var el = document.getElementById('goalHistoryHidden');
+    var btn = document.getElementById('goalToggleBtn');
+    if (!el || !btn) return;
+    goalHistoryExpanded = !goalHistoryExpanded;
+    el.style.display = goalHistoryExpanded ? 'block' : 'none';
+    btn.textContent = goalHistoryExpanded ? '📜 收起历史 ▴' : '📜 展开全部历史 ▾';
 }
 
 function deleteGoal(id) {
@@ -1104,7 +1163,7 @@ async function saveEditScore(id) {
         const data = await res.json();
         if (data.success) {
             editingScoreId = null;
-            await Promise.all([loadScores(), loadTrend(), loadStats()]);
+            await Promise.all([loadScores(), loadTrend(), loadStats(), renderTopRules()]);
         } else { alert('编辑失败: ' + (data.error || '')); }
     } catch(e) { alert('编辑失败: ' + e.message); }
 }
@@ -1115,7 +1174,7 @@ async function deleteScore(id) {
         const res = await fetch('/xiaoyu/api/scores/' + id, {method: 'DELETE'});
         const data = await res.json();
         if (data.success) {
-            await Promise.all([loadScores(), loadTrend(), loadStats()]);
+            await Promise.all([loadScores(), loadTrend(), loadStats(), renderTopRules()]);
         } else { alert('删除失败: ' + (data.error || '')); }
     } catch(e) { alert('删除失败: ' + e.message); }
 }
@@ -1125,16 +1184,18 @@ function populateScoreSelect() {
     const sel = document.getElementById('scoreRule');
     if (!sel) return;
     // 按分类排序
-    const catOrder = ['坚持口算','坚持英语打卡','快速完成作业','按时上美梯课','美梯作业','做家务','考试成绩','信条'];
-    const catLabels = {
+        const catLabels = {
         '坚持口算':'📐 坚持口算',
         '坚持英语打卡':'🇬🇧 坚持英语打卡',
+        '坚持美梯打卡':'🇬🇧 坚持美梯打卡',
         '快速完成作业':'⚡ 快速完成作业',
         '按时上美梯课':'🎒 按时上美梯课',
         '美梯作业':'📖 美梯作业',
         '做家务':'🏠 做家务',
         '考试成绩':'🎯 考试成绩',
-        '信条':'⚖️ 信条'
+        '信条':'⚖️ 信条',
+        '得到表扬':'🌟 得到表扬',
+        '被批评':'⚠️ 被批评'
     };
     const byCat = {};
     rules.forEach(r => {
@@ -1142,12 +1203,19 @@ function populateScoreSelect() {
         if (!byCat[c]) byCat[c] = [];
         byCat[c].push(r);
     });
-    // 每个分类内按分降序
     Object.keys(byCat).forEach(c => byCat[c].sort((a,b) => b.score - a.score));
     let html = '<option value="">— 选择规则 —</option>';
-    catOrder.forEach(cat => {
-        if (!byCat[cat] || byCat[cat].length === 0) return;
-        html += '<option disabled style="font-weight:bold;background:#f3e5f5;color:#7b1fa2;">' + (catLabels[cat] || cat) + '</option>';
+    const preferred = Object.keys(catLabels);
+    const sortedCats = Object.keys(byCat).sort((a, b) => {
+        const ai = preferred.indexOf(a);
+        const bi = preferred.indexOf(b);
+        if (ai !== -1 && bi !== -1) return ai - bi;
+        if (ai !== -1) return -1;
+        if (bi !== -1) return 1;
+        return a.localeCompare(b, 'zh');
+    });
+    sortedCats.forEach(cat => {
+        html += '<option disabled style="font-weight:bold;background:#f3e5f5;color:#7b1fa2;">' + (catLabels[cat] || '📂 ' + cat) + '</option>';
         byCat[cat].forEach(r => {
             const sc = parseFloat(r.score) || 0;
             const sign = sc > 0 ? '+' : '';
@@ -1208,12 +1276,12 @@ async function addScore() {
         if (data.success) {
             document.getElementById('scoreReason').value = '';
             document.getElementById('scorePreview').style.display = 'none';
-            await Promise.all([loadScores(), loadTrend(), loadStats()]);
+            await Promise.all([loadScores(), loadTrend(), loadStats(), renderTopRules()]);
         } else { alert('打分失败: ' + (data.error || '')); }
     } catch(e) { alert('打分失败: ' + e.message); }
 }
 
-async function  {
+async function renderTopRules() {
     try {
         const res = await fetch('/xiaoyu/api/scores');
         const data = await res.json();
@@ -1229,7 +1297,7 @@ async function  {
         }
         const sorted = Object.entries(ruleScores).sort((a, b) => b[1].total - a[1].total).slice(0, 5);
 
-        const el = document.getElementById('statsContainer');
+        const el = document.getElementById('topRules');
         if (sorted.length === 0) {
             el.innerHTML = '<div class="empty"><div class="icon">🏆</div><div>暂无累计数据</div></div>';
             return;
@@ -1260,7 +1328,7 @@ async function addRule() {
         if (data.success) {
             document.getElementById('ruleName').value = '';
             document.getElementById('ruleScore').value = '';
-            await Promise.all([loadRules(), loadScores(), loadTrend()]);
+            await Promise.all([loadRules(), loadScores(), loadTrend(), renderTopRules()]);
         } else { alert('添加失败: ' + (data.error || '')); }
     } catch(e) { alert('添加失败: ' + e.message); }
 }
@@ -1270,7 +1338,7 @@ async function deleteRule(id) {
     try {
         const res = await fetch('/xiaoyu/api/rules/' + id, {method: 'DELETE'});
         const data = await res.json();
-        if (data.success) { await Promise.all([loadRules(), loadScores(), loadTrend()]); }
+        if (data.success) { await Promise.all([loadRules(), loadScores(), loadTrend(), renderTopRules()]); }
         else { alert('删除失败'); }
     } catch(e) { alert('删除失败: ' + e.message); }
 }
@@ -1279,6 +1347,21 @@ function escapeHtml(t) {
     const d = document.createElement('div');
     d.textContent = t;
     return d.innerHTML;
+}
+
+
+// ── 折叠展开控制 ──
+function toggleSection(id) {
+    var el = document.getElementById(id);
+    var icon = document.getElementById(id + 'Icon');
+    if (!el || !icon) return;
+    if (el.style.display === 'none') {
+        el.style.display = 'block';
+        icon.className = 'bi bi-chevron-up';
+    } else {
+        el.style.display = 'none';
+        icon.className = 'bi bi-chevron-down';
+    }
 }
 
 // ── 规则编辑 ──
@@ -1308,7 +1391,7 @@ async function saveRuleEdit(id) {
         const data = await res.json();
         if (data.success) {
             window._editingRuleId = null;
-            await Promise.all([loadRules(), loadScores(), loadTrend(), loadStats()]);
+            await Promise.all([loadRules(), loadScores(), loadTrend(), loadStats(), renderTopRules()]);
         } else { alert('编辑失败: ' + (data.error || '')); }
     } catch(e) { alert('编辑失败: ' + e.message); }
 }
@@ -1318,7 +1401,7 @@ loadStats();
 loadGoal();checkGoals();loadTrend();
 loadRules();
 loadScores();
-;
+renderTopRules();
 
 // 选择框事件
 setTimeout(() => {
