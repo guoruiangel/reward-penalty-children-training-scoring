@@ -249,6 +249,20 @@ def goals_api():
     return jsonify({'success': True, 'goal': dict(goal)})
 
 
+@xiaoyu.route('/api/goals/<int:goal_id>', methods=['DELETE'])
+def delete_goal(goal_id):
+    """删除许愿目标"""
+    ensure_tables()
+    conn = get_db()
+    cur = conn.execute('DELETE FROM xiaoyu_goals WHERE id = ?', (goal_id,))
+    deleted = cur.rowcount
+    conn.commit()
+    conn.close()
+    if deleted == 0:
+        return jsonify({'success': False, 'error': '目标不存在'}), 404
+    return jsonify({'success': True})
+
+
 @xiaoyu.route('/api/goals/check', methods=['POST'])
 def goals_check():
     """检查当前分数是否达成目标，若达成自动创建下一个目标"""
@@ -270,12 +284,12 @@ def goals_check():
             triggered.append(dict(g))
 
     # 如果所有已存在 goal 都达成（或没有goal），自动创建下一个
-    last_goal = conn.execute('SELECT * FROM xiaoyu_goals ORDER BY target_score DESC, id DESC LIMIT 1').fetchone();
+    last_goal = conn.execute('SELECT * FROM xiaoyu_goals ORDER BY target_score DESC LIMIT 1').fetchone()
     if not last_goal or last_goal['achieved']:
         next_target = (last_goal['target_score'] if last_goal else 0) + 100
         conn.execute('INSERT INTO xiaoyu_goals (target_score, reward) VALUES (?, ?)',
                      (next_target, '请输入愿望 ✨'))
-        new_goal_id = cursor.lastrowid
+        new_goal_id = conn.lastrowid
 
     conn.commit()
     goals = conn.execute('SELECT * FROM xiaoyu_goals ORDER BY target_score ASC').fetchall()
@@ -286,15 +300,6 @@ def goals_check():
         'triggered': triggered,
         'goals': [dict(g) for g in goals]
     })
-@xiaoyu.route('/api/goals/<int:goal_id>', methods=['DELETE'])
-def delete_goal(goal_id):
-    conn = get_db()
-    conn.execute('DELETE FROM xiaoyu_goals WHERE id = ?', (goal_id,))
-    conn.commit()
-    conn.close()
-    return jsonify({'success': True})
-
-
 @xiaoyu.route('/api/scores/stats', methods=['GET'])
 def score_stats():
     """评分统计：今日、本周、本月"""
